@@ -35,7 +35,7 @@ if (index != -1 && index > 2) {
 if (process.argv.includes('--execute')) {
 	config.execute = true;
 }
-index = process.argv.indexOf('-S');
+index = process.argv.indexOf('-s');
 if (index != -1) {
 	config.source = process.argv[index+1] || "asm";
 }

@@ -2,4 +2,4 @@
 test/*
 node_modules/*
 .vscode/*
-compiler/parser/qupa.json
+compiler/parser/syntax.json
