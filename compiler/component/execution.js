@@ -738,6 +738,102 @@ class Execution {
 
 
 	/**
+	 * Generates the LLVM for a call
+	 * Used in other compile functions
+	 * @param {BNF_Node} ast
+	 */
+	compile_call(ast) {
+		let instruction = null;
+		let preamble    = new LLVM.Fragment();
+		let epilog      = new LLVM.Fragment();
+		let returnType    = null;
+
+
+
+		// Get argument types
+		//  and generate LLVM for argument inputs
+		//  also add any preamble to get the arguments
+		let signature = [];
+		let args = [];
+		let regs = [];
+		for (let arg of ast.tokens[2].tokens) {
+			let expr = this.compile_expr_opperand(arg);
+			if (expr === null) {
+				return null;
+			}
+
+			preamble.merge(expr.preamble);
+			epilog.merge(expr.epilog);
+
+			args.push(expr.instruction);
+			signature.push(expr.type);
+
+			if (expr.register instanceof Register) {
+				preamble.merge(expr.register.flushCache());
+				regs.push(expr.register);
+			}
+		}
+		
+
+		// Link any [] accessors
+		let accesses = [ ast.tokens[0].tokens[1].tokens ];
+		let file = this.getFile();
+		for (let access of ast.tokens[0].tokens[2]) {
+			if (access[0] == "[]") {
+				file.throw (
+					`Error: Class base function execution is currently unsupported`,
+					inner.ref.start, inner.ref.end
+				);
+				return null;
+			} else {
+				accesses.push([access[0], access[1].tokens]);
+			}
+		}
+
+
+		// Link any template access
+		// let template = this.resolveTemplate(ast.tokens[1]);
+		// if (template === null) {
+		// 	return null;
+		// }
+
+		// Find a function with the given signature
+		let target = this.getFunction(accesses, signature, null);
+		if (!target) {
+			let funcName = Flattern.VariableStr(ast.tokens[0]);
+			file.throw(
+				`Error: Unable to find function "${funcName}" with signature ${signature.join(", ")}`,
+				ast.ref.start, ast.ref.end
+			);
+			return null;
+		}
+
+
+		// Generate the LLVM for the call
+		//   Mark any parsed pointers as now being concurrent
+		if (target.isInline) {
+			let inner = target.generate(regs, args);
+			preamble.merge(inner.preamble);
+
+			instruction = inner.instruction;
+			returnType = inner.type;
+		} else {
+			instruction = new LLVM.Call(
+				new LLVM.Type(target.returnType.type.represent, target.returnType.pointer, ast.ref.start),
+				new LLVM.Name(target.represent, true, ast.tokens[0].ref),
+				args,
+				ast.ref.start
+			);
+			returnType = target.returnType;
+
+			// Mark this function as being called for the callgraph
+			// this.getFunctionInstance().addCall(target);
+		}
+
+		return { preamble, instruction, epilog, type: returnType };
+	}
+
+	/**
 	 * Generates the LLVM for a call where the result is ignored
 	 * @param {BNF_Reference} ast
 	 * @returns {LLVM.Fragment}
