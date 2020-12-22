@@ -74,8 +74,11 @@ class Variable extends Value {
 			return out;
 		}
 
+		if (this.type.typeSystem == 'linear') {
+			this.stores = [];
+		}
+
 		out.type = this.type;
-		this.stores = [];
 		return out;
 	}
 }

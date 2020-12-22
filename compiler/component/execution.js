@@ -248,11 +248,59 @@ class Execution {
 
 
 
-	compile_declare(ast) {
-		let	name = ast.tokens[2].tokens;
+	
+
+
+
+
+	/**
+	 * Generates the LLVM for assigning a variable
+	 * @param {BNF_Node} ast
+	 * @returns {LLVM.Fragment}
+	 */
+	compile_assign (ast) {
 		let frag = new LLVM.Fragment();
 
-		let typeRef = this.resolveType(ast.tokens[1]);
+
+		// Load the target variable
+		//   This must occur after the expression is resolve
+		//   because this variable now needs to be accessed for writing
+		//   after any reads that might have taken place in the expresion
+		let access = this.getVar(ast.tokens[0], false);
+		if (access.error) {
+			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
+			return null;
+		}
+		
+
+		// Resolve the expression
+		let expr = this.compile_expr(ast.tokens[1], access.type, true);
+		if (expr === null) {
+			return null;
+		}
+		frag.merge(expr.preamble);
+
+		let targetType = access.type;
+		if (!expr.type.match(targetType)) {
+			this.getFile().throw(
+				`Error: Assignment type mis-match` +
+				` cannot assign ${targetType.toString()}` +
+				` to ${expr.type.toString()}`,
+				ast.ref.start, ast.ref.end
+			);
+			return null;
+		}
+
+		access.markUpdated(expr.instruction);
+		frag.merge(expr.epilog);
+		return frag;
+	}
+
+	compile_declare(ast) {
+		let	name = ast.tokens[1].tokens;
+		let frag = new LLVM.Fragment();
+
+		let typeRef = this.resolveType(ast.tokens[0]);
 		typeRef.localLife = ast.tokens[0];
 		if (!(typeRef instanceof TypeRef)) {
 			this.getFile().throw(`Error: Invalid type name "${Flattern.DataTypeStr(ast.tokens[0])}"`, ast.ref.start, ast.ref.end);
@@ -266,6 +314,44 @@ class Execution {
 		);
 
 		return new LLVM.Fragment();
+	}
+
+	/**
+	 * Generates the LLVM for the combined action of define + assign
+	 * @param {BNF_Node} ast
+	 * @returns {LLVM.Fragment}
+	 */
+	compile_declare_assign(ast) {
+		let frag = new LLVM.Fragment();
+
+		let declare = this.compile_declare(ast);
+		if (declare == null) {
+			return null;
+		}
+		frag.merge(declare);
+
+		let forward = {
+			type: "assign",
+			tokens: [
+				{
+					type: "variable",
+					tokens: [ 0, ast.tokens[1], [] ],
+					ref: ast.tokens[1].ref
+				},
+				ast.tokens[2]
+			],
+			ref: {
+				start: ast.tokens[1].ref.start,
+				end: ast.ref.end
+			}
+		};
+		let assign = this.compile_assign(forward);
+		if (assign === null) {
+			return null;
+		}
+		frag.merge(assign);
+
+		return frag;
 	}
 
 
@@ -658,52 +744,6 @@ class Execution {
 
 
 
-	/**
-	 * Generates the LLVM for assigning a variable
-	 * @param {BNF_Node} ast
-	 * @returns {LLVM.Fragment}
-	 */
-	compile_assign (ast) {
-		let frag = new LLVM.Fragment();
-
-
-		// Load the target variable
-		//   This must occur after the expression is resolve
-		//   because this variable now needs to be accessed for writing
-		//   after any reads that might have taken place in the expresion
-		let access = this.getVar(ast.tokens[0], false);
-		if (access.error) {
-			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
-			return null;
-		}
-		
-
-		// Resolve the expression
-		let expr = this.compile_expr(ast.tokens[1], access.type, true);
-		if (expr === null) {
-			return null;
-		}
-		frag.merge(expr.preamble);
-
-		let targetType = access.type;
-		if (!expr.type.match(targetType)) {
-			this.getFile().throw(
-				`Error: Assignment type mis-match` +
-				` cannot assign ${targetType.toString()}` +
-				` to ${expr.type.toString()}`,
-				ast.ref.start, ast.ref.end
-			);
-			return null;
-		}
-
-		access.markUpdated(expr.instruction);
-		frag.merge(expr.epilog);
-		return frag;
-	}
-
-
-
-
 	compile_return(ast){
 		let frag = new LLVM.Fragment();
 		let inner = null;
@@ -881,6 +921,9 @@ class Execution {
 					break;
 				case "assign":
 					inner = this.compile_assign(token);
+					break;
+				case "declare_assign":
+					inner = this.compile_declare_assign(token);
 					break;
 				case "return":
 					inner = this.compile_return(token);
