@@ -3,8 +3,9 @@
 ## Upcomming
 
 ### Added
-[x] Able to assign and return numbers
-[x] Able to use primative variable inputs
+[x] Assign and return numbers
+[x] Use primative variable inputs
+[X] Basic opperands with primative types
 
 ### Fixes
 
