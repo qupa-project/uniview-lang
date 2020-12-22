@@ -114,18 +114,11 @@ async function Compile(root, id) {
 
 
 let tests = [
-	"array/main.qp",
-	"cast/main.qp",
-	"compare/main.qp",
-	"dynamic-alloc/main.qp",
-	"first-execution/main.qp",
-	"if-statement/main.qp",
-	"library-behaviour/main.qp",
-	"math/main.qp",
-	"pointer/main.qp",
-	"string/main.qp",
-	"structure/main.qp",
-	"while-loop/main.qp"
+	"cast/main.uv",
+	"compare/main.uv",
+	"first-execution/main.uv",
+	"library-behaviour/main.uv",
+	"math/main.uv",
 ].map( x => {
 	return resolve("./test/pre-alpha", x);
 });

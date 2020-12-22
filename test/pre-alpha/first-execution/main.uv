@@ -1,0 +1,32 @@
+/*
+	Description: First executable version of Qupa
+	Goals: Compiles to LLVM-IR
+	  Able to do integer addition
+		Print result
+		Exit code 0
+*/
+
+
+external assume {
+	void i32_println(i32 val);
+}
+
+
+i32 main () {
+	i32 a;
+	i32 b;
+
+	a = 1;
+	b = 2;
+
+	i32_println(a);
+	i32_println(b);
+
+	int c = a + b;
+	i32_println(c);
+
+	c = b;
+	i32_println(c);
+
+	return 0;
+}

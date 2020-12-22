@@ -1,0 +1,22 @@
+i32 main () {
+	i32 a = 1;
+	i32 b = 2;
+	float c = 3.0;
+	float d = 4.0;
+
+	i32 res_int;
+	res_int = a + b;
+	res_int = a - b;
+	res_int = a * b;
+	res_int = a / b;
+	res_int = a % b;
+
+	float res_float;
+	res_float = c + d;
+	res_float = c - d;
+	res_float = c * d;
+	res_float = c / d;
+	res_float = c % d;
+
+	return 0;
+}

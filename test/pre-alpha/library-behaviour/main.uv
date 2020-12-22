@@ -1,0 +1,22 @@
+import "print.uv";
+import "print.uv"; // twice to check double importation behaviour
+
+import "print.uv" as std; // check name-space access
+
+
+i32 main() {
+	int a;
+	i32 b;
+	i32 c;
+
+	a = 1;
+	b = 2;
+
+	std.println(a);
+	println(b);
+
+	c = a + b;
+	println(c);
+
+	return 0;
+}
