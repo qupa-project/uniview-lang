@@ -256,9 +256,9 @@ function Simplify_Struct_Stmt (node) {
 
 function Simplify_Variable (node) {
 	let inner = [
-		node.tokens[0].length,
-		Simplify_Name(node.tokens[1][0]),
-		node.tokens[2].map(x => {
+		0,
+		Simplify_Name(node.tokens[0][0]),
+		node.tokens[1].map(x => {
 			return Simplify_Variable_Access(x).tokens;
 		})
 	];
@@ -339,12 +339,12 @@ function Simplify_Name (node) {
 
 function Simplify_Data_Type (node) {
 	let inner = [
-		node.tokens[0].length,
-		Simplify_Name(node.tokens[1][0]),
-		node.tokens[2].map(x => {
+		0,
+		Simplify_Name(node.tokens[0][0]),
+		node.tokens[1].map(x => {
 			return Simplify_Data_Type_Access(x);
 		}),
-		node.tokens[3].length > 0 ? Simplify_Template(node.tokens[3][0]) : {   // Template
+		node.tokens[2].length > 0 ? Simplify_Template(node.tokens[2][0]) : {   // Template
 			type: "template",
 			tokens: [],
 			ref: {start: null, end:null}
@@ -621,9 +621,8 @@ function Simplify_Return (node) {
 
 function Simplify_Declare (node) {
 	let out = [
-		node.tokens[0].length == 1,
-		Simplify_Data_Type(node.tokens[2][0]),
-		Simplify_Name(node.tokens[4][0])
+		Simplify_Data_Type(node.tokens[0][0]),
+		Simplify_Name(node.tokens[2][0])
 	];
 
 	node.tokens = out;
@@ -632,9 +631,8 @@ function Simplify_Declare (node) {
 }
 function Simplify_Declare_Assign (node) {
 	let out = [
-		node.tokens[0].length == 1,
-		Simplify_Data_Type (node.tokens[2][0]),
-		Simplify_Name (node.tokens[4][0]),
+		Simplify_Data_Type (node.tokens[0][0]),
+		Simplify_Name (node.tokens[2][0]),
 		Simplify_Expr (node.tokens[6][0])
 	];
 

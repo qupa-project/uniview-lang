@@ -127,6 +127,7 @@ types.ulong  = types.u64;
 
 for (let key in types) {
 	types[key].primative = true;
+	types[key].typeSystem = 'normal';
 }
 
 

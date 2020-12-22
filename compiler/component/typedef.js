@@ -18,6 +18,8 @@ class TypeDef {
 		this.name = "unknown";
 		this.size = 0;
 
+		this.typeSystem = 'linear';
+
 		this.parse();
 	}
 

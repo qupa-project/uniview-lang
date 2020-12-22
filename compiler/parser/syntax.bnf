@@ -51,18 +51,18 @@ program ::= w* ( stmt_top w* )*
 #  Variables
 #=============================
 	assign  ::= variable w* "=" w* expr w* ";"
-	declare ::= "$"* w* data_type w+ name w* ";"
-	declare_assign ::= "$"* w* data_type w+ name w* "=" w* expr w* ";"
+	declare ::= data_type w+ name w* ";"
+	declare_assign ::= data_type w+ name w* "=" w* expr w* ";"
 
 	name ::= letter ( letter | digit | "_" )*
-	variable ::= "$"* name accessor*
+	variable ::= name accessor*
 		accessor ::= accessor_dynamic | accessor_static
 			accessor_dynamic ::= "[" w* variable_args w* "]"
 			accessor_static  ::= "." name
 		variable_args ::= variable_arg ( w* "," w* variable_arg )*
 			variable_arg ::= constant | variable
 
-	data_type ::= "@"* name data_type_access* template?
+	data_type ::= name data_type_access* template?
 		data_type_access ::= "." name
 
 
