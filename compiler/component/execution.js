@@ -73,7 +73,6 @@ class Execution {
 	getVar(ast) {
 		// Link dynamic access arguments
 		ast = this.resolveAccess(ast);
-
 		let res = this.scope.getVar(ast);
 
 		// Inject reference if it is missing
@@ -284,26 +283,21 @@ class Execution {
 			case "constant":
 				res = this.compile_constant(ast);
 				break;
-			// case "call":
-			// 	if (block) {
-			// 		recursiveFail = true;
-			// 		break;
-			// 	}
-
-			// 	res = this.compile_call(ast);
-			// 	break;
+			case "call":
+				res = this.compile_call(ast);
+				break;
 			case "variable":
 				res = this.compile_loadVariable(ast);
 				break;
-			// case "expr_arithmetic":
-			// 	res = this.compile_expr_arithmetic(ast.tokens[0]);
-			// 	break;
-			// case "expr_compare":
-			// 	res = this.compile_expr_compare(ast.tokens[0]);
-			// 	break;
-			// case "expr_bool":
-			// 	res = this.compile_expr_bool(ast.tokens[0]);
-			// 	break;
+			case "expr_arithmetic":
+				res = this.compile_expr_arithmetic(ast.tokens[0]);
+				break;
+			case "expr_compare":
+				res = this.compile_expr_compare(ast.tokens[0]);
+				break;
+			case "expr_bool":
+				res = this.compile_expr_bool(ast.tokens[0]);
+				break;
 			default:
 				throw new Error(`Unexpected expression type ${ast.type}`);
 		}
@@ -363,6 +357,300 @@ class Execution {
 		return res;
 	}
 
+	compile_expr_opperand (ast) {
+		switch (ast.type) {
+			case "variable":
+				return this.compile_loadVariable(ast);
+			case "constant":
+				return this.compile_constant(ast);
+			default:
+				throw new Error(`Unexpected expression opperand type ${ast.type}`);
+		}
+	}
+
+
+	compile_expr_arithmetic(ast) {
+		let action = null;
+		switch (ast.type) {
+			case "expr_add":
+				action = "Add";
+				break;
+			case "expr_sub":
+				action = "Sub";
+				break;
+			case "expr_mul":
+				action = "Mul";
+				break;
+			case "expr_div":
+				action = "Div";
+				break;
+			case "expr_mod":
+				action = "Rem";
+				break;
+			default:
+				throw new Error(`Unexpected arithmetic expression type ${ast.type}`);
+		}
+
+
+
+		let preamble = new LLVM.Fragment();
+		let epilog = new LLVM.Fragment();
+
+		// Load the two operands ready for operation
+		let opperands = [
+			this.compile_expr_opperand(ast.tokens[0]),
+			this.compile_expr_opperand(ast.tokens[2])
+		];
+
+
+		// Append the load instructions
+		preamble.merge(opperands[0].preamble);
+		preamble.merge(opperands[1].preamble);
+
+		// Append the cleanup instructions
+		epilog.merge(opperands[0].epilog);
+		epilog.merge(opperands[1].epilog);
+
+
+
+		// Check opperands are primatives
+		if (!opperands[0].type.type.primative) {
+			this.getFile().throw(
+				`Error: Cannot run arithmetic opperation on non-primative type`,
+				ast.tokens[0].ref.start, ast.tokens[0].ref.end
+			);
+			return null;
+		}
+		if (!opperands[1].type.type.primative) {
+			this.getFile().throw(
+				`Error: Cannot run arithmetic opperation on non-primative type`,
+				ast.tokens[2].ref.start, ast.tokens[2].ref.end
+			);
+			return null;
+		}
+
+
+		// Check opperands are the same type
+		if (!opperands[0].type.match(opperands[1].type)) {
+			this.getFile().throw(
+				`Error: Cannot perform arithmetic opperation on unequal types`,
+				ast.tokens[0].ref.start, ast.tokens[2].ref.end
+			);
+			return null;
+		}
+
+
+		// Get the arrithmetic mode
+		let mode = null;
+		if (opperands[0].type.type.cat == "int") {
+			mode = opperands[0].type.type.signed ? 0 : 1;
+		} else if (opperands[0].type.type.cat == "float") {
+			mode = 2;
+		}
+		if (mode === null) {
+			this.getFile().throw(
+				`Error: Unable to perform arithmetic opperation for unknown reason`,
+				ast.tokens[1].ref.start, ast.tokens[1].ref.end
+			);
+			return null;
+		}
+
+		return {
+			preamble, epilog,
+			instruction: new LLVM[action](
+				mode,
+				opperands[0].instruction.type,
+				opperands[0].instruction.name,
+				opperands[1].instruction.name
+			),
+			type: opperands[0].type
+		};
+	}
+
+	compile_expr_compare(ast) {
+		let preamble = new LLVM.Fragment();
+		let epilog = new LLVM.Fragment();
+
+
+		// Load the two operands ready for operation
+		let opperands = [
+			this.compile_expr_opperand(ast.tokens[0]),
+			this.compile_expr_opperand(ast.tokens[2])
+		];
+
+
+		// Check opperands are primatives
+		if (!opperands[0].type.type.primative) {
+			this.getFile().throw(
+				`Error: Cannot perform comparison opperation on non-primative type`,
+				ast.tokens[0].ref.start, ast.tokens[0].ref.end
+			);
+			return null;
+		}
+		if (!opperands[1].type.type.primative) {
+			this.getFile().throw(
+				`Error: Cannot perform comparison opperation on non-primative type`,
+				ast.tokens[2].ref.start, ast.tokens[2].ref.end
+			);
+			return null;
+		}
+
+
+		// Check opperands are the same type
+		if (!opperands[0].type.match(opperands[1].type)) {
+			this.getFile().throw(
+				`Error: Cannot perform comparison opperation on unequal types`,
+				ast.tokens[0].ref.start, ast.tokens[2].ref.end
+			);
+			return null;
+		}
+
+
+		// Get the arrithmetic mode
+		let mode = null;
+		if (opperands[0].type.type.cat == "int") {
+			mode = opperands[0].type.type.signed ? 0 : 1;
+		} else if (opperands[0].type.type.cat == "float") {
+			mode = 2;
+		}
+		if (mode === null) {
+			this.getFile().throw(
+				`Error: Unable to perform comparison opperation for unknown reason`,
+				ast.tokens[1].ref.start, ast.tokens[1].ref.end
+			);
+			return null;
+		}
+
+
+		let cond = null;
+		switch (ast.type) {
+			case "expr_eq":
+				cond = mode == 2 ? "oeq" : "eq";
+				break;
+			case "expr_neq":
+				cond = mode == 2 ? "une" : "ne";
+				break;
+			case "expr_gt":
+				cond = mode == 0 ? "ugt" :
+					mode == 1 ? "sgt" :
+					"ogt";
+				break;
+			case "expr_gt_eq":
+				cond = mode == 0 ? "uge" :
+					mode == 1 ? "sge" :
+					"oge";
+				break;
+			case "expr_lt":
+				cond = mode == 0 ? "ult" :
+					mode == 1 ? "slt" :
+					"olt";
+				break;
+			case "expr_lt_eq":
+				cond = mode == 0 ? "ule" :
+					mode == 1 ? "sle" :
+					"ole";
+				break;
+			default:
+				throw new Error(`Unexpected comparison expression type ${ast.type}`);
+		}
+
+
+		// Append the load instructions
+		preamble.merge(opperands[0].preamble);
+		preamble.merge(opperands[1].preamble);
+
+		// Append the cleanup instructions
+		epilog.merge(opperands[0].epilog);
+		epilog.merge(opperands[1].epilog);
+
+
+
+		return {
+			preamble, epilog,
+			instruction: new LLVM.Compare(
+				mode,
+				cond,
+				opperands[0].instruction.type,
+				opperands[0].instruction.name,
+				opperands[1].instruction.name
+			),
+			type: new TypeRef(0, Primative.types.bool)
+		};
+	}
+
+	compile_expr_bool(ast) {
+		let preamble = new LLVM.Fragment();
+		let epilog = new LLVM.Fragment();
+
+
+		let opperands = [];
+		let action = null;
+		let type = new TypeRef(0, Primative.types.bool);
+		switch (ast.type) {
+			case "expr_and":
+			case "expr_or":
+				action = ast.type == "expr_and" ? "And" : "Or";
+				opperands = [
+					this.compile_expr_opperand(ast.tokens[0]),
+					this.compile_expr_opperand(ast.tokens[2])
+				];
+				break;
+			case "expr_not":
+				action = "XOr";
+				opperands = [
+					this.compile_expr_opperand(ast.tokens[0]),
+					{
+						preamble: new LLVM.Fragment(),
+						epilog: new LLVM.Fragment(),
+						instruction: new LLVM.Constant("true"),
+						type
+					}
+				];
+				break;
+			default:
+				throw new Error(`Unexpected boolean expression type ${ast.type}`);
+		}
+
+
+		// Check opperands are of boolean type
+		if (!opperands[0].type.match(type)) {
+			this.getFile().throw(
+				`Error: Cannot perform boolean opperation on non boolean types`,
+				ast.tokens[0].ref.start, ast.tokens[0].ref.end
+			);
+			return null;
+		}
+		if (!opperands[1].type.match(type)) {
+			this.getFile().throw(
+				`Error: Cannot perform boolean opperation on non boolean types`,
+				ast.tokens[2].ref.start, ast.tokens[2].ref.end
+			);
+			return null;
+		}
+
+
+		// Append the load instructions
+		preamble.merge(opperands[0].preamble);
+		preamble.merge(opperands[1].preamble);
+
+		// Append the cleanup instructions
+		epilog.merge(opperands[0].epilog);
+		epilog.merge(opperands[1].epilog);
+
+
+		let instruction = new LLVM[action](
+			opperands[0].instruction.type,
+			opperands[0].instruction.name,
+			action == "XOr" ? opperands[1].instruction : opperands[1].instruction.name
+		);
+
+		return {
+			preamble, epilog,
+			instruction,
+			type
+		};
+	}
+
 
 
 
@@ -416,7 +704,6 @@ class Execution {
 		let frag = new LLVM.Fragment();
 		let inner = null;
 
-		this.returned = true;
 		let returnType = null;
 		if (ast.tokens.length == 0){
 			inner = new LLVM.Type("void", false);
@@ -443,6 +730,29 @@ class Execution {
 		}
 
 		frag.append(new LLVM.Return(inner, ast.ref.start));
+		this.returned = true;
+		return frag;
+	}
+
+
+
+
+	/**
+	 * Generates the LLVM for a call where the result is ignored
+	 * @param {BNF_Reference} ast
+	 * @returns {LLVM.Fragment}
+	 */
+	compile_call_procedure(ast) {
+		let frag = new LLVM.Fragment(ast);
+		let out = this.compile_call(ast);
+		if (out === null) {
+			return null;
+		}
+
+		// Merge the preable, execution, and epilog into one fragment
+		frag.merge(out.preamble);
+		frag.append(out.instruction);
+		frag.merge(out.epilog);
 		return frag;
 	}
 
@@ -474,6 +784,9 @@ class Execution {
 					break;
 				case "return":
 					inner = this.compile_return(token);
+					break;
+				case "call":
+					inner = this.compile_call_procedure(token);
 					break;
 				default:
 					this.getFile().throw(
@@ -513,17 +826,6 @@ class Execution {
 		let out = new Execution(this, this.returnType, scope);
 		out.isChild = true;
 		return out;
-	}
-
-	/**
-	 * Clears the cache of every
-	 */
-	clearAllCaches() {
-		return this.scope.clearAllCaches();
-	}
-
-	flushAllClones() {
-		return this.scope.flushAllClones();
 	}
 
 	/**

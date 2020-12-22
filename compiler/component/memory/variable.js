@@ -17,6 +17,7 @@ class Variable extends Value {
 		super(type, ref);
 		this.name = name;
 		this.stores = [];
+		this.initalised = false;
 	}
 
 
@@ -34,7 +35,9 @@ class Variable extends Value {
 			case 0:
 				return {
 					error: true,
-					msg: `'${this.name}' is undefined`,
+					msg: this.initalised ? 
+						`'${this.name}' has had it's already value used` :
+						`'${this.name}' has not be initalised`,
 					ref
 				};
 			case 1:
@@ -57,6 +60,7 @@ class Variable extends Value {
 
 	markUpdated(register) {
 		this.stores = [register];
+		this.initalised = true;
 	}
 
 	/**
