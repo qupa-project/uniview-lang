@@ -56,9 +56,8 @@ program ::= w* ( stmt_top w* )*
 
 	name ::= letter ( letter | digit | "_" )*
 	variable ::= "$"* name accessor*
-		accessor ::= accessor_dynamic | accessor_refer | accessor_static
+		accessor ::= accessor_dynamic | accessor_static
 			accessor_dynamic ::= "[" w* variable_args w* "]"
-			accessor_refer   ::= "->"
 			accessor_static  ::= "." name
 		variable_args ::= variable_arg ( w* "," w* variable_arg )*
 			variable_arg ::= constant | variable

@@ -342,15 +342,19 @@ class Execution {
 				irType = res.type;
 			}
 
-			res.register = new Register(res.type, "temp", ast.ref.start);
-			let regIR = res.register.toLLVM();
+
+			let id = new LLVM.ID(ast.ref.start);
 
 			res.preamble.append(new LLVM.Set(
-				regIR.name,
+				new LLVM.Name(id, false, ast.ref.start),
 				inner,
 				ast.ref.start
 			));
-			res.instruction = regIR;
+			res.instruction = new LLVM.Argument(
+				irType,
+				new LLVM.Name(id.reference()),
+				ast.ref.start
+			);
 		}
 
 		res.ref = ast.ref;
