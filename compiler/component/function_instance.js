@@ -149,7 +149,7 @@ class Function_Instance {
 		let frag = new LLVM.Procedure(
 			this.returnType.toLLVM(head.tokens[0].ref),
 			new LLVM.Name(this.represent, true, head.tokens[1].ref),
-			res.registers.map( x => x.toLLVM() ),
+			res.registers,
 			"#1",
 			this.external,
 			this.ref
