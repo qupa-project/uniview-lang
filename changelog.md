@@ -4,11 +4,11 @@
 
 ### Added
 [x] Assign and return numbers
-[x] Use primative variable inputs
-[x] Basic opperands with primative types
-[x] Primative types using non-linear type system for easier use
+[x] Use primitive variable inputs
+[x] Basic operands with primitive types
+[x] Primitive types using non-linear type system for easier use
 [x] Basic automatic test suite
-[x] Type casting of primative types
+[x] Typecasting of primitive types
 
 ### Fixes
 
