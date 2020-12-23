@@ -26,7 +26,7 @@
     "build-runtime": "clang++ runtime/runtime.cpp -S -emit-llvm -o runtime/runtime.ll"
   },
   "bin": {
-    "qupa": "compiler/compile.js"
+    "uvc": "compiler/compile.js"
   },
   "repository": {
     "type": "git",
