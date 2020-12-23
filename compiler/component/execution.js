@@ -61,6 +61,48 @@ class Execution {
 	}
 
 
+	/**
+	 *
+	 * @param {BNF_Node} node
+	 */
+	resolveTemplate(node) {
+		let template = [];
+		for (let arg of node.tokens) {
+			switch (arg.type) {
+				case "data_type":
+					let type = this.getFile().getType(
+						Flattern.DataTypeList(arg),
+						this.resolveTemplate(arg.tokens[3])
+					);
+					if (type === null) {
+						this.getFile().throw(
+							`Error: Unknown data type ${Flattern.DataTypeStr(arg)}`,
+							arg.ref.start, arg.ref.end
+						);
+						return null;
+					}
+
+					// Update pointer size
+					type.pointer = arg.tokens[0];
+
+					template.push(type);
+					break;
+				case "constant":
+					template.push(this.compile_constant(arg));
+					break;
+				default:
+					this.getFile().throw(
+						`Error: ${arg.type} are currently unsupported in template arguments`,
+						arg.ref.start, arg.ref.end
+					);
+					return null;
+			}
+		}
+
+		return template;
+	}
+
+
 
 
 
@@ -108,14 +150,14 @@ class Execution {
 	 * @param {BNF_Node} node
 	 */
 	resolveType (node) {
-		// let template = this.resolveTemplate(node.tokens[3]);
-		// if (template === null) {
-		// 	return null;
-		// }
+		let template = this.resolveTemplate(node.tokens[3]);
+		if (template === null) {
+			return null;
+		}
 
 		return this.getFile().getType(
 			Flattern.DataTypeList(node),
-			null
+			template
 		);
 	}
 
@@ -793,16 +835,19 @@ class Execution {
 		let returnType    = null;
 
 
-
 		// Get argument types
 		//  and generate LLVM for argument inputs
 		//  also add any preamble to get the arguments
+		let file = this.getFile();
 		let signature = [];
 		let args = [];
 		let regs = [];
 		for (let arg of ast.tokens[2].tokens) {
 			let expr = this.compile_expr_opperand(arg);
 			if (expr === null) {
+				return null;
+			} else if (expr.error == true) {
+				file.throw ( expr.msg, expr.ref.start, expr.ref.end );
 				return null;
 			}
 
@@ -817,11 +862,9 @@ class Execution {
 				regs.push(expr.register);
 			}
 		}
-		
 
 		// Link any [] accessors
 		let accesses = [ ast.tokens[0].tokens[1].tokens ];
-		let file = this.getFile();
 		for (let access of ast.tokens[0].tokens[2]) {
 			if (access[0] == "[]") {
 				file.throw (
@@ -836,13 +879,13 @@ class Execution {
 
 
 		// Link any template access
-		// let template = this.resolveTemplate(ast.tokens[1]);
-		// if (template === null) {
-		// 	return null;
-		// }
+		let template = this.resolveTemplate(ast.tokens[1]);
+		if (template === null) {
+			return null;
+		}
 
 		// Find a function with the given signature
-		let target = this.getFunction(accesses, signature, null);
+		let target = this.getFunction(accesses, signature, template);
 		if (!target) {
 			let funcName = Flattern.VariableStr(ast.tokens[0]);
 			file.throw(
