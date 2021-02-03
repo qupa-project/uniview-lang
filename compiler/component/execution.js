@@ -294,7 +294,6 @@ class Execution {
 
 
 
-
 	/**
 	 * Generates the LLVM for assigning a variable
 	 * @param {BNF_Node} ast
@@ -313,7 +312,7 @@ class Execution {
 			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
 			return null;
 		}
-
+    
 
 		// Resolve the expression
 		let expr = this.compile_expr(ast.tokens[1], access.type, true);
@@ -398,7 +397,7 @@ class Execution {
 
 
 
-
+  
 	compile_if (ast) {
 		let frag = new LLVM.Fragment(ast);
 
@@ -529,6 +528,7 @@ class Execution {
 
 
 
+  
 
 	/**
 	 *

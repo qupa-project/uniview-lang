@@ -45,6 +45,7 @@ class Probability {
 }
 
 
+
 class Variable extends Value {
 	/**
 	 *
