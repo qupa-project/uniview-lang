@@ -1,5 +1,7 @@
 {
 	"files.associations": {
-		"*.uv": "cpp"
+		"*.qp": "qupa",
+		"*.uv": "uniview",
+		"xstring": "cpp"
 	}
 }

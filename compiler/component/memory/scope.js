@@ -5,8 +5,6 @@ const TypeRef = require('./../typeRef.js');
 const Variable = require('./variable.js');
 
 class Scope {
-	static raisedVariables = true; // whether or not a variable can be redefined within a new scope
-
 	constructor(ctx) {
 		this.ctx        = ctx;
 		this.variables  = {};
@@ -90,13 +88,6 @@ class Scope {
 	 * @returns {void}
 	 */
 	register_Var(type, name, ref) {
-		if (Scope.raisedVariables) {
-			let parent = this.getParent();
-			if (parent) {
-				return parent.register_Var(type, name, ref);
-			}
-		}
-
 		if (this.variables[name]) {
 			if (this.variables[name].isClone && !Scope.raisedVariables) {
 				// When scoped variables are added
@@ -195,6 +186,27 @@ class Scope {
 		out.child = true;
 
 		return out;
+	}
+
+	/**
+	 * PreSync must be ran in each scope first
+	 * @param {Scope} scopes
+	 */
+	sync(scopes, segment, ref) {
+		let frag = new LLVM.Fragment();
+
+		for (let name in this.variables) {
+
+			let opts = scopes
+				.map(tuple => tuple[1].variables[name].createProbability(
+					tuple[0],
+					ref
+				));
+
+			frag.append(this.variables[name].resolvePossibilities(opts, segment, ref));
+		}
+
+		return frag;
 	}
 }
 

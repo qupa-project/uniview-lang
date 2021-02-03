@@ -7,8 +7,8 @@ external assume {
 	void i64_println(i64 val);
 	void f32_print(float val);
 	void f32_println(float val);
-	void str_print(char val);
-	void str_println(char val);
+	void str_print(string val);
+	void str_println(string val);
 }
 
 
@@ -33,7 +33,7 @@ void print(bool val) {
 	i1_print(val);
 	return;
 }
-void print(char val) {
+void print(string val) {
 	str_print(val);
 	return;
 }
@@ -55,7 +55,7 @@ void println(bool val) {
 	i1_println(val);
 	return;
 }
-void println(char val) {
+void println(string val) {
 	str_println(val);
 	return;
 }
