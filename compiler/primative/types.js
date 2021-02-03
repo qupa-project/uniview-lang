@@ -115,7 +115,6 @@ for (let i=1; i<=8; i+=i) {
 types.float.cat  = "float";
 types.double.cat = "float";
 
-types.char  = types.i8;
 types.short = types.i16;
 types.int   = types.i32;
 types.long  = types.i64;
@@ -129,6 +128,26 @@ for (let key in types) {
 	types[key].primative = true;
 	types[key].typeSystem = 'normal';
 }
+
+
+types.string = new TypeDef(null, {
+	tokens: [
+		{
+			type   : "name",
+			tokens : "i8"
+		},
+		{
+			type   : "integer",
+			tokens : "1"
+		}
+	],
+	ref: {
+		start: null,
+		end: null
+	}
+}, true);
+types.string.typeSystem = "linear";
+types.string.primative = true;
 
 
 module.exports = types;
