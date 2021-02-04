@@ -1,6 +1,8 @@
 const path = require('path');
 const BNF = require('bnf-parser');
 
+const helper = require('../helper/error.js');
+
 const LLVM = require('./../middle/llvm.js');
 const Function = require('./function.js');
 const TypeDef  = require('./typedef.js');
@@ -241,14 +243,9 @@ class File {
 	}
 
 	throw (msg, refStart, refEnd) {
-		let area = BNF.Message.HighlightArea(this.data, refStart, refEnd);
-		console.error(`\n${this.path}:`);
-		if (refEnd) {
-			console.error(`${msg} ${refStart.toString()} -> ${refEnd.toString()}`);
-		} else {
-			console.error(`${msg} ${refStart.toString()}`);
-		}
-		console.error(area.replace(/\t/g, '  '));
+		// let area = BNF.Message.HighlightArea(this.data, refStart, refEnd);
+		let area = helper.CodeSection(this.data, refStart, refEnd);
+		console.error(`\n${this.path}:\n ${msg}\n${area.replace(/\t/g, '  ')}`);
 		this.project.markError();
 	}
 

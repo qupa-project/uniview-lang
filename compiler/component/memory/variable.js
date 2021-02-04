@@ -15,12 +15,13 @@ class Probability {
 		this.rel = [];
 	}
 
-	resolve() {
+	resolve(ref) {
 		// Trigger ties
 		for (let act of this.rel) {
 			let res = act.activate();
 			if (res !== null) {
-				res.msg = `Error: Unable to merge possible states due to\n  ${res.msg}`;
+				res.msg = `Error: Unable to merge possible states at ${ref.start.toString()} due to\n  ${res.msg}`;
+				res.ref.end = ref.end;
 				return res;
 			}
 		}
@@ -62,7 +63,7 @@ class Variable extends Value {
 
 		this.probability = null;
 
-		this.lastUninit = null;
+		this.lastUninit = ref;
 
 		this.isCorrupt = false; // Is there an invalid state tree
 		this.isClone = false;
@@ -85,7 +86,7 @@ class Variable extends Value {
 
 		// Resolve probability
 		if (this.probability) {
-			let status = this.probability.resolve();
+			let status = this.probability.resolve(ref);
 			if (status !== null && status.error) {
 				return status;
 			}
@@ -97,10 +98,11 @@ class Variable extends Value {
 		if (this.store === null) {
 			return {
 				error: true,
-				msg: this.lastUninit !== null ?
-					`'${this.name}' has had it's already value used` :
-					`'${this.name}' has not be initalised`,
-				ref
+				msg: `'${this.name}' is undefined from ${this.lastUninit.toString()}`,
+				ref: {
+					start: this.lastUninit,
+					end: ref.end
+				}
 			};
 		} else {
 			return {
@@ -140,7 +142,7 @@ class Variable extends Value {
 		let instr = new LLVM.Latent(new LLVM.Set(
 			new LLVM.Name(id, false, ref),
 			new LLVM.Phi(this.type.toLLVM(), options.map(x => [
-				x.register.name,
+				(x.register ? x.register.name : undefined),
 				new LLVM.Name(x.segment, false, ref)
 			]), ref),
 			ref
