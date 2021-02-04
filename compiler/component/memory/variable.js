@@ -98,7 +98,7 @@ class Variable extends Value {
 		if (this.store === null) {
 			return {
 				error: true,
-				msg: `'${this.name}' is undefined from ${this.lastUninit.toString()}`,
+				msg: `'${this.name}' is a undefined value since ${this.lastUninit.toString()}`,
 				ref: {
 					start: this.lastUninit,
 					end: ref.end
