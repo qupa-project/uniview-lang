@@ -61,11 +61,11 @@ class Execution extends ExecutionFlow {
 		let frag = new LLVM.Fragment();
 
 		let typeRef = this.resolveType(ast.tokens[0]);
-		typeRef.localLife = ast.tokens[0];
 		if (!(typeRef instanceof TypeRef)) {
 			this.getFile().throw(`Error: Invalid type name "${Flattern.DataTypeStr(ast.tokens[0])}"`, ast.ref.start, ast.ref.end);
 			return null;
 		}
+		typeRef.localLife = ast.tokens[0];
 
 		this.scope.register_Var(
 			typeRef,
