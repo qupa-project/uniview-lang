@@ -114,6 +114,16 @@ class Variable extends Value {
 		throw "Bad code path";
 	}
 
+	access(type, accessor) {
+		if (!this.decomposed) {
+			return {
+				error: true,
+				msg: "Unable to access element of non-decomposed primative",
+				ref: accessor.ref
+			};
+		}
+	}
+
 
 
 

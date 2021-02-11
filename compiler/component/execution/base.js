@@ -112,6 +112,16 @@ class ExecutionBase {
 			res.ref = res.ref || ast.ref;
 		}
 
+		let access = ast.tokens[2];
+		while (access.length > 0) {
+			res = res.access(access[0][0], access[0][1]);
+			if (res.error) {
+				return res;
+			}
+
+			access.splice(0, 2);
+		}
+
 		return res;
 	}
 

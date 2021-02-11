@@ -21,6 +21,14 @@ function CodeSection(string, refStart, refEnd) {
 		];
 	}
 
+	if (refStart.line == refEnd.line) {
+		string.push(
+			` ${FixStringLength("*", digits)} | ` +
+			" ".repeat(refStart.col) +
+			"^".repeat(refEnd.col-refStart.col)
+		);
+	}
+
 	// let highlightA = " ".repeat(digits+2) + "|" +
 	// 	" ".repeat(refStart.col) +
 	// 	"^".repeat(string[0].length);
