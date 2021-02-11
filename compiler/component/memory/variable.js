@@ -62,12 +62,24 @@ class Variable extends Value {
 		this.store = null;
 
 		this.probability = null;
+		this.decomposed = false;
 
 		this.lastUninit = ref;
 
 		this.isCorrupt = false; // Is there an invalid state tree
 		this.isClone = false;
 		this.hasUpdated = false;
+	}
+
+
+	isSuperPosition() {
+		return this.possiblity !== null;
+	}
+
+	isDecomposable() {
+		console.log(this.type);
+
+		throw "unimplemented";
 	}
 
 
@@ -118,10 +130,28 @@ class Variable extends Value {
 		if (!this.decomposed) {
 			return {
 				error: true,
-				msg: "Unable to access element of non-decomposed primative",
+				msg: "Unable to access element of non-decomposed value",
 				ref: accessor.ref
 			};
 		}
+	}
+
+
+
+
+	decompose(ref){
+		throw "Unimplemented";
+	}
+	compose(ref){
+		if (!this.decomposed) {
+			return {
+				error: true,
+				msg: "Cannot compose a non-decomposed value",
+				ref: ref
+			};
+		}
+
+		throw "Unimplemented";
 	}
 
 
@@ -175,10 +205,6 @@ class Variable extends Value {
 
 		this.probability = prob;
 		return instr;
-	}
-
-	isSuperPosition() {
-		return this.possiblity !== null;
 	}
 
 	createProbability(segment, ref) {

@@ -83,7 +83,7 @@ program ::= w* ( stmt_top w* )*
 				func_arg_list ::= func_arg w* ( "," w* func_arg w* )*
 				func_arg      ::= data_type w+ name ( w* "=" w* constant )?
 		function_body ::= "{" w* ( func_stmt w* )* "}"
-			func_stmt ::= comment | if | for | while | return | declare | assign | declare_assign | call_procedure
+			func_stmt ::= comment | if | for | while | return | composition | declare | assign | declare_assign | call_procedure
 
 	function_outline ::= func_head w* ";"
 
@@ -100,6 +100,10 @@ program ::= w* ( stmt_top w* )*
 	struct  ::= "struct" w+ name w+ "{" w* struct_body w* "}" w* ";"?
 		struct_body ::= ( w* struct_stmt )*
 		struct_stmt ::= comment | declare
+
+	composition ::= compose | decompose
+		decompose ::= "decompose" w+ variable w* ";"
+		compose   ::= "compose" w+ variable w* ";"
 
 
 #=============================

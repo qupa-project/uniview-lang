@@ -254,6 +254,20 @@ function Simplify_Struct_Stmt (node) {
 
 
 
+function Simplify_Composition (node) {
+	node = node.tokens[0];
+
+	if (node.type != "decompose" && node.type != "compose") {
+		throw new Error(`Unexpected composition statement "${node.type}"`);
+	}
+
+	node.tokens = [ Simplify_Variable(node.tokens[2][0]) ];
+	node.reached = null;
+	return node;
+}
+
+
+
 function Simplify_Variable (node) {
 	let inner = [
 		0,
@@ -498,7 +512,9 @@ function Simplify_Function_Stmt (node) {
 		case "while":
 			inner = Simplify_While(node.tokens[0]);
 			break;
-		case "for":
+		case "composition":
+			inner = Simplify_Composition(node.tokens[0]);
+			break;
 		case "asm":
 		default:
 			throw new TypeError(`Unexpected function statement ${node.tokens[0].type}`);
