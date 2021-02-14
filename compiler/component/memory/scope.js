@@ -203,7 +203,7 @@ class Scope {
 					ref
 				));
 
-			frag.append(this.variables[name].resolvePossibilities(opts, segment, ref));
+			frag.append(this.variables[name].createResolutionPoint(opts, segment, ref));
 		}
 
 		return frag;

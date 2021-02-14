@@ -237,6 +237,41 @@ class Execution extends ExecutionFlow {
 
 
 
+	compile_decompose(ast) {
+		let target = this.getVar(ast.tokens[0], false);
+		if (target.error) {
+			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
+			return null;
+		}
+
+		let res = target.decompose(ast.ref);
+		if (res.error) {
+			this.getFile().throw( res.msg, res.ref.start, res.ref.end);
+			return null;
+		}
+
+		return res;
+	}
+	compile_compose(ast) {
+		let target = this.getVar(ast.tokens[0], false);
+		if (target.error) {
+			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
+			return null;
+		}
+
+		let res = target.compose();
+		if (res.error) {
+			this.getFile().throw( res.msg, res.ref.start, res.ref.end);
+			return null;
+		}
+
+		return res;
+	}
+
+
+
+
+
 
 	compile_return(ast){
 		let frag = new LLVM.Fragment();
@@ -309,6 +344,12 @@ class Execution extends ExecutionFlow {
 					break;
 				case "if":
 					inner = this.compile_if(token);
+					break;
+				case "compose":
+					inner = this.compile_compose(token);
+					break;
+				case "decompose":
+					inner = this.compile_decompose(token);
 					break;
 				default:
 					this.getFile().throw(

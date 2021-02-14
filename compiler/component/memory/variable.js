@@ -97,14 +97,9 @@ class Variable extends Value {
 		}
 
 		// Resolve probability
-		if (this.probability) {
-			let status = this.probability.resolve(ref);
-			if (status !== null && status.error) {
-				return status;
-			}
-
-			this.store = this.probability.register;
-			this.probablity = null;
+		let res = this.resolveProbability(ref);
+		if (res !== null) {
+			return res;
 		}
 
 		if (this.store === null) {
@@ -139,9 +134,31 @@ class Variable extends Value {
 
 
 
+	/**
+	 *
+	 * @param {LLVM.Fragment|Error} ref
+	 */
 	decompose(ref){
-		throw "Unimplemented";
+		if (this.decomposed) {
+			return {
+				error: true,
+				msg: "Cannot decompose a decomposed value",
+				ref: ref
+			};
+		}
+
+		let res = this.resolveProbability(ref);
+		if (res !== null) {
+			return res;
+		}
+
+		this.decomposed = true;
+		return new LLVM.Fragment();
 	}
+	/**
+	 *
+	 * @param {LLVM.Fragment|Error} ref
+	 */
 	compose(ref){
 		if (!this.decomposed) {
 			return {
@@ -176,7 +193,7 @@ class Variable extends Value {
 		this.store.push(poss);
 	}
 
-	resolvePossibilities(options, segment, ref) {
+	createResolutionPoint(options, segment, ref) {
 		let id = new LLVM.ID();
 
 		let instr = new LLVM.Latent(new LLVM.Set(
@@ -205,6 +222,20 @@ class Variable extends Value {
 
 		this.probability = prob;
 		return instr;
+	}
+
+	resolveProbability(ref) {
+		if (this.probability) {
+			let status = this.probability.resolve(ref);
+			if (status !== null && status.error) {
+				return status;
+			}
+
+			this.store = this.probability.register;
+			this.probablity = null;
+		}
+
+		return null;
 	}
 
 	createProbability(segment, ref) {
