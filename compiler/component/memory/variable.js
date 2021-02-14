@@ -1,4 +1,5 @@
 const LLVM = require('../../middle/llvm.js');
+const Structure = require('../struct.js');
 const TypeRef = require('../typeRef.js');
 
 const Constant = require('./constant.js');
@@ -69,6 +70,8 @@ class Variable extends Value {
 		this.isCorrupt = false; // Is there an invalid state tree
 		this.isClone = false;
 		this.hasUpdated = false;
+
+		this.elements = new Map();
 	}
 
 
@@ -76,10 +79,30 @@ class Variable extends Value {
 		return this.possiblity !== null;
 	}
 
-	isDecomposable() {
-		console.log(this.type);
+	isDecomposable(ref) {
+		if (this.decomposed) {
+			return {
+				error: true,
+				msg: "Cannot decompose a decomposed value",
+				ref: ref
+			};
+		}
+		if (!(this.type.type instanceof Structure)) {
+			return {
+				error: true,
+				msg: `Cannot decompose none decomposable type ${this.type.type.name}`,
+				ref: ref
+			};
+		}
+		if (this.store === null) {
+			return {
+				error: true,
+				msg: "Cannot decompose an undefined value",
+				ref: ref
+			};
+		}
 
-		throw "unimplemented";
+		return true;
 	}
 
 
@@ -92,6 +115,14 @@ class Variable extends Value {
 			return {
 				error: true,
 				msg: `Unable to merge state possibility with originally undefined value`,
+				ref
+			};
+		}
+
+		if (this.decomposed) {
+			return {
+				error: true,
+				msg: `Cannot resolve a decomposed value - recommend composing before use`,
 				ref
 			};
 		}
@@ -121,30 +152,42 @@ class Variable extends Value {
 		throw "Bad code path";
 	}
 
-	access(type, accessor) {
-		if (!this.decomposed) {
-			return {
-				error: true,
-				msg: "Unable to access element of non-decomposed value",
-				ref: accessor.ref
-			};
-		}
-	}
 
 
 
 
 	/**
+	 * Read the value of a variable
+	 * @param {LLVM.BNF_Reference} ref
+	 * @returns {LLVM.Argument}
+	 */
+	read (ref) {
+		let out = this.resolve(ref);
+		if (out !== null && out.error) {
+			return out;
+		}
+
+		if (this.type.typeSystem == 'linear') {
+			this.store = null;
+			this.lastUninit = ref;
+		}
+
+		out.type = this.type;
+		return out;
+	}
+
+
+
+
+
+		/**
 	 *
 	 * @param {LLVM.Fragment|Error} ref
 	 */
 	decompose(ref){
-		if (this.decomposed) {
-			return {
-				error: true,
-				msg: "Cannot decompose a decomposed value",
-				ref: ref
-			};
+		let check = this.isDecomposable(ref);
+		if (check.error) {
+			return check;
 		}
 
 		let res = this.resolveProbability(ref);
@@ -168,7 +211,75 @@ class Variable extends Value {
 			};
 		}
 
-		throw "Unimplemented";
+		let frag = new LLVM.Fragment();
+
+		for (let elm of this.elements) {
+			let res = elm[1].resolve();
+			if (res.error) {
+				return res;
+			}
+			frag.merge(res.preamble);
+
+			let access = this.type.type.accessGEPByIndex(elm[0], this, ref);
+			frag.merge(access.preamble);
+
+			let id = new LLVM.ID(ref);
+			frag.append(new LLVM.Set(
+				new LLVM.Name(id, false, ref),
+				access.instruction,
+				ref
+			));
+			frag.append(new LLVM.Store(
+				new LLVM.Argument(
+					access.type.duplicate().offsetPointer(1).toLLVM(),
+					new LLVM.Name(id.reference(), false, ref)
+				),
+				res.register,
+				ref
+			));
+		}
+
+		console.log(229, frag.stmts);
+
+		this.decomposed = false;
+		return frag;
+	}
+
+	access(type, accessor) {
+		if (!this.decomposed) {
+			return {
+				error: true,
+				msg: "Unable to access element of non-decomposed value",
+				ref: accessor.ref
+			};
+		}
+
+		let struct = this.type.type;
+		if (this.type.type instanceof Structure) {
+			let res = struct.getTerm(type, accessor, this);
+			if (res === null) {
+				return {
+					error: true,
+					msg: `Unable to access element "${accessor.tokens}"`,
+					ref: accessor.ref
+				};
+			}
+
+			if (!this.elements.has(res.index)) {
+				let elm = new Variable(res.type, res.index, this.ref);
+				elm.markUpdated(res.instruction);
+
+				this.elements.set(res.index, elm);
+			}
+
+			return this.elements.get(res.index);
+		} else {
+			return {
+				error: true,
+				msg: "Unable to access sub-element of non-structure or static array",
+				ref: accessor.ref
+			};
+		}
 	}
 
 
@@ -224,6 +335,10 @@ class Variable extends Value {
 		return instr;
 	}
 
+	/**
+	 *
+	 * @param {Error?} ref
+	 */
 	resolveProbability(ref) {
 		if (this.probability) {
 			let status = this.probability.resolve(ref);
@@ -251,26 +366,6 @@ class Variable extends Value {
 		return new Probability(activator, instr.register, segment, ref);
 	}
 
-
-	/**
-	 * Read the value of a variable
-	 * @param {LLVM.BNF_Reference} ref
-	 * @returns {LLVM.Argument}
-	 */
-	read (ref) {
-		let out = this.resolve(ref);
-		if (out !== null && out.error) {
-			return out;
-		}
-
-		if (this.type.typeSystem == 'linear') {
-			this.store = null;
-			this.lastUninit = ref;
-		}
-
-		out.type = this.type;
-		return out;
-	}
 
 	clone() {
 		let out = new Variable(this.type, this.name, this.ref);

@@ -6,6 +6,7 @@ const LLVM = require('../middle/llvm.js');
 const Execution = require('./execution/index.js');
 const Scope = require('./memory/scope.js');
 const TypeRef = require('./typeRef.js');
+const Structure = require('./struct.js');
 
 
 let funcIDGen = new Generator_ID();
@@ -80,6 +81,11 @@ class Function_Instance {
 			let search = exec.resolveType(type);
 			if (search instanceof TypeRef) {
 				search.pointer = type.tokens[0]; // Copy the pointer level across
+
+				if (search.type instanceof Structure) {
+					search.offsetPointer(1);
+				}
+
 				this.signature.push(search);
 			} else {
 				file.throw(

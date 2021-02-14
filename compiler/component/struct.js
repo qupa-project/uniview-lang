@@ -34,7 +34,7 @@ class Structure extends TypeDef {
 	 * @param {String} name
 	 * @returns {Object}
 	 */
-	getTerm(name, register) {
+	getTerm(type, name, register) {
 		let found = false;
 		let i = 0;
 		for (; i<this.terms.length && !found; i++) {
@@ -47,26 +47,41 @@ class Structure extends TypeDef {
 			return null;
 		}
 
-		let preamble = new LLVM.Fragment();
-		let signature = `.${i}`;
-		let instruction = new LLVM.GEP(
-			register.type.duplicate().offsetPointer(-1, register.declared).toLLVM(),
-			register.toLLVM(),
-			[
-				new LLVM.Argument(
-					Primative.types.i32.toLLVM(),
-					new LLVM.Constant("0", name.ref.start),
-					name.ref.start
-				),
-				new LLVM.Argument(
-					new LLVM.Type("i32", 0, name.ref.start),
-					new LLVM.Constant(i.toString(), name.ref.start)
-				)
-			],
-			name.ref.start
-		);
+		let res = this.accessGEPByIndex(i, register, name.ref.start);
 
-		return { preamble, instruction, signature, typeRef: this.terms[i].typeRef };
+		return {
+			preamble: res.preamble,
+			instruction: res.instruction,
+			index: i,
+			type: res.type
+		};
+	}
+
+	getTermCount() {
+		return this.terms.length;
+	}
+
+	accessGEPByIndex(i, register, ref) {
+		return {
+			preamble: new LLVM.Fragment(),
+			instruction: new LLVM.GEP(
+				register.type.duplicate().offsetPointer(-1, register.declared).toLLVM(),
+				register.store,
+				[
+					new LLVM.Argument(
+						Primative.types.i32.toLLVM(),
+						new LLVM.Constant("0", ref),
+						ref
+					),
+					new LLVM.Argument(
+						new LLVM.Type("i32", 0, ref),
+						new LLVM.Constant(i.toString(), ref)
+					)
+				],
+				ref
+			),
+			type: this.terms[i].typeRef
+		}
 	}
 
 	parse() {

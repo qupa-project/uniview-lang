@@ -431,7 +431,9 @@ class ExecutionExpr extends ExecutionBase {
 				throw new Error(`Unexpected expression type ${ast.type}`);
 		}
 
-		if (res.error) {
+		if (res === null) {
+			return null;
+		} else if (res.error) {
 			this.getFile().throw( res.msg, res.ref.start, res.ref.end );
 			return null;
 		}

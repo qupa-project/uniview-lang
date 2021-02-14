@@ -10,6 +10,7 @@ const Primative = {
 };
 
 const ExecutionFlow = require('./flow.js');
+const Structure = require('../struct.js');
 
 class Execution extends ExecutionFlow {
 
@@ -66,6 +67,10 @@ class Execution extends ExecutionFlow {
 			return null;
 		}
 		typeRef.localLife = ast.tokens[0];
+
+		if (typeRef.type instanceof Structure || typeRef.type instanceof Array) {
+			typeRef.pointer++;
+		}
 
 		this.scope.register_Var(
 			typeRef,
