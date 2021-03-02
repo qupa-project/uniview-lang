@@ -149,6 +149,7 @@ class ExecutionExpr extends ExecutionBase {
 			this.compile_expr_opperand(ast.tokens[2])
 		];
 
+		console.log(151, opperands);
 
 		// Append the load instructions
 		preamble.merge(opperands[0].preamble);

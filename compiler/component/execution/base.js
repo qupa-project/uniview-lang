@@ -137,6 +137,39 @@ class ExecutionBase {
 			return out;
 		}
 
+		if (out.register instanceof LLVM.GEP) {
+			let id = new LLVM.ID();
+
+			out.preamble.append(new LLVM.Set(
+				new LLVM.Name(id, false, ast.ref),
+				out.register,
+				ast.ref
+			));
+			out.register = new LLVM.Argument(
+				out.type.toLLVM(ast.ref),
+				new LLVM.Name(id.reference(), false, ast.ref),
+				ast.ref
+			);
+
+			if (out.type.type.primative) {
+				let id = new LLVM.ID();
+				out.preamble.append(new LLVM.Set(
+					new LLVM.Name(id, false, ast.ref),
+					new LLVM.Load(
+						out.type.toLLVM(),
+						out.register.name,
+						ast.ref
+					),
+					ast.ref
+				));
+				out.register = new LLVM.Argument(
+					out.type.toLLVM(ast.ref),
+					new LLVM.Name(id.reference(), false, ast.ref),
+					ast.ref
+				);
+			}
+		}
+
 		return {
 			preamble: out.preamble,
 			epilog: new LLVM.Fragment(),

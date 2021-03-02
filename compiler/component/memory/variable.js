@@ -239,8 +239,6 @@ class Variable extends Value {
 			));
 		}
 
-		console.log(229, frag.stmts);
-
 		this.decomposed = false;
 		return frag;
 	}

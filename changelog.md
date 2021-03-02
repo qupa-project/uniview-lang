@@ -11,6 +11,7 @@
 [x] Typecasting of primitive types
 [x] Implemented if statements
 [x] Clearer Error logs. Embeds code snippet with line ref
+[x] Strucutre manipulation support
 
 ### Fixes
 [x] Fixed strings requiring pointer types
