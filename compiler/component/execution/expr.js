@@ -434,12 +434,10 @@ class ExecutionExpr extends ExecutionBase {
 
 		if (res === null) {
 			return null;
-		} else if (res.error) {
-			this.getFile().throw( res.msg, res.ref.start, res.ref.end );
-			return null;
 		}
 
-		if (res === null) {
+		if (res.error) {
+			this.getFile().throw( res.msg, res.ref.start, res.ref.end );
 			return null;
 		}
 
