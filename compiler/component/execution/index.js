@@ -188,7 +188,7 @@ class Execution extends ExecutionFlow {
 		if (!target) {
 			let funcName = Flattern.VariableStr(ast.tokens[0]);
 			file.throw(
-				`Error: Unable to find function "${funcName}" with signature ${signature.join(", ")}`,
+				`Error: Unable to find function "${funcName}" with signature (${signature.join(", ")})`,
 				ast.ref.start, ast.ref.end
 			);
 			return null;
