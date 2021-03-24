@@ -194,7 +194,7 @@ class Execution extends ExecutionFlow {
 			return null;
 		}
 
-		
+
 
 		let complex = !target.isInline &&
 			target.returnType.type instanceof Structure;
@@ -219,8 +219,6 @@ class Execution extends ExecutionFlow {
 		}
 
 
-		// Generate the LLVM for the call
-		//   Mark any parsed pointers as now being concurrent
 		if (target.isInline) {
 			let inner = target.generate(regs, args);
 			preamble.merge(inner.preamble);
@@ -229,30 +227,27 @@ class Execution extends ExecutionFlow {
 			returnType = inner.type;
 		} else {
 			instruction = new LLVM.Call(
-				complex ? 
+				complex ?
 					new LLVM.Type("void", 0, ast.ref) :
-					new LLVM.Type(target.returnType.type.represent, target.returnType.pointer, ast.ref.start),
+					target.returnType.toLLVM(ast.ref),
 				new LLVM.Name(target.represent, true, ast.tokens[0].ref),
 				args,
 				ast.ref.start
 			);
 			returnType = target.returnType;
-
-			if (complex) {
-				preamble.append(instruction);
-				instruction = new LLVM.Argument(
-					target.returnType,
-					new LLVM.Name(callVal)
-				)
-			}
-
-			// Mark this function as being called for the callgraph
-			// this.getFunctionInstance().addCall(target);
 		}
 
-		if (instruction.args){
-			console.log(253, instruction.args[0].type.flattern);
+
+		// Complex functions do not return real values
+		// Instead the result is stored in the first argument
+		if (complex) {
+			preamble.append(instruction);
+			instruction = new LLVM.Argument(
+				target.returnType.toLLVM(),
+				callVal
+			);
 		}
+
 
 		return { preamble, instruction, epilog, type: returnType };
 	}
