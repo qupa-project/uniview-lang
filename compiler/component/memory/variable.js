@@ -120,11 +120,10 @@ class Variable extends Value {
 		}
 
 		if (this.decomposed) {
-			return {
-				error: true,
-				msg: `Cannot resolve a decomposed value - recommend composing before use`,
-				ref
-			};
+			let res = this.compose();
+			if (res.error) {
+				return res;
+			}
 		}
 
 		// Resolve probability
@@ -245,11 +244,10 @@ class Variable extends Value {
 
 	access(type, accessor) {
 		if (!this.decomposed) {
-			return {
-				error: true,
-				msg: "Unable to access element of non-decomposed value",
-				ref: accessor.ref
-			};
+			let res = this.decompose();
+			if (res.error) {
+				return res;
+			}
 		}
 
 		let struct = this.type.type;
