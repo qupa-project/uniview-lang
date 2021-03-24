@@ -194,6 +194,30 @@ class Execution extends ExecutionFlow {
 			return null;
 		}
 
+		
+
+		let complex = !target.isInline &&
+			target.returnType.type instanceof Structure;
+		let callVal;
+		if (complex) {
+			let id = new LLVM.ID();
+			preamble.append(new LLVM.Set(
+				new LLVM.Name(id, false, ast.ref),
+				new LLVM.Alloc(target.returnType.duplicate().offsetPointer().toLLVM(), ast.ref),
+				ast.ref
+			));
+
+			callVal = new LLVM.Name(id.reference(), false, ast.ref);
+
+			args = [
+				new LLVM.Argument(
+					target.returnType.toLLVM(ast.ref),
+					callVal
+				),
+				...args
+			]
+		}
+
 
 		// Generate the LLVM for the call
 		//   Mark any parsed pointers as now being concurrent
@@ -205,15 +229,29 @@ class Execution extends ExecutionFlow {
 			returnType = inner.type;
 		} else {
 			instruction = new LLVM.Call(
-				new LLVM.Type(target.returnType.type.represent, target.returnType.pointer, ast.ref.start),
+				complex ? 
+					new LLVM.Type("void", 0, ast.ref) :
+					new LLVM.Type(target.returnType.type.represent, target.returnType.pointer, ast.ref.start),
 				new LLVM.Name(target.represent, true, ast.tokens[0].ref),
 				args,
 				ast.ref.start
 			);
 			returnType = target.returnType;
 
+			if (complex) {
+				preamble.append(instruction);
+				instruction = new LLVM.Argument(
+					target.returnType,
+					new LLVM.Name(callVal)
+				)
+			}
+
 			// Mark this function as being called for the callgraph
 			// this.getFunctionInstance().addCall(target);
+		}
+
+		if (instruction.args){
+			console.log(253, instruction.args[0].type.flattern);
 		}
 
 		return { preamble, instruction, epilog, type: returnType };
@@ -293,7 +331,32 @@ class Execution extends ExecutionFlow {
 			}
 			returnType = res.type;
 			frag.merge(res.preamble);
-			inner = res.instruction;
+			if (returnType.type instanceof Structure) {
+				// Structures are parsed by pointer
+				let id = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(id, false, ast.ref),
+					new LLVM.Load(
+						returnType.duplicate().offsetPointer(-1).toLLVM(),
+						res.instruction.name, ast.ref
+					)
+				));
+				frag.append(new LLVM.Store(
+					new LLVM.Argument(
+						returnType.toLLVM(),
+						new LLVM.Name("0", false, ast.ref),
+						ast.ref
+					),
+					new LLVM.Argument(
+						returnType.duplicate().offsetPointer(-1).toLLVM(),
+						new LLVM.Name(id.reference(), false, ast.ref),
+						ast.ref
+					)
+				));
+				inner = new LLVM.Type("void", 0, ast.ref);
+			} else {
+				inner = res.instruction;
+			}
 
 			if (res.epilog.stmts.length > 0) {
 				throw new Error("Cannot return using instruction with epilog");

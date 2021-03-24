@@ -151,11 +151,25 @@ class Function_Instance {
 		if (res == null) {
 			return null;
 		}
+		let argsRegs = res.registers;
+
+		let id = new LLVM.ID();
+		let complex = this.returnType.type instanceof Structure;
+		if (complex) {
+			argsRegs = [
+				new LLVM.Argument(
+					this.returnType.toLLVM(),
+					new LLVM.Name(id, false)
+				)
+			];
+		}
 
 		let frag = new LLVM.Procedure(
-			this.returnType.toLLVM(head.tokens[0].ref),
+			complex ?
+				new LLVM.Type("void", 0, head.tokens[0].ref) :
+				this.returnType.toLLVM(head.tokens[0].ref),
 			new LLVM.Name(this.represent, true, head.tokens[1].ref),
-			res.registers,
+			argsRegs,
 			"#1",
 			this.external,
 			this.ref
