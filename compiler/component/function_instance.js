@@ -160,7 +160,8 @@ class Function_Instance {
 				new LLVM.Argument(
 					this.returnType.toLLVM(),
 					new LLVM.Name(id, false)
-				)
+				),
+				...argsRegs
 			];
 		}
 
