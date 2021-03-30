@@ -80,13 +80,6 @@ class Variable extends Value {
 	}
 
 	isDecomposable(ref) {
-		if (this.decomposed) {
-			return {
-				error: true,
-				msg: "Cannot decompose a decomposed value",
-				ref: ref
-			};
-		}
 		if (!(this.type.type instanceof Structure)) {
 			return {
 				error: true,
@@ -120,10 +113,11 @@ class Variable extends Value {
 		}
 
 		if (this.decomposed) {
-			let res = this.compose();
-			if (res.error) {
-				return res;
-			}
+			return {
+				error: true,
+				msg: `Cannot resolve a decomposed value - recommend composing before use`,
+				ref
+			};
 		}
 
 		// Resolve probability
@@ -184,6 +178,10 @@ class Variable extends Value {
 	 * @param {LLVM.Fragment|Error} ref
 	 */
 	decompose(ref){
+		if (this.decomposed) {
+			return new LLVM.Fragment();
+		}
+
 		let check = this.isDecomposable(ref);
 		if (check.error) {
 			return check;
@@ -208,6 +206,11 @@ class Variable extends Value {
 				msg: "Cannot compose a non-decomposed value",
 				ref: ref
 			};
+		}
+
+		let res = this.resolveProbability(ref);
+		if (res !== null) {
+			return res;
 		}
 
 		let frag = new LLVM.Fragment();
@@ -244,10 +247,11 @@ class Variable extends Value {
 
 	access(type, accessor) {
 		if (!this.decomposed) {
-			let res = this.decompose();
-			if (res.error) {
-				return res;
-			}
+			return {
+				error: true,
+				msg: "Unable to access element of non-decomposed value",
+				ref: accessor.ref
+			};
 		}
 
 		let struct = this.type.type;
@@ -350,6 +354,7 @@ class Variable extends Value {
 	}
 
 	createProbability(segment, ref) {
+		this.compose(ref);
 		let instr = this.resolve(ref);
 		let activator = null;
 
@@ -368,6 +373,13 @@ class Variable extends Value {
 		out.store = this.store;
 		out.isClone = true;
 		out.hasUpdated = false;
+		out.decomposed = this.decomposed;
+
+		if (this.decomposed) {
+			for (let tuple of this.elements) {
+				out.elements.set(tuple[0], tuple[1].clone());
+			}
+		}
 
 		return out;
 	}
