@@ -297,7 +297,7 @@ class Execution extends ExecutionFlow {
 			return null;
 		}
 
-		let res = target.compose();
+		let res = target.compose(ast.ref);
 		if (res.error) {
 			this.getFile().throw( res.msg, res.ref.start, res.ref.end);
 			return null;
