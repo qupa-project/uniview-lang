@@ -125,8 +125,8 @@ class ExecutionFlow extends ExecutionExpr {
 
 		// Synchronise possible states into current
 		let merger = this.sync(
-			hasElse ? [branch_true, branch_false] :
-				[ this, branch_true, branch_false ],
+			hasElse ? [ branch_true, branch_false ] :
+				[ this, branch_true ],
 			tail_segment,
 			ast.ref
 		);
