@@ -2,6 +2,9 @@ const Flattern = require('../../parser/flattern.js');
 const { Generator_ID } = require('../generate.js');
 const LLVM = require("../../middle/llvm.js");
 const TypeRef = require('./../typeRef.js');
+
+
+const Probability = require('./probability.js');
 const Variable = require('./variable.js');
 
 class Scope {
@@ -196,12 +199,30 @@ class Scope {
 		let frag = new LLVM.Fragment();
 
 		for (let name in this.variables) {
+			let composition = scopes.map(tuple => tuple[1].variables[name].isDecomposed);
+			let hasDecomp = composition.filter(val => val == true).length != 0;
+			let hasComp = composition.filter(val => val == false).length != 0;
 
-			let opts = scopes
-				.map(tuple => tuple[1].variables[name].createProbability(
-					tuple[0],
+			let opts = [];
+
+			// Cannot sync composed and non-composed values
+			if (hasDecomp && hasComp) {
+				opts = [ new Probability(
+					new LLVM.Latent(new LLVM.Failure(
+						`Cannot resolve superposition when not all positions are in the same composition state`,
+						ref
+					)),
+					undefined,
+					segment,
 					ref
-				));
+				)];
+			} else {
+				opts = scopes
+					.map(tuple => tuple[1].variables[name].createProbability(
+						tuple[0],
+						ref
+					));
+			}
 
 			frag.append(this.variables[name].createResolutionPoint(opts, segment, ref));
 		}

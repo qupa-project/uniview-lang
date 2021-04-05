@@ -5,46 +5,8 @@ const TypeRef = require('../typeRef.js');
 const Constant = require('./constant.js');
 const Value = require('./value.js');
 
+const Probability = require('./probability.js');
 
-class Probability {
-	constructor (activator, register, segment, ref) {
-		this.activator = activator;
-		this.register = register;
-		this.segment = segment;
-		this.ref = ref;
-
-		this.rel = [];
-	}
-
-	resolve(ref) {
-		// Trigger ties
-		for (let act of this.rel) {
-			let res = act.activate();
-			if (res !== null) {
-				res.msg = `Error: Unable to merge possible states at ${ref.start.toString()} due to\n  ${res.msg}`;
-				res.ref.end = ref.end;
-				return res;
-			}
-		}
-
-		// Trigger main activation
-		if (this.activator) {
-			return this.activator.activate();
-		}
-
-		return null;
-	}
-
-	/**
-	 *
-	 * @param {Probablity} other
-	 */
-	link(other) {
-		if (other.activator) {
-			this.rel.push(other.activator);
-		}
-	}
-}
 
 
 
@@ -63,7 +25,7 @@ class Variable extends Value {
 		this.store = null;
 
 		this.probability = null;
-		this.decomposed = false;
+		this.isDecomposed = false;
 
 		this.lastUninit = ref;
 
@@ -79,31 +41,12 @@ class Variable extends Value {
 		return this.possiblity !== null;
 	}
 
-	isDecomposable(ref) {
-		if (!(this.type.type instanceof Structure)) {
-			return {
-				error: true,
-				msg: `Cannot decompose none decomposable type ${this.type.type.name}`,
-				ref: ref
-			};
-		}
-		if (this.store === null) {
-			return {
-				error: true,
-				msg: "Cannot decompose an undefined value",
-				ref: ref
-			};
-		}
-
-		return true;
-	}
-
 
 	/**
 	 * Resolves the possible states of the variable into a single LLVM argument
 	 * @private
 	 */
-	resolve (ref) {
+	resolve (ref, allowDecomposition = false) {
 		if (this.isCorrupt) {
 			return {
 				error: true,
@@ -112,7 +55,7 @@ class Variable extends Value {
 			};
 		}
 
-		if (this.decomposed) {
+		if (!allowDecomposition && this.isDecomposed) {
 			return {
 				error: true,
 				msg: `Cannot resolve a decomposed value - recommend composing before use`,
@@ -178,21 +121,37 @@ class Variable extends Value {
 	 * @param {LLVM.Fragment|Error} ref
 	 */
 	decompose(ref){
-		if (this.decomposed) {
+		// If already decomposed do nothing
+		if (this.isDecomposed) {
 			return new LLVM.Fragment();
 		}
 
-		let check = this.isDecomposable(ref);
-		if (check.error) {
-			return check;
+		// Only structures can be decomposed
+		if (!(this.type.type instanceof Structure)) {
+			return {
+				error: true,
+				msg: `Cannot decompose none decomposable type ${this.type.type.name}`,
+				ref: ref
+			};
 		}
 
+		// Cannot decompse an undefined value
+		if (this.store === null) {
+			return {
+				error: true,
+				msg: "Cannot decompose an undefined value",
+				ref: ref
+			};
+		}
+
+		// Ensure any super positions are resolved before decomposition
 		let res = this.resolveProbability(ref);
 		if (res !== null) {
 			return res;
 		}
 
-		this.decomposed = true;
+		// Mark decposed
+		this.isDecomposed = true;
 		return new LLVM.Fragment();
 	}
 	/**
@@ -200,7 +159,7 @@ class Variable extends Value {
 	 * @param {LLVM.Fragment|Error} ref
 	 */
 	compose(ref){
-		if (!this.decomposed) {
+		if (!this.isDecomposed) {
 			return {
 				error: true,
 				msg: "Cannot compose a non-decomposed value",
@@ -241,12 +200,16 @@ class Variable extends Value {
 			));
 		}
 
-		this.decomposed = false;
+		this.isDecomposed = false;
 		return frag;
 	}
 
+
+
+
+
 	access(type, accessor) {
-		if (!this.decomposed) {
+		if (!this.isDecomposed) {
 			return {
 				error: true,
 				msg: "Unable to access element of non-decomposed value",
@@ -290,20 +253,39 @@ class Variable extends Value {
 		this.store = register;
 		this.lastUninit = null;
 		this.hasUpdated = true;
+		this.isDecomposed = false;
+	}
+
+
+
+
+
+	/**
+	 * Prepare this variable to be merged with a higher scope
+	 * @param {LLVM.ID} segment
+	 * @param {BNF_Reference} ref
+	 * @returns
+	 */
+	createProbability(segment, ref) {
+		let instr = this.resolve(ref, true);
+		let activator = null;
+
+		if (instr.error) {
+			activator = new LLVM.Latent(new LLVM.Failure(
+				instr.msg, instr.ref
+			), ref);
+		}
+
+		return new Probability(activator, instr.register, segment, ref);
 	}
 
 	/**
-	 *
-	 * @param {Possibility} other
+	 * Create a latent resolution point for resolving the value from multiple child scopes
+	 * @param {Probability[]} options
+	 * @param {LLVM.ID} segment
+	 * @param {BNF_Reference} ref
+	 * @returns
 	 */
-	addPossibility(poss, segment) {
-		if (this.store.length == 0){
-			this.isCorrupt = true;
-		}
-
-		this.store.push(poss);
-	}
-
 	createResolutionPoint(options, segment, ref) {
 		let id = new LLVM.ID();
 
@@ -337,6 +319,18 @@ class Variable extends Value {
 
 	/**
 	 *
+	 * @param {Possibility} other
+	 */
+		 addPossibility(poss, segment) {
+			if (this.store.length == 0){
+				this.isCorrupt = true;
+			}
+
+			this.store.push(poss);
+		}
+
+	/**
+	 * Resolve latent super positions as value needs to be accessed
 	 * @param {Error?} ref
 	 */
 	resolveProbability(ref) {
@@ -353,19 +347,8 @@ class Variable extends Value {
 		return null;
 	}
 
-	createProbability(segment, ref) {
-		this.compose(ref);
-		let instr = this.resolve(ref);
-		let activator = null;
 
-		if (instr.error) {
-			activator = new LLVM.Latent(new LLVM.Failure(
-				instr.msg, instr.ref
-			), ref);
-		}
 
-		return new Probability(activator, instr.register, segment, ref);
-	}
 
 
 	clone() {
@@ -373,9 +356,9 @@ class Variable extends Value {
 		out.store = this.store;
 		out.isClone = true;
 		out.hasUpdated = false;
-		out.decomposed = this.decomposed;
+		out.isDecomposed = this.isDecomposed;
 
-		if (this.decomposed) {
+		if (this.isDecomposed) {
 			for (let tuple of this.elements) {
 				out.elements.set(tuple[0], tuple[1].clone());
 			}
