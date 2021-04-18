@@ -34,7 +34,7 @@ class Structure extends TypeDef {
 	 * @param {String} name
 	 * @returns {Object}
 	 */
-	getTerm(type, name, register, ref) {
+	getTerm(name, register, ref) {
 		let found = false;
 		let i = 0;
 		if (typeof(name) == "number") {
