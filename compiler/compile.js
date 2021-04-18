@@ -108,7 +108,7 @@ if (config.source != "llvm") {
 	args = args.concat(["-o", exec_out]);
 
 	let clang = spawn('clang++', args);
-	console.log(`\nclang++ ${args.join(" ")}`);
+	console.info(`\nclang++ ${args.join(" ")}`);
 	clang.stderr.pipe (process.stderr);
 	clang.stdout.pipe (process.stdout);
 
