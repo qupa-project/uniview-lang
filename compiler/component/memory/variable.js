@@ -37,7 +37,7 @@ class Variable extends Value {
 	}
 
 
-	isSuperPosition() {
+	isSuperPosition () {
 		return this.possiblity !== null;
 	}
 
@@ -118,7 +118,7 @@ class Variable extends Value {
 
 		/**
 	 *
-	 * @param {LLVM.Fragment|Error} ref
+	 * @param {Error?} ref
 	 */
 	decompose(ref){
 		// If already decomposed do nothing
@@ -152,8 +152,9 @@ class Variable extends Value {
 
 		// Mark decposed
 		this.isDecomposed = true;
-		return new LLVM.Fragment();
+		return null;
 	}
+
 	/**
 	 *
 	 * @param {LLVM.Fragment|Error} ref
@@ -208,7 +209,13 @@ class Variable extends Value {
 
 
 
-	access(type, accessor) {
+	/**
+	 *
+	 * @param {BNF_Node} accessor
+	 * @param {BNF_Reference} ref
+	 * @returns
+	 */
+	access (accessor, ref) {
 		if (!this.isDecomposed) {
 			return {
 				error: true,
@@ -219,17 +226,19 @@ class Variable extends Value {
 
 		let struct = this.type.type;
 		if (this.type.type instanceof Structure) {
-			let res = struct.getTerm(type, accessor, this);
+			let res = struct.getTerm(accessor, this, ref);
 			if (res === null) {
+				/* jshint ignore:start*/
 				return {
 					error: true,
-					msg: `Unable to access element "${accessor.tokens}"`,
+					msg: `Unable to access element "${accessor?.tokens || accessor}"`,
 					ref: accessor.ref
 				};
+				/* jshint ignore:end*/
 			}
 
 			if (!this.elements.has(res.index)) {
-				let elm = new Variable(res.type, res.index, this.ref);
+				let elm = new Variable(res.type, res.index, ref);
 				elm.markUpdated(res.instruction);
 
 				this.elements.set(res.index, elm);
@@ -240,7 +249,7 @@ class Variable extends Value {
 			return {
 				error: true,
 				msg: "Unable to access sub-element of non-structure or static array",
-				ref: accessor.ref
+				ref: ref
 			};
 		}
 	}
@@ -249,7 +258,7 @@ class Variable extends Value {
 
 
 
-	markUpdated(register) {
+	markUpdated (register) {
 		this.store = register;
 		this.lastUninit = null;
 		this.hasUpdated = true;
@@ -266,74 +275,179 @@ class Variable extends Value {
 	 * @param {BNF_Reference} ref
 	 * @returns
 	 */
-	createProbability(segment, ref) {
+	createProbability (segment, ref) {
 		let instr = this.resolve(ref, true);
+		let preamble = new LLVM.Fragment();
 		let activator = null;
+		let reg = instr.register;
 
 		if (instr.error) {
 			activator = new LLVM.Latent(new LLVM.Failure(
 				instr.msg, instr.ref
 			), ref);
+		} else if (instr.register instanceof LLVM.GEP) {
+			let id = new LLVM.ID();
+
+			preamble.append(new LLVM.Set(
+				new LLVM.Name(id, false, ref),
+				instr.register
+			));
+
+			if (this.type.type.primative) {
+				let nx_id = new LLVM.ID();
+				preamble.append(new LLVM.Set(
+					new LLVM.Name(nx_id, false, ref),
+					new LLVM.Load(
+						this.type.toLLVM(),
+						new LLVM.Name(id.reference(), false, ref),
+						ref
+					),
+					ref
+				));
+				id = nx_id;
+			}
+
+			reg = new LLVM.Argument(
+				this.type.toLLVM(),
+				new LLVM.Name(id.reference(), false, ref),
+				ref
+			);
 		}
 
-		return new Probability(activator, instr.register, segment, ref);
+		return {
+			probability: new Probability(activator, reg, segment, ref),
+			preamble: preamble
+		};
 	}
 
 	/**
 	 * Create a latent resolution point for resolving the value from multiple child scopes
-	 * @param {Probability[]} options
+	 * @param {Variable[]} options
 	 * @param {LLVM.ID} segment
 	 * @param {BNF_Reference} ref
 	 * @returns
 	 */
-	createResolutionPoint(options, segment, ref) {
-		let id = new LLVM.ID();
+	createResolutionPoint (variables, scopes, segment, ref) {
+		let compStatus = GetCompositionState([this, ...variables]);
+		let frag = new LLVM.Fragment();
+		let hasErr = false;
 
+
+		// Cannot sync composed and non-composed values
+		let opts = [];
+		if (compStatus.hasDecomposed && compStatus.hasComposed) {
+			opts = [ new Probability(
+				new LLVM.Latent(new LLVM.Failure(
+					`Cannot resolve superposition when not all positions are in the same composition state`,
+					ref
+				)),
+				undefined,
+				segment,
+				ref
+			)];
+			hasErr = true;
+		} else {
+			opts = variables
+				.map((v, i) => v.createProbability(
+					scopes[i][0].reference(),
+					ref
+				));
+
+			for (let opt of opts) {
+				frag.merge(opt.preamble);
+			}
+			opts = opts.map(x => x.probability);
+		}
+
+
+		// Generate the latent resolution point
+		// console.log(336, opts);
+		let id = new LLVM.ID();
 		let instr = new LLVM.Latent(new LLVM.Set(
 			new LLVM.Name(id, false, ref),
-			new LLVM.Phi(this.type.toLLVM(), options.map(x => [
-				(x.register ? x.register.name : undefined),
+			new LLVM.Phi(this.type.toLLVM(), opts.map((x, i) => [
+				x.register.name,
 				new LLVM.Name(x.segment, false, ref)
 			]), ref),
 			ref
 		));
+		let register = new LLVM.Argument(
+			this.type.toLLVM(),
+			new LLVM.Name(id.reference(), false, ref),
+			ref
+		);
+		frag.append(instr);
 
+		// Mark latent result
 		let prob = new Probability(
 			instr,
-			new LLVM.Argument(
-				this.type.toLLVM(),
-				new LLVM.Name(id.reference(), false, ref),
-				ref
-			),
+			register,
 			segment,
 			ref
 		);
 
-		for (let opt of options) {
+		for (let opt of opts) {
 			prob.link(opt);
 		}
-
 		this.probability = prob;
-		return instr;
+
+		if (!hasErr && compStatus.hasDecomposed) {
+			// Get all sub-name spaces
+			let names = new Set();
+			for (let opt of variables) {
+				for (let key of opt.elements) {
+					names.add(Number(key[0]));
+				}
+			}
+
+			let links = [];
+			for (let opt of variables) {
+				let res = opt.decompose(ref);
+				/* jshint ignore:start*/
+				if (res?.error) {
+					links.push(new LLVM.Latent(new LLVM.Failure(
+						res.msg,
+						res.ref
+					), ref));
+				}
+				/* jshint ignore:end*/
+			}
+
+			for (let name of names) {
+				let target = this.access(name, ref);
+				if (target?.error) {
+					throw "Unexpected Error";
+				}
+
+				let forward = variables.map(v => v.access(name, ref));
+				let child = target.createResolutionPoint(forward, scopes, segment, ref);
+				// console.log(379, child.stmts[0].action.expr, forward);
+				frag.append(child);
+			}
+
+		}
+
+		this.hasUpdated = true;
+		return frag;
 	}
 
 	/**
 	 *
 	 * @param {Possibility} other
 	 */
-		 addPossibility(poss, segment) {
-			if (this.store.length == 0){
-				this.isCorrupt = true;
-			}
-
-			this.store.push(poss);
+	addPossibility (poss, segment) {
+		if (this.store.length == 0){
+			this.isCorrupt = true;
 		}
+
+		this.store.push(poss);
+	}
 
 	/**
 	 * Resolve latent super positions as value needs to be accessed
 	 * @param {Error?} ref
 	 */
-	resolveProbability(ref) {
+	resolveProbability (ref) {
 		if (this.probability) {
 			let status = this.probability.resolve(ref);
 			if (status !== null && status.error) {
@@ -351,7 +465,7 @@ class Variable extends Value {
 
 
 
-	clone() {
+	clone () {
 		let out = new Variable(this.type, this.name, this.ref);
 		out.store = this.store;
 		out.isClone = true;
@@ -366,6 +480,21 @@ class Variable extends Value {
 
 		return out;
 	}
+}
+
+
+
+/**
+ *
+ * @param {Variable[]} variables
+ */
+function GetCompositionState (variables) {
+	let composition = variables.map(v => v.isDecomposed);
+
+	return {
+		hasDecomposed: composition.filter(val => val == true).length != 0,
+		hasComposed: composition.filter(val => val == false).length != 0
+	};
 }
 
 module.exports = Variable;
