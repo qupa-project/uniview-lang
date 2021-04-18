@@ -23,14 +23,11 @@ class ExecutionFlow extends ExecutionExpr {
 		}
 
 
-		/**
-		 * Prepare entry point
-		 */
 
 
-		/**
-		 * Prepare the condition value
-		 */
+		/*===================================
+			Prepare condition value
+		===================================*/
 		let cond = this.compile_expr(
 			ast.tokens[0].tokens[0],
 			new TypeRef(0, Primative.types.bool),
@@ -42,103 +39,121 @@ class ExecutionFlow extends ExecutionExpr {
 		frag.merge(cond.preamble);
 
 
-		/**
-		 * Prepare condition true body
-		 */
-		let true_id = new LLVM.ID(ast.tokens[0].tokens[1].ref);
-		let branch_true = this.clone();
-		branch_true.entryPoint = true_id;
-		let body_true = branch_true.compile(ast.tokens[0].tokens[1]);
-		body_true.prepend(new LLVM.Label(
-			true_id,
-			ast.tokens[0].tokens[1].ref
-		).toDefinition());
 
 
-		/**
-		 * Prepare condition false body
-		 */
+
+		/*===================================
+			Prepare condition bodies
+		===================================*/
+		let branch_true = this.compile_branch(ast.tokens[0].tokens[1], ast.tokens[0].tokens[1].ref);
+
 		let hasElse = ast.tokens[2] !== null;
-		let false_id = new LLVM.ID();
-		let body_false = new LLVM.Fragment();
-		let branch_false = this.clone();
-		branch_false.entryPoint = false_id;
-		if (hasElse) {
-			body_false = branch_false.compile(ast.tokens[2].tokens[0]);
-			body_false.prepend(new LLVM.Label(
-				false_id
-			).toDefinition());
-		}
-
-
-		/**
-		 * Cleanup and merging
-		 */
-		let endpoint_id = new LLVM.ID();
-		let endpoint = new LLVM.Label(
-			new LLVM.Name(endpoint_id.reference(), false)
+		let branch_false = this.compile_branch(
+			hasElse ?
+				ast.tokens[2].tokens[0] :
+				null,
+			hasElse ?
+				ast.tokens[2].tokens[0].ref :
+				ast.tokens[0].tokens[1].ref,
 		);
 
+
+
+
+		/*===================================
+			Cleanup and merging
+		===================================*/
 
 		// Push the branching jump
 		frag.append(new LLVM.Branch(
 			cond.instruction,
 			new LLVM.Label(
-				new LLVM.Name(true_id.reference(), false, ast.tokens[0].tokens[1].ref),
-				ast.tokens[0].tokens[1].ref
+				new LLVM.Name(branch_true.id, false),
 			),
 			new LLVM.Label(
-				new LLVM.Name( hasElse ? false_id.reference() : endpoint_id.reference() , false)
+				new LLVM.Name(branch_false.id, false)
 			),
 			ast.ref.start
 		));
 
 
-		// Push the if branch
-		frag.merge(body_true);
-		if (!branch_true.returned) {
-			frag.append(new LLVM.Branch_Unco(endpoint));
-		}
-
-		// Push the else branch
-		if (hasElse) {
-			frag.merge(body_false);
-			if (!branch_false.returned) {
-				frag.append(new LLVM.Branch_Unco(endpoint));
-			}
-		}
-
-		// Both branches returned
-		if (branch_true.returned && branch_false.returned) {
+		// If both branches have returned,
+		//   execution does not continue
+		//   thus cleanup is not needed
+		if (branch_true.env.returned && branch_false.env.returned) {
 			this.returned = true;
-		}
+		} else {
 
-		// Push the end point
-		if (!this.returned) {
+			// Mark end of the if statement
+			let endpoint_id = new LLVM.ID();
+			let endpoint = new LLVM.Label(
+				new LLVM.Name(endpoint_id.reference(), false)
+			);
+
+
+			// Merge branches
+			for (let branch of [branch_true, branch_false]) {
+
+				// If the branch didn't return
+				//   Jump to the endpoint label
+				if (!branch.env.returned) {
+					branch.frag.append(new LLVM.Branch_Unco(endpoint));
+				}
+
+				// Append the body of this branch to the main body
+				frag.merge(branch.frag);
+			}
+
+
+			// Push the end point label
 			frag.append(new LLVM.Label(
 				endpoint_id
 			).toDefinition());
+
+			// Synchronise possible states into current
+			let merger = this.sync(
+				[ branch_true.env, branch_false.env ],
+				endpoint_id,
+				ast.ref
+			);
+			frag.merge(merger);
+
+
+			this.entryPoint = endpoint_id;
 		}
 
 
-		let tail_segment = hasElse ? false_id : endpoint_id;
-
-		// Synchronise possible states into current
-		let merger = this.sync(
-			hasElse ? [ branch_true, branch_false ] :
-				[ this, branch_true ],
-			tail_segment,
-			ast.ref
-		);
-		frag.merge(merger);
-
-
-		// Mark current branch
-		this.entryPoint = tail_segment;
 		return frag;
 	}
 
+
+	compile_branch(ast, ref) {
+		let id = new LLVM.ID(ref);
+		let env = this.clone();
+		env.entryPoint = id;
+
+		let frag = new LLVM.Fragment();
+		if (ast !== null) {
+			env.compile(ast);
+		}
+
+		// Add the start label
+		frag.prepend(new LLVM.Label(
+			id,
+			ref
+		).toDefinition());
+
+		return {
+			id: id.reference(),
+			env: env,
+			frag: frag
+		};
+	}
+
 }
+
+
+
 
 
 module.exports = ExecutionFlow;
