@@ -4,8 +4,9 @@
   "description": "Uniview Language",
   "main": "compile/compile.js",
   "preferGlobal": true,
+  "engineStrict" : true,
   "engines": {
-    "node": ">=12"
+    "node": ">=14"
   },
   "dependencies": {
     "bnf-parser": "^2.2.1"
