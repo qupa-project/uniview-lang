@@ -102,10 +102,10 @@ class ExecutionBase {
 	 * @param {*} ast
 	 * @param {Boolean} read
 	 */
-	getVar(ast) {
+	getVar (ast, read = true) {
 		// Link dynamic access arguments
-		ast = this.resolveAccess(ast);
-		let res = this.scope.getVar(ast);
+		ast = this.resolveAccess (ast);
+		let res = this.scope.getVar (ast, read);
 
 		// Inject reference if it is missing
 		if (res.error) {
@@ -114,7 +114,8 @@ class ExecutionBase {
 
 		let access = ast.tokens[2];
 		while (access.length > 0) {
-			res = res.access(access[0][0], access[0][1], access[0][1].ref);
+			res.hasUpdated = res.hasUpdated || !read;
+			res = res.access(access[0][1], access[0][1].ref);
 			if (res.error) {
 				return res;
 			}
@@ -125,14 +126,14 @@ class ExecutionBase {
 		return res;
 	}
 
-	compile_loadVariable(ast) {
-		let target = this.getVar(ast);
+	compile_loadVariable (ast) {
+		let target = this.getVar (ast);
 
 		if (target.error) {
 			return target;
 		}
 
-		let out = target.read(ast.ref);
+		let out = target.read (ast.ref);
 		if (out.error) {
 			return out;
 		}
@@ -227,7 +228,7 @@ class ExecutionBase {
 
 
 
-	sync(branches, segment, ref){
+	sync (branches, segment, ref){
 		return this.scope.sync(
 			branches.map(x => [x.entryPoint, x.scope]),
 			segment,
