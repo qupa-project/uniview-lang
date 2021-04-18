@@ -16,6 +16,7 @@ class Set extends Instruction {
 
 	assign_ID (gen) {
 		this.register.assign_ID(gen);
+		this.expr.assign_ID(gen);
 	}
 
 	flattern(indent) {
