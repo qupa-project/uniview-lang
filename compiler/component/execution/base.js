@@ -114,7 +114,7 @@ class ExecutionBase {
 
 		let access = ast.tokens[2];
 		while (access.length > 0) {
-			res = res.access(access[0][0], access[0][1]);
+			res = res.access(access[0][0], access[0][1], access[0][1].ref);
 			if (res.error) {
 				return res;
 			}
@@ -228,7 +228,11 @@ class ExecutionBase {
 
 
 	sync(branches, segment, ref){
-		return this.scope.sync(branches.map(x => [x.entryPoint, x.scope]), segment, ref);
+		return this.scope.sync(
+			branches.map(x => [x.entryPoint, x.scope]),
+			segment,
+			ref
+		);
 	}
 }
 
