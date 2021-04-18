@@ -34,20 +34,25 @@ class Structure extends TypeDef {
 	 * @param {String} name
 	 * @returns {Object}
 	 */
-	getTerm(type, name, register) {
+	getTerm(type, name, register, ref) {
 		let found = false;
 		let i = 0;
-		for (; i<this.terms.length && !found; i++) {
-			if (this.terms[i].name == name.tokens) {
-				found = true;
-				break;
+		if (typeof(name) == "number") {
+			found = i < this.terms.length;
+			i = name;
+		} else{
+			for (; i<this.terms.length && !found; i++) {
+				if (this.terms[i].name == name.tokens) {
+					found = true;
+					break;
+				}
 			}
 		}
 		if (!found) {
 			return null;
 		}
 
-		let res = this.accessGEPByIndex(i, register, name.ref.start);
+		let res = this.accessGEPByIndex(i, register, ref);
 
 		return {
 			preamble: res.preamble,
