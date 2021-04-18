@@ -89,6 +89,20 @@ class ExecutionFlow extends ExecutionExpr {
 			let endpoint = new LLVM.Label(
 				new LLVM.Name(endpoint_id.reference(), false)
 			);
+			this.entryPoint = endpoint_id;
+
+
+
+			// Synchronise possible states into current
+			let merger = this.sync(
+				[ branch_true.env, branch_false.env ],
+				endpoint_id,
+				ast.ref
+			);
+
+
+			// Merge synchronisation preamble for each branch
+			[ branch_true, branch_false ].map( (branch, i) => branch.frag.append(merger.preambles[i]) );
 
 
 			// Merge branches
@@ -110,16 +124,9 @@ class ExecutionFlow extends ExecutionExpr {
 				endpoint_id
 			).toDefinition());
 
-			// Synchronise possible states into current
-			let merger = this.sync(
-				[ branch_true.env, branch_false.env ],
-				endpoint_id,
-				ast.ref
-			);
-			frag.merge(merger);
 
-
-			this.entryPoint = endpoint_id;
+			// Append the synchronisation finalisation
+			frag.append(merger.frag);
 		}
 
 

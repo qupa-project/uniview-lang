@@ -329,6 +329,7 @@ class Variable extends Value {
 	 */
 	createResolutionPoint (variables, scopes, segment, ref) {
 		let compStatus = GetCompositionState([this, ...variables]);
+		let preambles = [];
 		let frag = new LLVM.Fragment();
 		let hasErr = false;
 
@@ -346,6 +347,8 @@ class Variable extends Value {
 				ref
 			)];
 			hasErr = true;
+
+			preambles = scopes.map(x => new LLVM.Fragment());
 		} else {
 			opts = variables
 				.map((v, i) => v.createProbability(
@@ -353,16 +356,15 @@ class Variable extends Value {
 					ref
 				));
 
-			for (let opt of opts) {
-				frag.merge(opt.preamble);
-			}
+
+			preambles = opts.map(x => x.preamble);
 			opts = opts.map(x => x.probability);
 		}
 
 
 		// Generate the latent resolution point
 		let id = new LLVM.ID();
-		let instr = new LLVM.Latent(new LLVM.Set(
+		let instruction = new LLVM.Latent(new LLVM.Set(
 			new LLVM.Name(id, false, ref),
 			new LLVM.Phi(this.type.toLLVM(), opts.map((x, i) => [
 				x.register.name,
@@ -375,11 +377,11 @@ class Variable extends Value {
 			new LLVM.Name(id.reference(), false, ref),
 			ref
 		);
-		frag.append(instr);
+		frag.append(instruction);
 
 		// Mark latent result
 		let prob = new Probability(
-			instr,
+			instruction,
 			register,
 			segment,
 			ref
@@ -422,13 +424,21 @@ class Variable extends Value {
 
 				let forward = variables.map(v => v.access(name, ref));
 				let child = target.createResolutionPoint(forward, scopes, segment, ref);
-				frag.append(child);
+
+				// Merge information
+				for (let i=0; i<preambles.length; i++) {
+					preambles[i].append(child.preambles[i]);
+				}
+				frag.append(child.frag);
 			}
 
 		}
-
 		this.hasUpdated = true;
-		return frag;
+
+		return {
+			preambles,
+			frag
+		};
 	}
 
 	/**

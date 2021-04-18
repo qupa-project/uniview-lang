@@ -198,6 +198,7 @@ class Scope {
 	 * @param {Scope} scopes
 	 */
 	sync (scopes, segment, ref) {
+		let preambles = scopes.map(x => new LLVM.Fragment());
 		let frag = new LLVM.Fragment();
 
 		for (let name in this.variables) {
@@ -210,16 +211,26 @@ class Scope {
 					.map(tuple => tuple[1].variables[name].hasUpdated)
 					.includes(true)
 			) { // ignore non-updated values
-				frag.append(this.variables[name].createResolutionPoint(
+				let res = this.variables[name].createResolutionPoint(
 					applicable.map(tuple => tuple[1].variables[name]),
 					applicable,
 					segment,
 					ref
-				));
+				);
+
+				let j=0;
+				for (let i=0; i<preambles.length; i++) {
+					if (scopes[i][1].variables[name].isClone) {
+						preambles[i].append(res.preambles[j]);
+						j++;
+					}
+				}
+
+				frag.append(res.frag);
 			}
 		}
 
-		return frag;
+		return {frag, preambles};
 	}
 }
 
