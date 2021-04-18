@@ -20,20 +20,20 @@ class Function_Instance {
 		this.represent = `${this.name}.${this.ctx.getFile().getID().toString(36)}.${this.id.toString(36)}`;
 	}
 
-	getFileID() {
+	getFileID () {
 		return this.ctx.getFileID();
 	}
 
-	getFile() {
+	getFile () {
 		return this.ctx.getFile();
 	}
 
-	getFunction() {
+	getFunction () {
 		return this;
 	}
 
 
-	generate(registers, ir_args) {
+	generate (registers, ir_args) {
 		throw new Error("Unbound");
 	}
 
@@ -41,7 +41,7 @@ class Function_Instance {
 
 	link () {}
 	match (other) {}
-	compile() {}
+	compile () {}
 }
 
 module.exports = Function_Instance;

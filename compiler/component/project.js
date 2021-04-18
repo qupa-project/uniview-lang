@@ -25,7 +25,7 @@ class Project {
 		this.error = false;
 	}
 
-	import(path, entry = false, relation = this.rootPath) {
+	import (path, entry = false, relation = this.rootPath) {
 		let searchDir = [
 			dirname(relation),
 			resolve(__dirname, "../../std/"),
@@ -86,7 +86,7 @@ class Project {
 	/**
 	 * Returns the primative library
 	 */
-	getPrimative() {
+	getPrimative () {
 		return this.files[0];
 	}
 
@@ -94,11 +94,11 @@ class Project {
 	 *
 	 * @param {File} file
 	 */
-	inject(file) {
+	inject (file) {
 		this.files.push(file);
 	}
 
-	registerExport(name) {
+	registerExport (name) {
 		if (this.exports.indexOf(name) == -1) {
 			this.exports.push(name);
 			return true;
@@ -107,18 +107,18 @@ class Project {
 		}
 	}
 
-	link(){
+	link (){
 		for (let file of this.files) {
 			file.link();
 		}
 	}
 
-	markError() {
+	markError () {
 		this.error = true;
 	};
 
 
-	compile() {
+	compile () {
 		let fragment = new LLVM.Fragment();
 
 		for (let file of this.files) {

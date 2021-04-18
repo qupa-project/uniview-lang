@@ -8,7 +8,7 @@ class ExecutionBase {
 	 * @param {*} returnType
 	 * @param {*} scope
 	 */
-	constructor(ctx, returnType, scope, entryPoint = new LLVM.ID()) {
+	constructor (ctx, returnType, scope, entryPoint = new LLVM.ID()) {
 		this.ctx        = ctx;
 		this.scope      = scope;
 		this.returnType = returnType;
@@ -22,14 +22,14 @@ class ExecutionBase {
 	 * Return the function this scope is within
 	 * @returns {Function_Instance}
 	 */
-	getFunction(access, signature, template) {
+	getFunction (access, signature, template) {
 		return this.getFile().getFunction(access, signature, template);
 	}
 
 	getFunctionGroup () {
 		return this.ctx.getFunctionGroup();
 	}
-	getFunctionInstance() {
+	getFunctionInstance () {
 		return this.ctx.getFunctionInstance();
 	}
 
@@ -43,7 +43,7 @@ class ExecutionBase {
 	/**
 	 * Return the parent scope if this is a sub scope
 	 */
-	getParent() {
+	getParent () {
 		if (this.ctx instanceof ExecutionBase) {
 			return this.ctx;
 		}
@@ -55,7 +55,7 @@ class ExecutionBase {
 	 *
 	 * @param {BNF_Node} node
 	 */
-	resolveTemplate(node) {
+	resolveTemplate (node) {
 		let template = [];
 		for (let arg of node.tokens) {
 			switch (arg.type) {

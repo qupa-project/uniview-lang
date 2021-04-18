@@ -1,9 +1,9 @@
-function FixStringLength(string, count, filler = " ") {
+function FixStringLength (string, count, filler = " ") {
 	return filler.repeat(Math.max(0, count - string.length)) +
 		string.slice(0, count);
 }
 
-function CodeSection(string, refStart, refEnd) {
+function CodeSection (string, refStart, refEnd) {
 	string = string.replace(/\t/g, "  ");
 
 	let offset = refStart.line;

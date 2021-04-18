@@ -32,22 +32,22 @@ class Function_Instance {
 		this.represent = external ? `${this.name}` : `${this.name}.${this.ctx.getFileID().toString(36)}.${this.id.toString(36)}`;
 	}
 
-	markExport() {
+	markExport () {
 		this.represent = this.name;
 	}
 
-	getFileID() {
+	getFileID () {
 		return this.ctx.getFileID();
 	}
 
-	getFile() {
+	getFile () {
 		return this.ctx.getFile();
 	}
 
-	getFunctionGroup() {
+	getFunctionGroup () {
 		return this.ctx.getFunctionGroup();
 	}
-	getFunctionInstance() {
+	getFunctionInstance () {
 		return this;
 	}
 
@@ -127,7 +127,7 @@ class Function_Instance {
 
 
 
-	compile() {
+	compile () {
 		if (this.abstract) {
 			return null;
 		}

@@ -1,4 +1,4 @@
-function* IDGenerator(seed) {
+function* IDGenerator (seed) {
 	let state = seed;
 	while (true) {
 		yield state++;
@@ -6,11 +6,11 @@ function* IDGenerator(seed) {
 }
 
 class Generator_ID {
-	constructor(seed = 0) {
+	constructor (seed = 0) {
 		this.internal = IDGenerator(seed);
 	}
 
-	next() {
+	next () {
 		return this.internal.next().value;
 	}
 }

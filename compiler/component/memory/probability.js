@@ -8,7 +8,7 @@ class Probability {
 		this.rel = [];
 	}
 
-	resolve(ref) {
+	resolve (ref) {
 		// Trigger ties
 		for (let act of this.rel) {
 			let res = act.activate();
@@ -31,7 +31,7 @@ class Probability {
 	 *
 	 * @param {Probablity} other
 	 */
-	link(other) {
+	link (other) {
 		if (other.activator) {
 			this.rel.push(other.activator);
 		}

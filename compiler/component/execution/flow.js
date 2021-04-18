@@ -127,7 +127,7 @@ class ExecutionFlow extends ExecutionExpr {
 	}
 
 
-	compile_branch(ast, ref) {
+	compile_branch (ast, ref) {
 		let id = new LLVM.ID(ref);
 		let env = this.clone();
 		env.entryPoint = id;

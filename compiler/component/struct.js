@@ -34,7 +34,7 @@ class Structure extends TypeDef {
 	 * @param {String} name
 	 * @returns {Object}
 	 */
-	getTerm(name, register, ref) {
+	getTerm (name, register, ref) {
 		let found = false;
 		let i = 0;
 		if (typeof(name) == "number") {
@@ -62,11 +62,11 @@ class Structure extends TypeDef {
 		};
 	}
 
-	getTermCount() {
+	getTermCount () {
 		return this.terms.length;
 	}
 
-	accessGEPByIndex(i, register, ref) {
+	accessGEPByIndex (i, register, ref) {
 		return {
 			preamble: new LLVM.Fragment(),
 			instruction: new LLVM.GEP(
@@ -89,14 +89,14 @@ class Structure extends TypeDef {
 		}
 	}
 
-	parse() {
+	parse () {
 		this.name = this.ast.tokens[0].tokens;
 		this.represent = "%struct." + (
 			this.external ? this.name : `${this.name}.${this.ctx.getFileID().toString(36)}`
 		);
 	}
 
-	link(stack = []) {
+	link (stack = []) {
 		if (stack.indexOf(this) != -1) {
 			this.ctx.getFile().throw(
 				`Error: Structure ${this.name} contains itself, either directly or indirectly`,
@@ -146,7 +146,7 @@ class Structure extends TypeDef {
 		}
 	}
 
-	compile() {
+	compile () {
 		let types = [];
 		for (let name in this.terms) {
 			types.push(this.terms[name].toLLVM());

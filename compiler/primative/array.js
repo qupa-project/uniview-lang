@@ -54,7 +54,7 @@ class Array_Gen extends TypeDef {
 	 * @param {TypeRef} type
 	 * @param {Number} length
 	 */
-	constructor(ctx, type, length = 0) {
+	constructor (ctx, type, length = 0) {
 		super(ctx, {
 			ref: {start: null, end: null}
 		}, false);
@@ -75,7 +75,7 @@ class Array_Gen extends TypeDef {
 	 * @param {Expr[]} opperands
 	 * @param {Register} target
 	 */
-	getElement(opperands, target) {
+	getElement (opperands, target) {
 		if (opperands.length != 1) {
 			return null;
 		}

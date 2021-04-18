@@ -7,7 +7,7 @@ class Constant extends Value {
 		this.value = value;
 	}
 
-	clone() {
+	clone () {
 		return new Constant(this.type, this.value, this.ref);
 	}
 
@@ -15,7 +15,7 @@ class Constant extends Value {
 	 * @param {LLVM.Argument} arg
 	 * @returns {Constant}
 	 */
-	static fromArgument(arg) {
+	static fromArgument (arg) {
 		return new Constant(arg.type, arg.name, arg.ref);
 	}
 

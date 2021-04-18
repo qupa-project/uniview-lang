@@ -32,22 +32,22 @@ class TypeDef {
 	}
 
 
-	parse() {
+	parse () {
 		this.name = this.ast.tokens[0].tokens;
 		this.represent = this.external ? this.name : `"${this.name}@${this.ctx.getFileID().toString(36)}"`;
 	}
 
-	link() {
+	link () {
 		this.size = Number(this.ast.tokens[1].tokens);
 		this.linked = true;
 		return;
 	}
 
-	compile() {
+	compile () {
 		return new LLVM.Comment(`Assume Typedef: ${this.name} ${this.represent}, ${this.size}`, this.ref);
 	}
 
-	toLLVM() {
+	toLLVM () {
 		return new LLVM.Type(this.represent, 0, this.declared || null);
 	}
 }

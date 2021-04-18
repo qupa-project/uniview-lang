@@ -15,7 +15,7 @@ class ExecutionExpr extends ExecutionBase {
 	 * Used in other compile functions
 	 * @param {BNF_Node} ast
 	 */
-	compile_constant(ast) {
+	compile_constant (ast) {
 		let preamble = new LLVM.Fragment();
 		let type = null;
 		let val = null;
@@ -116,7 +116,7 @@ class ExecutionExpr extends ExecutionBase {
 	}
 
 
-	compile_expr_arithmetic(ast) {
+	compile_expr_arithmetic (ast) {
 		let action = null;
 		switch (ast.type) {
 			case "expr_add":
@@ -213,7 +213,7 @@ class ExecutionExpr extends ExecutionBase {
 		};
 	}
 
-	compile_expr_compare(ast) {
+	compile_expr_compare (ast) {
 		let preamble = new LLVM.Fragment();
 		let epilog = new LLVM.Fragment();
 
@@ -324,7 +324,7 @@ class ExecutionExpr extends ExecutionBase {
 		};
 	}
 
-	compile_expr_bool(ast) {
+	compile_expr_bool (ast) {
 		let preamble = new LLVM.Fragment();
 		let epilog = new LLVM.Fragment();
 

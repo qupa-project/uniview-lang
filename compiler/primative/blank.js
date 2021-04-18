@@ -7,15 +7,15 @@ const TypeRef = require('../component/typeRef.js');
 const Structure = require('../component/struct.js');
 
 class Template_Primative_Blank extends Template {
-	constructor(ctx) {
+	constructor (ctx) {
 		super(ctx, null);
 	}
 
-	getFunction(access, signature, template) {
+	getFunction (access, signature, template) {
 		return this.generate(access, signature, template);
 	}
 
-	generate(access, signature, template) {
+	generate (access, signature, template) {
 		if (access.length != 0) {
 			return false;
 		}

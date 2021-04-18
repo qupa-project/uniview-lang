@@ -38,7 +38,7 @@ class File {
 
 
 
-	parse() {
+	parse () {
 		console.info("Parsing:", this.path);
 
 		this.data = fs.readFileSync(this.path, 'utf8').replace(/\n\r/g, '\n');
@@ -90,7 +90,7 @@ class File {
 		}
 	}
 
-	register(element, external = false) {
+	register (element, external = false) {
 		let space = null;
 		let abstract = false;
 		switch (element.type) {
@@ -135,7 +135,7 @@ class File {
 	 * Must be ran after main linking
 	 * @param {BNF_SyntaxNode} element
 	 */
-	registerExport(element) {
+	registerExport (element) {
 		if (element.type != "function_outline") {
 			this.getFile().throw(`Link Error: Unable to export non-functions in current version`, element.ref.start);
 			return;
@@ -158,7 +158,7 @@ class File {
 		}
 	}
 
-	getType(typeList, template = []) {
+	getType (typeList, template = []) {
 		let res = null;
 		// File access must be direct
 		if (typeList[0][0] == "." || Number.isInteger(typeList[0][0])) {
@@ -184,7 +184,7 @@ class File {
 		return null;
 	}
 
-	getFunction(access, signature, template) {
+	getFunction (access, signature, template) {
 		if (access.length < 1) {
 			return null;
 		}
@@ -215,30 +215,30 @@ class File {
 		return null;
 	}
 
-	getMain() {
+	getMain () {
 		return this.names['main'];
 	}
 
 	getID () {
 		return this.id;
 	}
-	getFile() {
+	getFile () {
 		return this;
 	}
 	getFileID () {
 		return this.getID();
 	}
-	getPath() {
+	getPath () {
 		return this.path;
 	}
-	getRelative() {
+	getRelative () {
 		return path.relative(this.project.rootPath, this.path);
 	}
 
-	getFile() {
+	getFile () {
 		return this;
 	}
-	import(filename) {
+	import (filename) {
 		return this.project.import(filename, false, this.path);
 	}
 
@@ -261,7 +261,7 @@ class File {
 	}
 
 
-	compile() {
+	compile () {
 		let fragment = new LLVM.Fragment();
 		fragment.append(new LLVM.Comment(`ModuleID = '${this.getRelative()}'`));
 

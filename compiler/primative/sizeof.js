@@ -6,15 +6,15 @@ const types = require('./types.js');
 const TypeRef = require('../component/typeRef.js');
 
 class Template_Primative_Size_Of extends Template {
-	constructor(ctx) {
+	constructor (ctx) {
 		super(ctx, null);
 	}
 
-	getFunction(access, signature, template) {
+	getFunction (access, signature, template) {
 		return this.generate(access, signature, template);
 	}
 
-	generate(access, signature, template) {
+	generate (access, signature, template) {
 		if (access.length != 0) {
 			return false;
 		}

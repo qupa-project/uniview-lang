@@ -57,7 +57,7 @@ class Execution extends ExecutionFlow {
 		return frag;
 	}
 
-	compile_declare(ast) {
+	compile_declare (ast) {
 		let	name = ast.tokens[1].tokens;
 		let frag = new LLVM.Fragment();
 
@@ -86,7 +86,7 @@ class Execution extends ExecutionFlow {
 	 * @param {BNF_Node} ast
 	 * @returns {LLVM.Fragment}
 	 */
-	compile_declare_assign(ast) {
+	compile_declare_assign (ast) {
 		let frag = new LLVM.Fragment();
 
 		let declare = this.compile_declare(ast);
@@ -127,7 +127,7 @@ class Execution extends ExecutionFlow {
 	 * Used in other compile functions
 	 * @param {BNF_Node} ast
 	 */
-	compile_call(ast) {
+	compile_call (ast) {
 		let instruction = null;
 		let preamble    = new LLVM.Fragment();
 		let epilog      = new LLVM.Fragment();
@@ -257,7 +257,7 @@ class Execution extends ExecutionFlow {
 	 * @param {BNF_Reference} ast
 	 * @returns {LLVM.Fragment}
 	 */
-	compile_call_procedure(ast) {
+	compile_call_procedure (ast) {
 		let frag = new LLVM.Fragment(ast);
 		let out = this.compile_call(ast);
 		if (out === null) {
@@ -275,8 +275,8 @@ class Execution extends ExecutionFlow {
 
 
 
-	compile_decompose(ast) {
-		let target = this.getVar(ast.tokens[0], false);
+	compile_decompose (ast) {
+		let target = this.getVar(ast.tokens[0], true);
 		if (target.error) {
 			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
 			return null;
@@ -293,8 +293,8 @@ class Execution extends ExecutionFlow {
 
 		return new LLVM.Fragment();
 	}
-	compile_compose(ast) {
-		let target = this.getVar(ast.tokens[0], false);
+	compile_compose (ast) {
+		let target = this.getVar(ast.tokens[0], true);
 		if (target.error) {
 			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
 			return null;
@@ -314,7 +314,7 @@ class Execution extends ExecutionFlow {
 
 
 
-	compile_return(ast){
+	compile_return (ast){
 		let frag = new LLVM.Fragment();
 		let inner = null;
 
@@ -377,7 +377,7 @@ class Execution extends ExecutionFlow {
 
 
 
-	compile(ast) {
+	compile (ast) {
 		let fragment = new LLVM.Fragment();
 		let returnWarned = false;
 		let failed = false;
@@ -448,7 +448,7 @@ class Execution extends ExecutionFlow {
 	 * Deep clone
 	 * @returns {Scope}
 	 */
-	clone() {
+	clone () {
 		let scope = this.scope.clone();
 		let out = new Execution(this, this.returnType, scope);
 		out.isChild = true;

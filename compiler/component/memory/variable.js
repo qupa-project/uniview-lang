@@ -19,7 +19,7 @@ class Variable extends Value {
 	 * @param {Number} pointerDepth
 	 * @param {BNF_Reference} ref
 	 */
-	constructor(type, name, ref) {
+	constructor (type, name, ref) {
 		super(type, ref);
 		this.name = name;
 		this.store = null;
@@ -120,7 +120,7 @@ class Variable extends Value {
 	 *
 	 * @param {Error?} ref
 	 */
-	decompose(ref){
+	decompose (ref){
 		// If already decomposed do nothing
 		if (this.isDecomposed) {
 			return new LLVM.Fragment();
@@ -159,7 +159,7 @@ class Variable extends Value {
 	 *
 	 * @param {LLVM.Fragment|Error} ref
 	 */
-	compose(ref){
+	compose (ref){
 		if (!this.isDecomposed) {
 			return {
 				error: true,
@@ -361,7 +361,6 @@ class Variable extends Value {
 
 
 		// Generate the latent resolution point
-		// console.log(336, opts);
 		let id = new LLVM.ID();
 		let instr = new LLVM.Latent(new LLVM.Set(
 			new LLVM.Name(id, false, ref),
@@ -415,13 +414,14 @@ class Variable extends Value {
 
 			for (let name of names) {
 				let target = this.access(name, ref);
+				/* jshint ignore:start*/
 				if (target?.error) {
 					throw "Unexpected Error";
 				}
+				/* jshint ignore:end*/
 
 				let forward = variables.map(v => v.access(name, ref));
 				let child = target.createResolutionPoint(forward, scopes, segment, ref);
-				// console.log(379, child.stmts[0].action.expr, forward);
 				frag.append(child);
 			}
 
