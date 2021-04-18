@@ -283,12 +283,15 @@ class Execution extends ExecutionFlow {
 		}
 
 		let res = target.decompose(ast.ref);
-		if (res.error) {
+
+		/* jshint ignore:start*/
+		if (res?.error) {
 			this.getFile().throw( res.msg, res.ref.start, res.ref.end);
 			return null;
 		}
+		/* jshint ignore:end*/
 
-		return res;
+		return new LLVM.Fragment();
 	}
 	compile_compose(ast) {
 		let target = this.getVar(ast.tokens[0], false);
