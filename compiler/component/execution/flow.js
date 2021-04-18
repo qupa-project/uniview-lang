@@ -101,12 +101,11 @@ class ExecutionFlow extends ExecutionExpr {
 			);
 
 
-			// Merge synchronisation preamble for each branch
-			[ branch_true, branch_false ].map( (branch, i) => branch.frag.append(merger.preambles[i]) );
-
-
 			// Merge branches
-			for (let branch of [branch_true, branch_false]) {
+			for (const [i, branch] of [branch_true, branch_false].entries()) {
+
+				// Merge synchronisation preamble for each branch
+				branch.frag.append(merger.preambles[i]);
 
 				// If the branch didn't return
 				//   Jump to the endpoint label
