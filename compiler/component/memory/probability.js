@@ -1,3 +1,6 @@
+const LLVM = require('./../../middle/llvm.js');
+
+
 class Probability {
 	constructor (activator, register, segment, ref) {
 		this.activator = activator;
@@ -6,6 +9,10 @@ class Probability {
 		this.ref = ref;
 
 		this.rel = [];
+	}
+
+	isFailure() {
+		return this.activator && this.activator.action instanceof LLVM.Failure;
 	}
 
 	resolve (ref) {

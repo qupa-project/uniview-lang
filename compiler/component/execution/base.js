@@ -112,6 +112,7 @@ class ExecutionBase {
 			res.ref = res.ref || ast.ref;
 		}
 
+		let preamble = new LLVM.Fragment();
 		let access = ast.tokens[2];
 		while (access.length > 0) {
 			res.hasUpdated = res.hasUpdated || !read;
@@ -119,37 +120,32 @@ class ExecutionBase {
 			if (res.error) {
 				return res;
 			}
+			preamble.append(res.preamble);
+			res = res.variable;
 
 			access.splice(0, 2);
 		}
 
-		return res;
+		return {
+			preamble: preamble,
+			variable: res
+		};
 	}
 
 	compile_loadVariable (ast) {
+		let preamble = new LLVM.Fragment();
 		let target = this.getVar (ast);
-
 		if (target.error) {
 			return target;
 		}
+		preamble.append(target.preamble);
+		target = target.variable;
 
-		// Automatic composure
-		let preamble = new LLVM.Fragment();
-		if (target.isDecomposed) {
-			let res = target.compose();
-			/* jshint ignore:start */
-			if (res?.error) {
-				return out;
-			}
-			/* jshint ignore:end */
-
-			preamble.append(res);
-		}
-
-		let out = target.read (ast.ref);
+		let out = target.read(ast.ref);
 		if (out.error) {
 			return out;
 		}
+		preamble.append(out.preamble);
 
 		if (out.register instanceof LLVM.GEP) {
 			let id = new LLVM.ID();

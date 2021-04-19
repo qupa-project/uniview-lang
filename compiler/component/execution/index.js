@@ -32,6 +32,8 @@ class Execution extends ExecutionFlow {
 			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
 			return null;
 		}
+		frag.append(access.preamble);
+		access = access.variable;
 
 
 		// Resolve the expression
@@ -276,11 +278,15 @@ class Execution extends ExecutionFlow {
 
 
 	compile_decompose (ast) {
+		let frag = new LLVM.Fragment();
+
 		let target = this.getVar(ast.tokens[0], true);
 		if (target.error) {
 			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
 			return null;
 		}
+		frag.append(target.preamble);
+		target = target.variable;
 
 		let res = target.decompose(ast.ref);
 
@@ -291,22 +297,28 @@ class Execution extends ExecutionFlow {
 		}
 		/* jshint ignore:end*/
 
-		return new LLVM.Fragment();
+		frag.append(res);
+		return frag;
 	}
 	compile_compose (ast) {
+		let frag = new LLVM.Fragment();
+
 		let target = this.getVar(ast.tokens[0], true);
 		if (target.error) {
 			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
 			return null;
 		}
+		frag.append(target.preamble);
+		target = target.variable;
 
 		let res = target.compose(ast.ref);
 		if (res.error) {
 			this.getFile().throw( res.msg, res.ref.start, res.ref.end);
 			return null;
 		}
+		frag.append(res);
 
-		return res;
+		return frag;
 	}
 
 

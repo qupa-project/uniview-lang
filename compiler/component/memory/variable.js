@@ -46,7 +46,7 @@ class Variable extends Value {
 	 * Resolves the possible states of the variable into a single LLVM argument
 	 * @private
 	 */
-	resolve (ref, allowDecomposition = false) {
+	resolve (ref, ignoreComposition = false) {
 		if (this.isCorrupt) {
 			return {
 				error: true,
@@ -55,12 +55,14 @@ class Variable extends Value {
 			};
 		}
 
-		if (!allowDecomposition && this.isDecomposed) {
-			return {
-				error: true,
-				msg: `Cannot resolve a decomposed value - recommend composing before use`,
-				ref
-			};
+		// Automatically compose value
+		let preamble = new LLVM.Fragment();
+		if (this.isDecomposed || ignoreComposition) {
+			let res = this.compose(ref);
+			if (res.error) {
+				return res;
+			}
+			preamble.append(res);
 		}
 
 		// Resolve probability
@@ -81,7 +83,7 @@ class Variable extends Value {
 		} else {
 			return {
 				register: this.store,
-				preamble: new LLVM.Fragment()
+				preamble: preamble
 			};
 		}
 
@@ -98,8 +100,8 @@ class Variable extends Value {
 	 * @returns {LLVM.Argument}
 	 */
 	read (ref) {
-		let out = this.resolve(ref);
-		if (out !== null && out.error) {
+		let out = this.resolve(ref, false);
+		if (out.error) {
 			return out;
 		}
 
@@ -161,11 +163,7 @@ class Variable extends Value {
 	 */
 	compose (ref){
 		if (!this.isDecomposed) {
-			return {
-				error: true,
-				msg: "Cannot compose a non-decomposed value",
-				ref: ref
-			};
+			return new LLVM.Fragment(ref);
 		}
 
 		let res = this.resolveProbability(ref);
@@ -176,7 +174,7 @@ class Variable extends Value {
 		let frag = new LLVM.Fragment();
 
 		for (let elm of this.elements) {
-			let res = elm[1].resolve();
+			let res = elm[1].resolve(ref);
 			if (res.error) {
 				return res;
 			}
@@ -213,15 +211,18 @@ class Variable extends Value {
 	 *
 	 * @param {BNF_Node} accessor
 	 * @param {BNF_Reference} ref
-	 * @returns
+	 * @returns {Object[Variable, LLVM.Fragment]|Error}
 	 */
 	access (accessor, ref) {
+		let preamble = new LLVM.Fragment();
 		if (!this.isDecomposed) {
-			return {
-				error: true,
-				msg: "Unable to access element of non-decomposed value",
-				ref: accessor.ref
-			};
+			let res = this.decompose(ref);
+			/* jshint ignore:start*/
+			if (res?.error) {
+				return res;
+			}
+			/* jshint ignore:end*/
+			preamble = res.preamble;
 		}
 
 		let struct = this.type.type;
@@ -244,7 +245,10 @@ class Variable extends Value {
 				this.elements.set(res.index, elm);
 			}
 
-			return this.elements.get(res.index);
+			return {
+				variable: this.elements.get(res.index),
+				preamble: preamble
+			};
 		} else {
 			return {
 				error: true,
@@ -361,17 +365,26 @@ class Variable extends Value {
 			opts = opts.map(x => x.probability);
 		}
 
+		let hasFailure = opts.map(x => x.isFailure()).includes(true);
+
 
 		// Generate the latent resolution point
 		let id = new LLVM.ID();
-		let instruction = new LLVM.Latent(new LLVM.Set(
-			new LLVM.Name(id, false, ref),
-			new LLVM.Phi(this.type.toLLVM(), opts.map((x, i) => [
-				x.register.name,
-				new LLVM.Name(x.segment, false, ref)
-			]), ref),
-			ref
-		));
+		let instruction = new LLVM.Latent(
+			hasFailure ?
+				new LLVM.Failure(
+					`Cannot resolve superposition due to some states having internal errors`,
+					ref
+				) :
+				new LLVM.Set(
+					new LLVM.Name(id, false, ref),
+					new LLVM.Phi(this.type.toLLVM(), opts.map((x, i) => [
+						x.register.name,
+						new LLVM.Name(x.segment, false, ref)
+					]), ref),
+					ref
+				)
+		);
 		let register = new LLVM.Argument(
 			this.type.toLLVM(),
 			new LLVM.Name(id.reference(), false, ref),
@@ -421,9 +434,15 @@ class Variable extends Value {
 					throw "Unexpected Error";
 				}
 				/* jshint ignore:end*/
+				frag.append(target.preamble);
+				target = target.variable;
 
 				let forward = variables.map(v => v.access(name, ref));
-				let child = target.createResolutionPoint(forward, scopes, segment, ref);
+				for (let [i, act] of forward.entries()) {
+					preambles[i].append(act.preamble);
+				}
+
+				let child = target.createResolutionPoint(forward.map(x => x.variable), scopes, segment, ref);
 
 				// Merge information
 				for (let i=0; i<preambles.length; i++) {
@@ -434,6 +453,13 @@ class Variable extends Value {
 
 		}
 		this.hasUpdated = true;
+
+
+		// Merged two decomposed states
+		//   Hence this state is now decomposed
+		if (compStatus.hasDecomposed) {
+			this.isDecomposed = true;
+		}
 
 		return {
 			preambles,
