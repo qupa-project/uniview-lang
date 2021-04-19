@@ -118,7 +118,7 @@ class Variable extends Value {
 
 		/**
 	 *
-	 * @param {Error?} ref
+	 * @param {LLVM.Fragment|Error} ref
 	 */
 	decompose (ref){
 		// If already decomposed do nothing
@@ -152,7 +152,7 @@ class Variable extends Value {
 
 		// Mark decposed
 		this.isDecomposed = true;
-		return null;
+		return new LLVM.Fragment();
 	}
 
 	/**

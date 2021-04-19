@@ -133,6 +133,19 @@ class ExecutionBase {
 			return target;
 		}
 
+		// Automatic composure
+		let preamble = new LLVM.Fragment();
+		if (target.isDecomposed) {
+			let res = target.compose();
+			/* jshint ignore:start */
+			if (res?.error) {
+				return out;
+			}
+			/* jshint ignore:end */
+
+			preamble.append(res);
+		}
+
 		let out = target.read (ast.ref);
 		if (out.error) {
 			return out;
@@ -141,7 +154,7 @@ class ExecutionBase {
 		if (out.register instanceof LLVM.GEP) {
 			let id = new LLVM.ID();
 
-			out.preamble.append(new LLVM.Set(
+			preamble.append(new LLVM.Set(
 				new LLVM.Name(id, false, ast.ref),
 				out.register,
 				ast.ref
@@ -154,7 +167,7 @@ class ExecutionBase {
 
 			if (out.type.type.primative) {
 				let id = new LLVM.ID();
-				out.preamble.append(new LLVM.Set(
+				preamble.append(new LLVM.Set(
 					new LLVM.Name(id, false, ast.ref),
 					new LLVM.Load(
 						out.type.toLLVM(),
@@ -172,7 +185,7 @@ class ExecutionBase {
 		}
 
 		return {
-			preamble: out.preamble,
+			preamble: preamble,
 			epilog: new LLVM.Fragment(),
 			type: out.type,
 			instruction: out.register
