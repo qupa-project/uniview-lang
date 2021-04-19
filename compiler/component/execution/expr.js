@@ -30,7 +30,7 @@ class ExecutionExpr extends ExecutionBase {
 			case "boolean":
 				type = new TypeRef(0, Primative.types.bool);
 				val = new LLVM.Constant(
-					val == "true" ? 1 : 0,
+					ast.tokens[0].tokens == "true" ? 1 : 0,
 					ast.ref.start
 				);
 				break;
