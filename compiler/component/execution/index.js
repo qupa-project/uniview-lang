@@ -343,26 +343,82 @@ class Execution extends ExecutionFlow {
 			frag.merge(res.preamble);
 			if (returnType.type instanceof Structure) {
 				// Structures are parsed by pointer
-				let id = new LLVM.ID();
+					
+				let sizePtrID = new LLVM.ID();
 				frag.append(new LLVM.Set(
-					new LLVM.Name(id, false, ast.ref),
-					new LLVM.Load(
+					new LLVM.Name(sizePtrID, false, ast.ref),
+					new LLVM.GEP(
 						returnType.duplicate().offsetPointer(-1).toLLVM(),
-						res.instruction.name, ast.ref
+						new LLVM.Argument(
+							returnType.duplicate().toLLVM(),
+							new LLVM.Constant("null", ast.ref),
+							ast.ref
+						),
+						[new LLVM.Argument(
+							new LLVM.Type("i64", 0, ast.ref),
+							new LLVM.Constant("0", ast.ref),
+							ast.ref
+						)]
 					)
 				));
-				frag.append(new LLVM.Store(
-					new LLVM.Argument(
-						returnType.toLLVM(),
-						new LLVM.Name("0", false, ast.ref),
-						ast.ref
-					),
-					new LLVM.Argument(
-						returnType.duplicate().offsetPointer(-1).toLLVM(),
-						new LLVM.Name(id.reference(), false, ast.ref),
-						ast.ref
+
+				let sizeID = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(sizeID, false, ast.ref),
+					new LLVM.PtrToInt(
+						new LLVM.Type("i64", 0),
+						new LLVM.Argument(
+							returnType.duplicate().toLLVM(),
+							new LLVM.Name(sizePtrID.reference(), false, ast.ref),
+							ast.ref
+						)
 					)
 				));
+
+				let fromID = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(fromID, false),
+					new LLVM.Bitcast(
+						new LLVM.Type("i8", 1),
+						res.instruction
+					)
+				));
+				let toID = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(toID, false),
+					new LLVM.Bitcast(
+						new LLVM.Type("i8", 1),
+						new LLVM.Argument(
+							returnType.toLLVM(),
+							new LLVM.Name("0", false, ast.ref),
+							ast.ref
+						)
+					)
+				));
+
+				frag.append(new LLVM.Call(
+					new LLVM.Type("void", 0),
+					new LLVM.Name("llvm.memmove.p0i8.p0i8.i64", true),
+					[
+						new LLVM.Argument(
+							new LLVM.Type("i8", 1),
+							new LLVM.Name(toID.reference(), false)
+						),
+						new LLVM.Argument(
+							new LLVM.Type("i8", 1),
+							new LLVM.Name(fromID.reference(), false)
+						),
+						new LLVM.Argument(
+							new LLVM.Type("i64", 0),
+							new LLVM.Name(sizeID.reference(), false)
+						),
+						new LLVM.Argument(
+							new LLVM.Type('i1', 0),
+							new LLVM.Constant("0")
+						)
+					]
+				));
+
 				inner = new LLVM.Type("void", 0, ast.ref);
 			} else {
 				inner = res.instruction;

@@ -25,6 +25,7 @@ const Name = require('./name.js');
 const Or = require('./or.js');
 const Phi = require('./phi.js');
 const Procedure = require('./procedure.js');
+const PtrToInt = require('./ptrtoint.js');
 const Raw = require('./raw.js');
 const Rem = require('./rem.js');
 const Return = require('./return.js');
@@ -51,7 +52,7 @@ module.exports = {
 	Mul,
 	Name,
 	Or,
-	Phi, Procedure,
+	Phi, Procedure, PtrToInt,
 	Raw, Return,
 	Rem,
 	Set, Store, Struct, Sub,
