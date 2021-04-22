@@ -57,7 +57,7 @@ class Variable extends Value {
 
 		// Automatically compose value
 		let preamble = new LLVM.Fragment();
-		if (this.isDecomposed || ignoreComposition) {
+		if (!ignoreComposition && this.isDecomposed) {
 			let res = this.compose(ref);
 			if (res.error) {
 				return res;
@@ -279,13 +279,34 @@ class Variable extends Value {
 	 * @param {BNF_Reference} ref
 	 * @returns
 	 */
-	createProbability (segment, ref) {
-		let instr = this.resolve(ref, true);
-		let preamble = new LLVM.Fragment();
+	createProbability (segment, needsDecomposition = false, ref) {
+		let preamble  = new LLVM.Fragment();
 		let activator = null;
-		let reg = instr.register;
+		let error     = null;
+		let reg       = new LLVM.Constant("null");
 
-		if (instr.error) {
+
+		// Decompose if required
+		if (needsDecomposition) {
+			let res = this.decompose(ref);
+			if (res.error) {
+				error = res.error;
+			} else {
+				preamble.merge(res);
+			}
+		}
+
+		let instr;
+		if (!error) {
+			instr = this.resolve(ref, true);
+			if (instr.error) {
+				error = instr.error;
+			} else {
+				preamble.merge(instr.preamble);
+			}
+		}
+
+		if (error) {
 			activator = new LLVM.Latent(new LLVM.Failure(
 				instr.msg, instr.ref
 			), ref);
@@ -316,6 +337,8 @@ class Variable extends Value {
 				new LLVM.Name(id.reference(), false, ref),
 				ref
 			);
+		} else {
+			reg = instr.register;
 		}
 
 		return {
@@ -333,38 +356,24 @@ class Variable extends Value {
 	 */
 	createResolutionPoint (variables, scopes, segment, ref) {
 		let compStatus = GetCompositionState([this, ...variables]);
-		let preambles = [];
+		let preambles = scopes.map(x => new LLVM.Fragment());
 		let frag = new LLVM.Fragment();
 		let hasErr = false;
 
 
-		// Cannot sync composed and non-composed values
-		let opts = [];
-		if (compStatus.hasDecomposed && compStatus.hasComposed) {
-			opts = [ new Probability(
-				new LLVM.Latent(new LLVM.Failure(
-					`Cannot resolve superposition when not all positions are in the same composition state`,
-					ref
-				)),
-				undefined,
-				segment,
+		// Prepare each scope for merging
+		let needsDecomposition = compStatus.hasDecomposed && compStatus.hasComposed;
+		let opts =
+			variables.map((v, i) => v.createProbability(
+				scopes[i][0].reference(),
+				needsDecomposition,
 				ref
-			)];
-			hasErr = true;
-
-			preambles = scopes.map(x => new LLVM.Fragment());
-		} else {
-			opts = variables
-				.map((v, i) => v.createProbability(
-					scopes[i][0].reference(),
-					ref
-				));
+			));
+		opts.map((x, i) => preambles[i].merge(x.preamble));  // Append preambles to correct scopes
+		opts = opts.map(x => x.probability);                 // Extract the probabilities
 
 
-			preambles = opts.map(x => x.preamble);
-			opts = opts.map(x => x.probability);
-		}
-
+		// Check for a failure in any branch
 		let hasFailure = opts.map(x => x.isFailure()).includes(true);
 
 
