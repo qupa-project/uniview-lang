@@ -138,14 +138,14 @@ class ExecutionBase {
 		if (target.error) {
 			return target;
 		}
-		preamble.append(target.preamble);
+		preamble.merge(target.preamble);
 		target = target.variable;
 
 		let out = target.read(ast.ref);
 		if (out.error) {
 			return out;
 		}
-		preamble.append(out.preamble);
+		preamble.merge(out.preamble);
 
 		if (out.register instanceof LLVM.GEP) {
 			let id = new LLVM.ID();

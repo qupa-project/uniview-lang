@@ -62,7 +62,7 @@ class Variable extends Value {
 			if (res.error) {
 				return res;
 			}
-			preamble.append(res);
+			preamble.merge(res);
 		}
 
 		// Resolve probability
@@ -222,7 +222,7 @@ class Variable extends Value {
 				return res;
 			}
 			/* jshint ignore:end*/
-			preamble = res.preamble;
+			preamble.merge(res);
 		}
 
 		let struct = this.type.type;
