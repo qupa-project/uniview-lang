@@ -343,7 +343,7 @@ class Execution extends ExecutionFlow {
 			frag.merge(res.preamble);
 			if (returnType.type instanceof Structure) {
 				// Structures are parsed by pointer
-					
+
 				let sizePtrID = new LLVM.ID();
 				frag.append(new LLVM.Set(
 					new LLVM.Name(sizePtrID, false, ast.ref),
@@ -355,7 +355,7 @@ class Execution extends ExecutionFlow {
 							ast.ref
 						),
 						[new LLVM.Argument(
-							new LLVM.Type("i64", 0, ast.ref),
+							new LLVM.Type("i64", 1, ast.ref),
 							new LLVM.Constant("0", ast.ref),
 							ast.ref
 						)]
