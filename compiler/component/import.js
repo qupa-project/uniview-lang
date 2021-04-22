@@ -21,7 +21,7 @@ class Import {
 	 *
 	 * @param {File} file
 	 */
-	inject(file) {
+	inject (file) {
 		this.files.push({
 			file: file,
 			path: file.path,
@@ -32,7 +32,7 @@ class Import {
 		});
 	}
 
-	merge(other) {
+	merge (other) {
 		if (
 			other instanceof Import &&
 			this.name == "*"
@@ -44,7 +44,7 @@ class Import {
 		return false;
 	}
 
-	load() {
+	load () {
 		let file = this.ctx.getFile();
 		for (let extern of this.files) {
 			if (!extern.file) {
@@ -53,7 +53,7 @@ class Import {
 		}
 	}
 
-	getType(variable, template) {
+	getType (variable, template) {
 		for (let extern of this.files) {
 			let opt = extern.file.getType(variable, template);
 			if (opt) {
@@ -64,7 +64,7 @@ class Import {
 		return null;
 	}
 
-	getFunction(access, signature, template) {
+	getFunction (access, signature, template) {
 		for (let lib of this.files) {
 			let opt = lib.file.getFunction(access, signature, template);
 			if (opt) {
@@ -75,11 +75,11 @@ class Import {
 		return null;
 	}
 
-	link() {
+	link () {
 		return;
 	}
 
-	compile() {
+	compile () {
 		let frag = new LLVM.Fragment();
 		frag.append(new LLVM.Comment(`Imported under ${this.name}:`))
 		for (let extern of this.files) {
@@ -89,7 +89,7 @@ class Import {
 		return frag;
 	}
 
-	static From() {
+	static From () {
 
 	}
 }

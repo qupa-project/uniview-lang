@@ -59,9 +59,9 @@ class ID extends Instruction {
 	assign_ID(gen) {
 		if (this.origin) {
 			this.id = gen.next();
-		} else {
-			this.ref.assignID(gen);
-		}
+		} /*else {
+			this.ref.assign_ID(gen);
+		}*/
 	}
 
 	/**

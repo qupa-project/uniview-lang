@@ -2,10 +2,13 @@ const Flattern = require('../../parser/flattern.js');
 const { Generator_ID } = require('../generate.js');
 const LLVM = require("../../middle/llvm.js");
 const TypeRef = require('./../typeRef.js');
+
+
+const Probability = require('./probability.js');
 const Variable = require('./variable.js');
 
 class Scope {
-	constructor(ctx) {
+	constructor (ctx) {
 		this.ctx        = ctx;
 		this.variables  = {};
 		this.isChild    = false;
@@ -25,7 +28,7 @@ class Scope {
 	 * Return the parent scope if this is a sub scope
 	 * @returns {Scope|null}
 	 */
-	getParent() {
+	getParent () {
 		if (this.ctx instanceof Scope) {
 			return this.ctx;
 		}
@@ -38,7 +41,7 @@ class Scope {
 	 * Registers all arguments as local variables in correct order
 	 * @param {Object[]} args
 	 */
-	register_Args(args) {
+	register_Args (args) {
 		let frag = new LLVM.Fragment();
 		let registers = [];
 
@@ -72,6 +75,7 @@ class Scope {
 				this.variables[arg.name].type.toLLVM(),
 				new LLVM.Name(id.reference(), false)
 			));
+			this.variables[arg.name].hasUpdated = false;
 		}
 
 		return {frag, registers};
@@ -87,7 +91,7 @@ class Scope {
 	 * @param {BNF_Reference} ref
 	 * @returns {void}
 	 */
-	register_Var(type, name, ref) {
+	register_Var (type, name, ref) {
 		if (this.variables[name]) {
 			if (this.variables[name].isClone && !Scope.raisedVariables) {
 				// When scoped variables are added
@@ -110,7 +114,7 @@ class Scope {
 	 * @param {BNF_Node} ast
 	 * @returns {Variable}
 	 */
-	getVar(ast) {
+	getVar (ast, read = true) {
 		if (ast.type != "variable") {
 			throw new TypeError(`Parsed AST must be a branch of type variable, not "${ast.type}"`);
 		}
@@ -132,7 +136,7 @@ class Scope {
 	 * Get the type of a given variable
 	 * @param {BNF_Node} ast
 	 */
-	getVarType(ast) {
+	getVarType (ast) {
 		if (ast.type != "variable") {
 			throw new TypeError(`Parsed AST must be a branch of type variable, not "${ast.type}"`);
 		}
@@ -165,7 +169,7 @@ class Scope {
 	 * @param {String} name
 	 * @returns {Bool}
 	 */
-	hasVariable(name) {
+	hasVariable (name) {
 		return name in this.variables;
 	}
 
@@ -178,12 +182,13 @@ class Scope {
 	 * Deep clone
 	 * @returns {Scope}
 	 */
-	clone() {
+	clone () {
 		let out = new Scope(this.ctx, this.caching, this.generator);
 		for (let name in this.variables) {
 			out.variables[name] = this.variables[name].clone();
 		}
-		out.child = true;
+		out.isClone = true;
+		out.hasUpdated = false;
 
 		return out;
 	}
@@ -192,21 +197,40 @@ class Scope {
 	 * PreSync must be ran in each scope first
 	 * @param {Scope} scopes
 	 */
-	sync(scopes, segment, ref) {
+	sync (scopes, segment, ref) {
+		let preambles = scopes.map(x => new LLVM.Fragment());
 		let frag = new LLVM.Fragment();
 
 		for (let name in this.variables) {
 
-			let opts = scopes
-				.map(tuple => tuple[1].variables[name].createProbability(
-					tuple[0],
-					ref
-				));
+			// Ignore locally defined variables
+			let applicable = scopes.filter(tuple => tuple[1].variables[name].isClone);
 
-			frag.append(this.variables[name].resolvePossibilities(opts, segment, ref));
+			if (
+				applicable
+					.map(tuple => tuple[1].variables[name].hasUpdated)
+					.includes(true)
+			) { // ignore non-updated values
+				let res = this.variables[name].createResolutionPoint(
+					applicable.map(tuple => tuple[1].variables[name]),
+					applicable,
+					segment,
+					ref
+				);
+
+				let j=0;
+				for (let i=0; i<preambles.length; i++) {
+					if (scopes[i][1].variables[name].isClone) {
+						preambles[i].append(res.preambles[j]);
+						j++;
+					}
+				}
+
+				frag.append(res.frag);
+			}
 		}
 
-		return frag;
+		return {frag, preambles};
 	}
 }
 

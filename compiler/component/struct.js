@@ -34,49 +34,69 @@ class Structure extends TypeDef {
 	 * @param {String} name
 	 * @returns {Object}
 	 */
-	getTerm(name, register) {
+	getTerm (name, register, ref) {
 		let found = false;
 		let i = 0;
-		for (; i<this.terms.length && !found; i++) {
-			if (this.terms[i].name == name.tokens) {
-				found = true;
-				break;
+		if (typeof(name) == "number") {
+			found = i < this.terms.length;
+			i = name;
+		} else{
+			for (; i<this.terms.length && !found; i++) {
+				if (this.terms[i].name == name.tokens) {
+					found = true;
+					break;
+				}
 			}
 		}
 		if (!found) {
 			return null;
 		}
 
-		let preamble = new LLVM.Fragment();
-		let signature = `.${i}`;
-		let instruction = new LLVM.GEP(
-			register.type.duplicate().offsetPointer(-1, register.declared).toLLVM(),
-			register.toLLVM(),
-			[
-				new LLVM.Argument(
-					Primative.types.i32.toLLVM(),
-					new LLVM.Constant("0", name.ref.start),
-					name.ref.start
-				),
-				new LLVM.Argument(
-					new LLVM.Type("i32", 0, name.ref.start),
-					new LLVM.Constant(i.toString(), name.ref.start)
-				)
-			],
-			name.ref.start
-		);
+		let res = this.accessGEPByIndex(i, register, ref);
 
-		return { preamble, instruction, signature, typeRef: this.terms[i].typeRef };
+		return {
+			preamble: res.preamble,
+			instruction: res.instruction,
+			index: i,
+			type: res.type
+		};
 	}
 
-	parse() {
+	getTermCount () {
+		return this.terms.length;
+	}
+
+	accessGEPByIndex (i, register, ref) {
+		return {
+			preamble: new LLVM.Fragment(),
+			instruction: new LLVM.GEP(
+				register.type.duplicate().offsetPointer(-1, register.declared).toLLVM(),
+				register.store,
+				[
+					new LLVM.Argument(
+						Primative.types.i32.toLLVM(),
+						new LLVM.Constant("0", ref),
+						ref
+					),
+					new LLVM.Argument(
+						new LLVM.Type("i32", 0, ref),
+						new LLVM.Constant(i.toString(), ref)
+					)
+				],
+				ref
+			),
+			type: this.terms[i].typeRef
+		}
+	}
+
+	parse () {
 		this.name = this.ast.tokens[0].tokens;
 		this.represent = "%struct." + (
 			this.external ? this.name : `${this.name}.${this.ctx.getFileID().toString(36)}`
 		);
 	}
 
-	link(stack = []) {
+	link (stack = []) {
 		if (stack.indexOf(this) != -1) {
 			this.ctx.getFile().throw(
 				`Error: Structure ${this.name} contains itself, either directly or indirectly`,
@@ -126,7 +146,7 @@ class Structure extends TypeDef {
 		}
 	}
 
-	compile() {
+	compile () {
 		let types = [];
 		for (let name in this.terms) {
 			types.push(this.terms[name].toLLVM());

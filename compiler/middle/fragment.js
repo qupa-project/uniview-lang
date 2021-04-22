@@ -31,8 +31,11 @@ class Fragment extends Instruction {
 		}
 	}
 
-	flattern () {
-		return this.stmts.map(x => x.flattern()).join("\n");
+	flattern (indent = 0) {
+		return this.stmts
+			.map(x => x.flattern(indent))
+			.filter(x => x.length !== 0)
+			.join("\n");
 	}
 }
 

@@ -10,6 +10,7 @@ const Primative = {
 };
 
 const ExecutionFlow = require('./flow.js');
+const Structure = require('../struct.js');
 
 class Execution extends ExecutionFlow {
 
@@ -31,6 +32,8 @@ class Execution extends ExecutionFlow {
 			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
 			return null;
 		}
+		frag.append(access.preamble);
+		access = access.variable;
 
 
 		// Resolve the expression
@@ -56,15 +59,19 @@ class Execution extends ExecutionFlow {
 		return frag;
 	}
 
-	compile_declare(ast) {
+	compile_declare (ast) {
 		let	name = ast.tokens[1].tokens;
 		let frag = new LLVM.Fragment();
 
 		let typeRef = this.resolveType(ast.tokens[0]);
-		typeRef.localLife = ast.tokens[0];
 		if (!(typeRef instanceof TypeRef)) {
 			this.getFile().throw(`Error: Invalid type name "${Flattern.DataTypeStr(ast.tokens[0])}"`, ast.ref.start, ast.ref.end);
 			return null;
+		}
+		typeRef.localLife = ast.tokens[0];
+
+		if (typeRef.type instanceof Structure || typeRef.type instanceof Array) {
+			typeRef.pointer++;
 		}
 
 		this.scope.register_Var(
@@ -81,7 +88,7 @@ class Execution extends ExecutionFlow {
 	 * @param {BNF_Node} ast
 	 * @returns {LLVM.Fragment}
 	 */
-	compile_declare_assign(ast) {
+	compile_declare_assign (ast) {
 		let frag = new LLVM.Fragment();
 
 		let declare = this.compile_declare(ast);
@@ -122,7 +129,7 @@ class Execution extends ExecutionFlow {
 	 * Used in other compile functions
 	 * @param {BNF_Node} ast
 	 */
-	compile_call(ast) {
+	compile_call (ast) {
 		let instruction = null;
 		let preamble    = new LLVM.Fragment();
 		let epilog      = new LLVM.Fragment();
@@ -183,15 +190,37 @@ class Execution extends ExecutionFlow {
 		if (!target) {
 			let funcName = Flattern.VariableStr(ast.tokens[0]);
 			file.throw(
-				`Error: Unable to find function "${funcName}" with signature ${signature.join(", ")}`,
+				`Error: Unable to find function "${funcName}" with signature (${signature.join(", ")})`,
 				ast.ref.start, ast.ref.end
 			);
 			return null;
 		}
 
 
-		// Generate the LLVM for the call
-		//   Mark any parsed pointers as now being concurrent
+
+		let complex = !target.isInline &&
+			target.returnType.type instanceof Structure;
+		let callVal;
+		if (complex) {
+			let id = new LLVM.ID();
+			preamble.append(new LLVM.Set(
+				new LLVM.Name(id, false, ast.ref),
+				new LLVM.Alloc(target.returnType.duplicate().offsetPointer().toLLVM(), ast.ref),
+				ast.ref
+			));
+
+			callVal = new LLVM.Name(id.reference(), false, ast.ref);
+
+			args = [
+				new LLVM.Argument(
+					target.returnType.toLLVM(ast.ref),
+					callVal
+				),
+				...args
+			]
+		}
+
+
 		if (target.isInline) {
 			let inner = target.generate(regs, args);
 			preamble.merge(inner.preamble);
@@ -200,16 +229,27 @@ class Execution extends ExecutionFlow {
 			returnType = inner.type;
 		} else {
 			instruction = new LLVM.Call(
-				new LLVM.Type(target.returnType.type.represent, target.returnType.pointer, ast.ref.start),
+				complex ?
+					new LLVM.Type("void", 0, ast.ref) :
+					target.returnType.toLLVM(ast.ref),
 				new LLVM.Name(target.represent, true, ast.tokens[0].ref),
 				args,
 				ast.ref.start
 			);
 			returnType = target.returnType;
-
-			// Mark this function as being called for the callgraph
-			// this.getFunctionInstance().addCall(target);
 		}
+
+
+		// Complex functions do not return real values
+		// Instead the result is stored in the first argument
+		if (complex) {
+			preamble.append(instruction);
+			instruction = new LLVM.Argument(
+				target.returnType.toLLVM(),
+				callVal
+			);
+		}
+
 
 		return { preamble, instruction, epilog, type: returnType };
 	}
@@ -219,7 +259,7 @@ class Execution extends ExecutionFlow {
 	 * @param {BNF_Reference} ast
 	 * @returns {LLVM.Fragment}
 	 */
-	compile_call_procedure(ast) {
+	compile_call_procedure (ast) {
 		let frag = new LLVM.Fragment(ast);
 		let out = this.compile_call(ast);
 		if (out === null) {
@@ -237,8 +277,56 @@ class Execution extends ExecutionFlow {
 
 
 
+	compile_decompose (ast) {
+		let frag = new LLVM.Fragment();
 
-	compile_return(ast){
+		let target = this.getVar(ast.tokens[0], true);
+		if (target.error) {
+			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
+			return null;
+		}
+		frag.append(target.preamble);
+		target = target.variable;
+
+		let res = target.decompose(ast.ref);
+
+		/* jshint ignore:start*/
+		if (res?.error) {
+			this.getFile().throw( res.msg, res.ref.start, res.ref.end);
+			return null;
+		}
+		/* jshint ignore:end*/
+
+		frag.append(res);
+		return frag;
+	}
+	compile_compose (ast) {
+		let frag = new LLVM.Fragment();
+
+		let target = this.getVar(ast.tokens[0], true);
+		if (target.error) {
+			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
+			return null;
+		}
+		frag.append(target.preamble);
+		target = target.variable;
+
+		let res = target.compose(ast.ref);
+		if (res.error) {
+			this.getFile().throw( res.msg, res.ref.start, res.ref.end);
+			return null;
+		}
+		frag.append(res);
+
+		return frag;
+	}
+
+
+
+
+
+
+	compile_return (ast){
 		let frag = new LLVM.Fragment();
 		let inner = null;
 
@@ -253,7 +341,88 @@ class Execution extends ExecutionFlow {
 			}
 			returnType = res.type;
 			frag.merge(res.preamble);
-			inner = res.instruction;
+			if (returnType.type instanceof Structure) {
+				// Structures are parsed by pointer
+
+				let sizePtrID = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(sizePtrID, false, ast.ref),
+					new LLVM.GEP(
+						returnType.duplicate().offsetPointer(-1).toLLVM(),
+						new LLVM.Argument(
+							returnType.duplicate().toLLVM(),
+							new LLVM.Constant("null", ast.ref),
+							ast.ref
+						),
+						[new LLVM.Argument(
+							new LLVM.Type("i64", 1, ast.ref),
+							new LLVM.Constant("0", ast.ref),
+							ast.ref
+						)]
+					)
+				));
+
+				let sizeID = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(sizeID, false, ast.ref),
+					new LLVM.PtrToInt(
+						new LLVM.Type("i64", 0),
+						new LLVM.Argument(
+							returnType.duplicate().toLLVM(),
+							new LLVM.Name(sizePtrID.reference(), false, ast.ref),
+							ast.ref
+						)
+					)
+				));
+
+				let fromID = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(fromID, false),
+					new LLVM.Bitcast(
+						new LLVM.Type("i8", 1),
+						res.instruction
+					)
+				));
+				let toID = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(toID, false),
+					new LLVM.Bitcast(
+						new LLVM.Type("i8", 1),
+						new LLVM.Argument(
+							returnType.toLLVM(),
+							new LLVM.Name("0", false, ast.ref),
+							ast.ref
+						)
+					)
+				));
+
+				frag.append(new LLVM.Call(
+					new LLVM.Type("void", 0),
+					new LLVM.Name("llvm.memmove.p0i8.p0i8.i64", true),
+					[
+						new LLVM.Argument(
+							new LLVM.Type("i8", 1),
+							new LLVM.Name(toID.reference(), false)
+						),
+						new LLVM.Argument(
+							new LLVM.Type("i8", 1),
+							new LLVM.Name(fromID.reference(), false)
+						),
+						new LLVM.Argument(
+							new LLVM.Type("i64", 0),
+							new LLVM.Name(sizeID.reference(), false)
+						),
+						new LLVM.Argument(
+							new LLVM.Type('i1', 0),
+							new LLVM.Constant("0")
+						)
+					]
+				));
+
+				inner = new LLVM.Type("void", 0, ast.ref);
+			} else {
+				inner = res.instruction;
+			}
 
 			if (res.epilog.stmts.length > 0) {
 				throw new Error("Cannot return using instruction with epilog");
@@ -276,7 +445,7 @@ class Execution extends ExecutionFlow {
 
 
 
-	compile(ast) {
+	compile (ast) {
 		let fragment = new LLVM.Fragment();
 		let returnWarned = false;
 		let failed = false;
@@ -310,6 +479,12 @@ class Execution extends ExecutionFlow {
 				case "if":
 					inner = this.compile_if(token);
 					break;
+				case "compose":
+					inner = this.compile_compose(token);
+					break;
+				case "decompose":
+					inner = this.compile_decompose(token);
+					break;
 				default:
 					this.getFile().throw(
 						`Unexpected statment ${token.type}`,
@@ -341,7 +516,7 @@ class Execution extends ExecutionFlow {
 	 * Deep clone
 	 * @returns {Scope}
 	 */
-	clone() {
+	clone () {
 		let scope = this.scope.clone();
 		let out = new Execution(this, this.returnType, scope);
 		out.isChild = true;

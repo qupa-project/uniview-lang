@@ -8,10 +8,10 @@ class Template {
 		this.instances = {};
 	}
 
-	getType() {
+	getType () {
 		return null;
 	}
-	getFunction() {
+	getFunction () {
 		return null;
 	}
 
@@ -19,15 +19,15 @@ class Template {
 		return this.ctx.getFile();
 	}
 
-	merge(other) {
+	merge (other) {
 		return false;
 	}
 
-	link() {
+	link () {
 		return;
 	}
 
-	compile(){
+	compile (){
 		return new LLVM.Fragment();
 	}
 }

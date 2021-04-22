@@ -8,7 +8,7 @@ class ExecutionBase {
 	 * @param {*} returnType
 	 * @param {*} scope
 	 */
-	constructor(ctx, returnType, scope, entryPoint = new LLVM.ID()) {
+	constructor (ctx, returnType, scope, entryPoint = new LLVM.ID()) {
 		this.ctx        = ctx;
 		this.scope      = scope;
 		this.returnType = returnType;
@@ -22,14 +22,14 @@ class ExecutionBase {
 	 * Return the function this scope is within
 	 * @returns {Function_Instance}
 	 */
-	getFunction(access, signature, template) {
+	getFunction (access, signature, template) {
 		return this.getFile().getFunction(access, signature, template);
 	}
 
 	getFunctionGroup () {
 		return this.ctx.getFunctionGroup();
 	}
-	getFunctionInstance() {
+	getFunctionInstance () {
 		return this.ctx.getFunctionInstance();
 	}
 
@@ -43,7 +43,7 @@ class ExecutionBase {
 	/**
 	 * Return the parent scope if this is a sub scope
 	 */
-	getParent() {
+	getParent () {
 		if (this.ctx instanceof ExecutionBase) {
 			return this.ctx;
 		}
@@ -55,7 +55,7 @@ class ExecutionBase {
 	 *
 	 * @param {BNF_Node} node
 	 */
-	resolveTemplate(node) {
+	resolveTemplate (node) {
 		let template = [];
 		for (let arg of node.tokens) {
 			switch (arg.type) {
@@ -102,33 +102,86 @@ class ExecutionBase {
 	 * @param {*} ast
 	 * @param {Boolean} read
 	 */
-	getVar(ast) {
+	getVar (ast, read = true) {
 		// Link dynamic access arguments
-		ast = this.resolveAccess(ast);
-		let res = this.scope.getVar(ast);
+		ast = this.resolveAccess (ast);
+		let res = this.scope.getVar (ast, read);
 
 		// Inject reference if it is missing
 		if (res.error) {
 			res.ref = res.ref || ast.ref;
 		}
 
-		return res;
+		let preamble = new LLVM.Fragment();
+		let access = ast.tokens[2];
+		while (access.length > 0) {
+			res.hasUpdated = res.hasUpdated || !read;
+			res = res.access(access[0][1], access[0][1].ref);
+			if (res.error) {
+				return res;
+			}
+			preamble.append(res.preamble);
+			res = res.variable;
+
+			access.splice(0, 2);
+		}
+
+		return {
+			preamble: preamble,
+			variable: res
+		};
 	}
 
-	compile_loadVariable(ast) {
-		let target = this.getVar(ast);
-
+	compile_loadVariable (ast) {
+		let preamble = new LLVM.Fragment();
+		let target = this.getVar (ast);
 		if (target.error) {
 			return target;
 		}
+		preamble.merge(target.preamble);
+		target = target.variable;
 
 		let out = target.read(ast.ref);
 		if (out.error) {
 			return out;
 		}
+		preamble.merge(out.preamble);
+
+		if (out.register instanceof LLVM.GEP) {
+			let id = new LLVM.ID();
+
+			preamble.append(new LLVM.Set(
+				new LLVM.Name(id, false, ast.ref),
+				out.register,
+				ast.ref
+			));
+			out.register = new LLVM.Argument(
+				out.type.toLLVM(ast.ref),
+				new LLVM.Name(id.reference(), false, ast.ref),
+				ast.ref
+			);
+
+			if (out.type.type.primative) {
+				let id = new LLVM.ID();
+				preamble.append(new LLVM.Set(
+					new LLVM.Name(id, false, ast.ref),
+					new LLVM.Load(
+						out.type.toLLVM(),
+						out.register.name,
+						ast.ref
+					),
+					ast.ref
+				));
+				out.register = new LLVM.Argument(
+					out.type.toLLVM(ast.ref),
+					new LLVM.Name(id.reference(), false, ast.ref),
+					ast.ref
+				);
+			}
+		}
 
 		return {
-			preamble: out.preamble,
+			preamble: preamble,
 			epilog: new LLVM.Fragment(),
 			type: out.type,
 			instruction: out.register
@@ -184,8 +237,12 @@ class ExecutionBase {
 
 
 
-	sync(branches, segment, ref){
-		return this.scope.sync(branches.map(x => [x.entryPoint, x.scope]), segment, ref);
+	sync (branches, segment, ref){
+		return this.scope.sync(
+			branches.map(x => [x.entryPoint, x.scope]),
+			segment,
+			ref
+		);
 	}
 }
 

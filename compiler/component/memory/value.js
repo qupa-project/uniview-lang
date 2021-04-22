@@ -8,7 +8,7 @@ class Value {
 	 * @param {TypeRef} type
 	 * @param {*} ref
 	 */
-	constructor(type, ref) {
+	constructor (type, ref) {
 		this.type = type;
 		this.ref  = ref;
 	}

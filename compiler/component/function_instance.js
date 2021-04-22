@@ -6,6 +6,7 @@ const LLVM = require('../middle/llvm.js');
 const Execution = require('./execution/index.js');
 const Scope = require('./memory/scope.js');
 const TypeRef = require('./typeRef.js');
+const Structure = require('./struct.js');
 
 
 let funcIDGen = new Generator_ID();
@@ -31,22 +32,22 @@ class Function_Instance {
 		this.represent = external ? `${this.name}` : `${this.name}.${this.ctx.getFileID().toString(36)}.${this.id.toString(36)}`;
 	}
 
-	markExport() {
+	markExport () {
 		this.represent = this.name;
 	}
 
-	getFileID() {
+	getFileID () {
 		return this.ctx.getFileID();
 	}
 
-	getFile() {
+	getFile () {
 		return this.ctx.getFile();
 	}
 
-	getFunctionGroup() {
+	getFunctionGroup () {
 		return this.ctx.getFunctionGroup();
 	}
-	getFunctionInstance() {
+	getFunctionInstance () {
 		return this;
 	}
 
@@ -80,6 +81,11 @@ class Function_Instance {
 			let search = exec.resolveType(type);
 			if (search instanceof TypeRef) {
 				search.pointer = type.tokens[0]; // Copy the pointer level across
+
+				if (search.type instanceof Structure) {
+					search.offsetPointer(1);
+				}
+
 				this.signature.push(search);
 			} else {
 				file.throw(
@@ -121,7 +127,7 @@ class Function_Instance {
 
 
 
-	compile() {
+	compile () {
 		if (this.abstract) {
 			return null;
 		}
@@ -145,11 +151,26 @@ class Function_Instance {
 		if (res == null) {
 			return null;
 		}
+		let argsRegs = res.registers;
+
+		let id = new LLVM.ID();
+		let complex = this.returnType.type instanceof Structure;
+		if (complex) {
+			argsRegs = [
+				new LLVM.Argument(
+					this.returnType.toLLVM(),
+					new LLVM.Name(id, false)
+				),
+				...argsRegs
+			];
+		}
 
 		let frag = new LLVM.Procedure(
-			this.returnType.toLLVM(head.tokens[0].ref),
+			complex ?
+				new LLVM.Type("void", 0, head.tokens[0].ref) :
+				this.returnType.toLLVM(head.tokens[0].ref),
 			new LLVM.Name(this.represent, true, head.tokens[1].ref),
-			res.registers,
+			argsRegs,
 			"#1",
 			this.external,
 			this.ref

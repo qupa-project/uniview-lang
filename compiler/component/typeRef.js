@@ -9,7 +9,7 @@ class TypeRef {
 	 * @param {Number} pointerLvl
 	 * @param {Type} type
 	 */
-	constructor(pointerLvl, type) {
+	constructor (pointerLvl, type) {
 		this.pointer = pointerLvl;
 		this.type = type;
 	}
@@ -42,7 +42,7 @@ class TypeRef {
 	 * Increases/decreases the pointer reference level
 	 * @param {Number} inc
 	 */
-	offsetPointer(inc) {
+	offsetPointer (inc) {
 		this.pointer += inc;
 		return this;
 	}

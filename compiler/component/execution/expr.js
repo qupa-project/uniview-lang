@@ -15,7 +15,7 @@ class ExecutionExpr extends ExecutionBase {
 	 * Used in other compile functions
 	 * @param {BNF_Node} ast
 	 */
-	compile_constant(ast) {
+	compile_constant (ast) {
 		let preamble = new LLVM.Fragment();
 		let type = null;
 		let val = null;
@@ -30,7 +30,7 @@ class ExecutionExpr extends ExecutionBase {
 			case "boolean":
 				type = new TypeRef(0, Primative.types.bool);
 				val = new LLVM.Constant(
-					val == "true" ? 1 : 0,
+					ast.tokens[0].tokens == "true" ? 1 : 0,
 					ast.ref.start
 				);
 				break;
@@ -116,7 +116,7 @@ class ExecutionExpr extends ExecutionBase {
 	}
 
 
-	compile_expr_arithmetic(ast) {
+	compile_expr_arithmetic (ast) {
 		let action = null;
 		switch (ast.type) {
 			case "expr_add":
@@ -148,7 +148,6 @@ class ExecutionExpr extends ExecutionBase {
 			this.compile_expr_opperand(ast.tokens[0]),
 			this.compile_expr_opperand(ast.tokens[2])
 		];
-
 
 		// Append the load instructions
 		preamble.merge(opperands[0].preamble);
@@ -214,7 +213,7 @@ class ExecutionExpr extends ExecutionBase {
 		};
 	}
 
-	compile_expr_compare(ast) {
+	compile_expr_compare (ast) {
 		let preamble = new LLVM.Fragment();
 		let epilog = new LLVM.Fragment();
 
@@ -325,7 +324,7 @@ class ExecutionExpr extends ExecutionBase {
 		};
 	}
 
-	compile_expr_bool(ast) {
+	compile_expr_bool (ast) {
 		let preamble = new LLVM.Fragment();
 		let epilog = new LLVM.Fragment();
 
@@ -431,12 +430,12 @@ class ExecutionExpr extends ExecutionBase {
 				throw new Error(`Unexpected expression type ${ast.type}`);
 		}
 
-		if (res.error) {
-			this.getFile().throw( res.msg, res.ref.start, res.ref.end );
+		if (res === null) {
 			return null;
 		}
 
-		if (res === null) {
+		if (res.error) {
+			this.getFile().throw( res.msg, res.ref.start, res.ref.end );
 			return null;
 		}
 

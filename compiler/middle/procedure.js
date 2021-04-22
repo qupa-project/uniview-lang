@@ -28,7 +28,7 @@ class Procedure extends Fragment {
 		super.assign_ID(gen);
 	}
 
-	flattern () {
+	flattern (indent = 0) {
 		let out = `${this.external ? "declare" : "define"} dso_local ` +
 			`${this.rtrnType.flattern()} ` +
 			`${this.name.flattern()} ` +
@@ -37,7 +37,10 @@ class Procedure extends Fragment {
 
 		if (this.stmts.length > 0) {
 			out += ` {\n` +
-				`${this.stmts.map(x => x.flattern(2)).join("\n")}` +
+				`${this.stmts
+						.map(x => x.flattern(indent+2))
+						.filter(x => x.length !== 0)
+						.join("\n")}` +
 				`\n}`;
 		}
 

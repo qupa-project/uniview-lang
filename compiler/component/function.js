@@ -15,23 +15,23 @@ class Function {
 		this.register(ast, external, abstract);
 	}
 
-	getFileID() {
+	getFileID () {
 		return this.ctx.getFileID();
 	}
 
-	getFile() {
+	getFile () {
 		return this.ctx.getFile();
 	}
 
-	getFunctionGroup() {
+	getFunctionGroup () {
 		return this;
 	}
 
-	register(ast, external = false, abstract = false) {
+	register (ast, external = false, abstract = false) {
 		this.instances.push(new Function_Instance( this, ast, external, abstract ));
 	}
 
-	registerExport() {
+	registerExport () {
 		if (this.instances.length > 1) {
 			this.getFile().throw(`Link Error: Cannot export function ${this.name} with more than once instances`, this.ref);
 			console.error(this.instances);
@@ -39,7 +39,7 @@ class Function {
 		this.instances[0].markExport();
 	}
 
-	getFunction(variable, signature) {
+	getFunction (variable, signature) {
 		if (variable.length != 0) {
 			return null;
 		}
@@ -47,7 +47,7 @@ class Function {
 		return this.matchSignature(signature);
 	}
 
-	matchSignature(sig) {
+	matchSignature (sig) {
 		for (let instance of this.instances) {
 			if (instance.matchSignature(sig)) {
 				return instance;
@@ -57,7 +57,7 @@ class Function {
 		return null;
 	}
 
-	merge(other){
+	merge (other){
 		for (let instance of this.instances) {
 			if (instance.match(other.instances[0])) {
 				return false;
@@ -69,7 +69,7 @@ class Function {
 		return true;
 	}
 
-	link() {
+	link () {
 		for (let instance of this.instances) {
 			instance.link();
 		}
@@ -77,7 +77,7 @@ class Function {
 		return;
 	}
 
-	compile() {
+	compile () {
 		let fragment = new LLVM.Fragment();
 		fragment.append(new LLVM.WPad(1));
 		fragment.append(new LLVM.Comment(`Function Group "${this.name}":`));

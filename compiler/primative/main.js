@@ -4,6 +4,7 @@ const Project = require('../component/project.js');
 const Function = require('./../component/function.js');
 
 const Array_Template = require('./array.js');
+const Blank = require('./blank.js');
 const Static_Cast = require('./static_cast.js');
 const SizeOf = require('./sizeof.js');
 const types = require('./types.js');
@@ -24,6 +25,7 @@ function Generate (ctx) {
 
 	file.names.static_cast = new Static_Cast(file);
 	file.names.sizeof = new SizeOf(file);
+	file.names.Blank = new Blank(file);
 
 	file.names.Array = new Array_Template(file);
 
