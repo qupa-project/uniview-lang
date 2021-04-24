@@ -5,6 +5,7 @@
 ### Fixes
 - [x] Fixed not parsing structures properly on return
 - [x] Fixed printing error buffer twice on clang compilation failure
+- [x] Fixed crash when using undefined type in template
 
 ## v0.0.0
 
