@@ -64,6 +64,23 @@ let types = {
 			start: null,
 			end: null
 		}
+	}, true),
+
+	string: new TypeDef(null, {
+		tokens: [
+			{
+				type   : "name",
+				tokens : "i8"
+			},
+			{
+				type   : "integer",
+				tokens : "1"
+			}
+		],
+		ref: {
+			start: null,
+			end: null
+		}
 	}, true)
 };
 
@@ -124,28 +141,11 @@ types.uint   = types.u32;
 types.ulong  = types.u64;
 
 
+// Update primative types correct type system
 for (let key in types) {
 	types[key].primative = true;
 	types[key].typeSystem = 'normal';
 }
-
-
-types.string = new TypeDef(null, {
-	tokens: [
-		{
-			type   : "name",
-			tokens : "i8"
-		},
-		{
-			type   : "integer",
-			tokens : "1"
-		}
-	],
-	ref: {
-		start: null,
-		end: null
-	}
-}, true);
 types.string.typeSystem = "linear";
 types.string.primative = true;
 
