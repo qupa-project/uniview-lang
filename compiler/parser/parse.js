@@ -725,7 +725,7 @@ function Simplify_Expr_NoPrecedence (node) {
 			return Simplify_Expr_Opperand(node.tokens[0]);
 		case "expr_bool":
 			return Simplify_Expr_Bool(node.tokens[0]);
-		case "expr_lend":
+		case "expr_clone":
 			return Simplify_Expr_Clone(node.tokens[0]);
 		default:
 			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
