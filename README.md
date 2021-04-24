@@ -22,3 +22,4 @@ fn main(): int {
 | `-s` | The compilation level to perform `llvm`, `assembly` |
 | `--execute` | Executes the binary output after successful compilation |
 | `--version` | Prints the version of the compiler |
+| `--opt {num}` | Runs optimisation passes over the output (any number between 0-3 inclusive) |

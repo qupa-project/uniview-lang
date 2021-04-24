@@ -4,7 +4,8 @@
 
 ### Added
 - [x] Able to create a clone of any linear value
-- [x] Able to parse any linear variable forward to a function call and reassign the result
+- [x] Able to parse any linear variable forward to a function call and reasign the modified result
+- [x] Added compiler parameter for llvm optimisation sweeps
 
 ### Fixes
 - [x] Fixed not parsing structures properly on return
