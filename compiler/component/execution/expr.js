@@ -438,16 +438,6 @@ class ExecutionExpr extends ExecutionBase {
 	compile_expr_lend(ast) {
 		let preamble = new LLVM.Fragment();
 
-		let res = this.compile_loadVariable(ast);
-		preamble.merge(res.preamble);
-
-		if (!(res.type.type instanceof Structure)) {
-			this.getFile().throw(
-				`Error: Unable to clone non-linear types`,
-				ast.ref.start, ast.ref.end
-			);
-		}
-
 		let target = this.getVar(ast, false);
 		if (target.error) {
 			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
@@ -456,13 +446,14 @@ class ExecutionExpr extends ExecutionBase {
 		preamble.merge(target.preamble);
 		target = target.variable;
 
-		target.markUpdated(res.instruction);
+		let act = target.lend(ast.ref);
+		preamble.merge(act.preamble);
 
 		return {
 			preamble,
-			instruction: res.instruction,
+			instruction: act.instruction,
 			epilog: new LLVM.Fragment(),
-			type: res.type
+			type: act.type
 		};
 	}
 

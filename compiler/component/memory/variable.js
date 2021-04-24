@@ -114,6 +114,30 @@ class Variable extends Value {
 		return out;
 	}
 
+	lend (ref) {
+		if (!(this.type.type instanceof Structure)) {
+			return {
+				error: true,
+				msg: `Error: Unable to lend non-linear types`,
+				ref: ref
+			};
+		}
+
+
+		let out = this.resolve(ref, false);
+		if (out.error) {
+			return out;
+		}
+		this.store = out.register;
+
+
+		return {
+			preamble: out.preamble,
+			instruction: out.register,
+			type: this.type
+		};
+	}
+
 
 
 
