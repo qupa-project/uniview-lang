@@ -24,7 +24,7 @@ class Template_Primative_Blank extends Template {
 			return false;
 		}
 
-		if (!(template[0].type instanceof Structure)) {
+		if (!(template[0].type.typeSystem == "linear")) {
 			return false;
 		}
 

@@ -455,6 +455,7 @@ class ExecutionExpr extends ExecutionBase {
 		 *   - The value is not a constant
 		 *   - The expected type is known
 		 */
+
 		if (
 			simple &&
 			!( res.instruction instanceof LLVM.Argument )
@@ -462,12 +463,12 @@ class ExecutionExpr extends ExecutionBase {
 			let inner = res.instruction;
 			let irType = null;
 			if (expects) {
-				irType = new LLVM.Type(expects.type.represent, expects.pointer, ast.ref.start)
+				irType = expects.toLLVM();
 			} else {
 				if (!res.type) {
 					throw new Error("Error: Cannot simplify due to undeduceable type");
 				}
-				irType = res.type;
+				irType = res.type.toLLVM();
 			}
 
 

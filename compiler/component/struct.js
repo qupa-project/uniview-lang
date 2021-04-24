@@ -14,6 +14,8 @@ class Struct_Term {
 		this.typeRef = typeRef;
 		this.declared = ref;
 		this.size = typeRef.pointer > 0 ? 4 : typeRef.type.size;
+
+		this.typeSystem = "linear";
 	}
 
 	toLLVM() {

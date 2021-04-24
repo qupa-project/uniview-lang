@@ -200,10 +200,17 @@ class ExecutionBase {
 			return null;
 		}
 
-		return this.getFile().getType(
+		let type = this.getFile().getType(
 			Flattern.DataTypeList(node),
 			template
 		);
+
+		// Linear types are handled by address, not value
+		if (type.type.typeSystem == "linear") {
+			type.pointer++;
+		}
+
+		return type;
 	}
 
 	/**

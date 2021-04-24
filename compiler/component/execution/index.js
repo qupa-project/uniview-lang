@@ -70,7 +70,7 @@ class Execution extends ExecutionFlow {
 		typeRef.localLife = ast.tokens[0];
 
 		// Complex types are handled by address, not value
-		if (typeRef.type instanceof Structure || typeRef.type instanceof Array) {
+		if (typeRef.type.typeSystem == "linear" || typeRef.type instanceof Array) {
 			typeRef.pointer++;
 		}
 
@@ -102,11 +102,6 @@ class Execution extends ExecutionFlow {
 				}"`, ast.ref.start, ast.ref.end);
 				return null;
 			}
-
-			// Complex types are handled by address, not value
-			if (targetType.type instanceof Structure || targetType.type instanceof Array) {
-				targetType.pointer++;
-			}
 		}
 
 
@@ -121,14 +116,7 @@ class Execution extends ExecutionFlow {
 		// If the type was not given, extract it from the expression
 		if (targetType === null) {
 			targetType = expr.type;
-
-			// Complex types are handled by address, not value
-			if (targetType.type instanceof Structure || targetType.type instanceof Array) {
-				targetType.pointer++;
-			}
 		}
-
-
 
 		// Declare the variable and assign it to the expression result
 		let variable = this.scope.register_Var(
@@ -165,7 +153,7 @@ class Execution extends ExecutionFlow {
 		let args = [];
 		let regs = [];
 		for (let arg of ast.tokens[2].tokens) {
-			let expr = this.compile_expr_opperand(arg);
+			let expr = this.compile_expr(arg, null, true);
 			if (expr === null) {
 				return null;
 			} else if (expr.error == true) {
@@ -217,10 +205,8 @@ class Execution extends ExecutionFlow {
 			return null;
 		}
 
-
-
 		let complex = !target.isInline &&
-			target.returnType.type instanceof Structure;
+			target.returnType.type.typeSystem == "linear";
 		let callVal;
 		if (complex) {
 			let id = new LLVM.ID();
@@ -238,9 +224,8 @@ class Execution extends ExecutionFlow {
 					callVal
 				),
 				...args
-			]
+			];
 		}
-
 
 		if (target.isInline) {
 			let inner = target.generate(regs, args);
@@ -270,7 +255,6 @@ class Execution extends ExecutionFlow {
 				callVal
 			);
 		}
-
 
 		return { preamble, instruction, epilog, type: returnType };
 	}
@@ -362,7 +346,7 @@ class Execution extends ExecutionFlow {
 			}
 			returnType = res.type;
 			frag.merge(res.preamble);
-			if (returnType.type instanceof Structure) {
+			if (returnType.type.typeSystem == "linear") {
 				// Structures are parsed by pointer
 
 				let sizePtrID = new LLVM.ID();
