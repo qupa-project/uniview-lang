@@ -1,5 +1,10 @@
 # Change Log
 
+## Upcoming
+
+### Fixes
+- [x] Fixed not parsing structures properly on return
+
 ## v0.0.0
 
 ### Added

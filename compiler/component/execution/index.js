@@ -360,8 +360,8 @@ class Execution extends ExecutionFlow {
 							ast.ref
 						),
 						[new LLVM.Argument(
-							new LLVM.Type("i64", 1, ast.ref),
-							new LLVM.Constant("0", ast.ref),
+							new LLVM.Type("i64", 0, ast.ref),
+							new LLVM.Constant("1", ast.ref),
 							ast.ref
 						)]
 					)
