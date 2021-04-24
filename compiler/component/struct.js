@@ -228,7 +228,7 @@ class Structure extends TypeDef {
 
 		preamble.append(new LLVM.Call(
 			new LLVM.Type("void", 0),
-			new LLVM.Name("llvm.memmove.p0i8.p0i8.i64", true),
+			new LLVM.Name("llvm.memcpy.p0i8.p0i8.i64", true),
 			[
 				new LLVM.Argument(
 					new LLVM.Type("i8", 1),
