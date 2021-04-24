@@ -580,10 +580,6 @@ function Simplify_Func_Args_List (node) {
 	node.reached = null;
 	return node;
 }
-function Simplify_Func_Flags (node) {
-	// TODO
-	return node;
-}
 function Simplify_Call (node) {
 	let out = [
 		Simplify_Variable(node.tokens[0][0]),                                  // Call name
@@ -602,13 +598,21 @@ function Simplify_Call (node) {
 	return node;
 }
 function Simplify_Call_Args (node) {
-	node.tokens = [
-		Simplify_Expr(node.tokens[0][0]) ]
-			.concat( node.tokens[1].map(arg => {
-				return Simplify_Expr(arg.tokens[3][0])
-			}) )
+	node.tokens =
+		[ node.tokens[0][0] ].concat(
+			node.tokens[1].map(arg => arg.tokens[3][0])
+		)
+		.map( x => Simplify_Call_Arg(x) );
+
 	node.reached = null;
 	return node;
+}
+function Simplify_Call_Arg(node) {
+	if (node.tokens[0].type == "expr_lend") {
+		return Simplify_Expr_Lend(node.tokens[0][0]);
+	} else {
+		return Simplify_Expr(node.tokens[0]);
+	}
 }
 
 
@@ -721,6 +725,8 @@ function Simplify_Expr_NoPrecedence (node) {
 			return Simplify_Expr_Opperand(node.tokens[0]);
 		case "expr_bool":
 			return Simplify_Expr_Bool(node.tokens[0]);
+		case "expr_lend":
+			return Simplify_Expr_Clone(node.tokens[0]);
 		default:
 			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
 	}
@@ -827,6 +833,22 @@ function Simplify_Expr_Opperand (node) {
 }
 function Simplify_Expr_Brackets (node) {
 	return Simplify_Expr ( node.tokens[2][0] );
+}
+function Simplify_Expr_Clone (node) {
+	node.tokens = [
+		Simplify_Variable(node.tokens[2][0])
+	];
+	node.reached = null;
+
+	return node;
+}
+function Simplify_Expr_Lend (node) {
+	node.tokens = [
+		Simplify_Variable(node.tokens[2][0])
+	];
+	node.reached = null;
+
+	return node;
 }
 
 
