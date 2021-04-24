@@ -1,14 +1,14 @@
 external assume {
-	void i1_print(bool val);
-	void i1_println(bool val);
-	void i32_print(i32 val);
-	void i32_println(i32 val);
-	void i64_print(i64 val);
-	void i64_println(i64 val);
-	void f32_print(float val);
-	void f32_println(float val);
-	void str_print(string val);
-	void str_println(string val);
+	fn i1_print(val: bool);
+	fn i1_println(val: bool);
+	fn i32_print(val: i32);
+	fn i32_println(val: i32);
+	fn i64_print(val: i64);
+	fn i64_println(val: i64);
+	fn f32_print(val: float);
+	fn f32_println(val: float);
+	fn str_print(val: string);
+	fn str_println(val: string);
 }
 
 
@@ -17,45 +17,45 @@ external assume {
 	Merge multi name C style functions
 	 into single namespace
 ------------------------------------*/
-void print(int val) {
+fn print(val: int) {
 	i32_print(val);
 	return;
 }
-void print(i64 val) {
+fn print(val: i64) {
 	i64_print(val);
 	return;
 }
-void print(float val) {
+fn print(val: float) {
 	f32_print(val);
 	return;
 }
-void print(bool val) {
+fn print(val: bool) {
 	i1_print(val);
 	return;
 }
-void print(string val) {
+fn print(val: string) {
 	str_print(val);
 	return;
 }
 
 
-void println(int val) {
+fn println(val: int) {
 	i32_println(val);
 	return;
 }
-void println(i64 val) {
+fn println(val: i64) {
 	i64_println(val);
 	return;
 }
-void println(float val) {
+fn println(val: float) {
 	f32_println(val);
 	return;
 }
-void println(bool val) {
+fn println(val: bool) {
 	i1_println(val);
 	return;
 }
-void println(string val) {
+fn println(val: string) {
 	str_println(val);
 	return;
 }

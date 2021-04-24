@@ -1,4 +1,4 @@
 external assume {
-	@char malloc(i32 bytes);
-	void free(@char addr);
+	fn malloc(bytes: i32): string;
+	fn free(addr: string);
 }

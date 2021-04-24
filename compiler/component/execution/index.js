@@ -61,7 +61,6 @@ class Execution extends ExecutionFlow {
 
 	compile_declare (ast) {
 		let	name = ast.tokens[1].tokens;
-		let frag = new LLVM.Fragment();
 
 		let typeRef = this.resolveType(ast.tokens[0]);
 		if (!(typeRef instanceof TypeRef)) {
@@ -70,6 +69,7 @@ class Execution extends ExecutionFlow {
 		}
 		typeRef.localLife = ast.tokens[0];
 
+		// Complex types are handled by address, not value
 		if (typeRef.type instanceof Structure || typeRef.type instanceof Array) {
 			typeRef.pointer++;
 		}
@@ -91,32 +91,53 @@ class Execution extends ExecutionFlow {
 	compile_declare_assign (ast) {
 		let frag = new LLVM.Fragment();
 
-		let declare = this.compile_declare(ast);
-		if (declare == null) {
-			return null;
-		}
-		frag.merge(declare);
-
-		let forward = {
-			type: "assign",
-			tokens: [
-				{
-					type: "variable",
-					tokens: [ 0, ast.tokens[1], [] ],
-					ref: ast.tokens[1].ref
-				},
-				ast.tokens[2]
-			],
-			ref: {
-				start: ast.tokens[1].ref.start,
-				end: ast.ref.end
+		// If there is a goal type
+		//   Get the goal type
+		let targetType = null;
+		if (ast.tokens[0] !== null) {
+			targetType = this.resolveType(ast.tokens[0]);
+			if (!(targetType instanceof TypeRef)) {
+				this.getFile().throw(`Error: Invalid type name "${
+					Flattern.DataTypeStr(ast.tokens[0])
+				}"`, ast.ref.start, ast.ref.end);
+				return null;
 			}
-		};
-		let assign = this.compile_assign(forward);
-		if (assign === null) {
+
+			// Complex types are handled by address, not value
+			if (targetType.type instanceof Structure || targetType.type instanceof Array) {
+				targetType.pointer++;
+			}
+		}
+
+
+
+		// Compile the expression
+		let expr = this.compile_expr(ast.tokens[2], targetType, true);
+		if (expr === null) {
 			return null;
 		}
-		frag.merge(assign);
+		frag.merge(expr.preamble);
+
+		// If the type was not given, extract it from the expression
+		if (targetType === null) {
+			targetType = expr.type;
+
+			// Complex types are handled by address, not value
+			if (targetType.type instanceof Structure || targetType.type instanceof Array) {
+				targetType.pointer++;
+			}
+		}
+
+
+
+		// Declare the variable and assign it to the expression result
+		let variable = this.scope.register_Var(
+			targetType,             // type
+			ast.tokens[1].tokens,   // name
+			ast.ref.start           // ref
+		);
+		variable.markUpdated(expr.instruction);
+		frag.merge(expr.epilog);
 
 		return frag;
 	}

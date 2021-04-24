@@ -6,7 +6,7 @@ const syntax = BNF.types.BNF_Tree.fromJSON(
 );
 
 
-function Simplify_Program(node) {
+function Simplify_Program (node) {
 	let out = [];
 	for (let inner of node.tokens[1]) {
 		out.push(Simplify_Stmt_Top(inner.tokens[0][0]));
@@ -18,7 +18,7 @@ function Simplify_Program(node) {
 	return node;
 }
 
-function Simplify_Stmt_Top(node) {
+function Simplify_Stmt_Top (node) {
 	let inner;
 	switch (node.tokens[0].type) {
 		case "comment":
@@ -58,7 +58,7 @@ function Simplify_Stmt_Top(node) {
 
 
 
-function Simplify_Library(node) {
+function Simplify_Library (node) {
 	switch (node.tokens[0].type) {
 		case "import":
 			node.tokens = [ Simplify_Library_Import(node.tokens[0]) ];
@@ -123,14 +123,14 @@ function Simplify_String (node) {
 
 
 
-function Simplify_Class(node) {
+function Simplify_Class (node) {
 	// TODO
 	return node;
 }
 
 
 
-function Simplify_Template(node) {
+function Simplify_Template (node) {
 	node.tokens = Simplify_Template_Args(node.tokens[2][0]).tokens;
 	node.reached = null;
 	return node;
@@ -160,14 +160,14 @@ function Simplify_Template_Arg (node) {
 
 
 
-function Simplify_Flag_Definition(node) {
+function Simplify_Flag_Definition (node) {
 	// TODO
 	return node;
 }
 
 
 
-function Simplify_External(node) {
+function Simplify_External (node) {
 	node.tokens = [
 		node.tokens[2][0].tokens,                        // mode
 		Simplify_External_Body(node.tokens[6][0]).tokens // internal
@@ -175,7 +175,7 @@ function Simplify_External(node) {
 	node.reached = null;
 	return node;
 }
-function Simplify_External_Body(node) {
+function Simplify_External_Body (node) {
 	let out = [];
 	for (let inner of node.tokens[0]) {
 		let next = Simplify_External_Term(inner.tokens[0][0]);
@@ -188,7 +188,7 @@ function Simplify_External_Body(node) {
 	node.reached = null;
 	return node;
 }
-function Simplify_External_Term(node) {
+function Simplify_External_Term (node) {
 	let inner = null;
 	switch (node.tokens[0].type) {
 		case "function_outline":
@@ -212,7 +212,7 @@ function Simplify_External_Term(node) {
 	return inner;
 }
 
-function Simplify_Type_Def(node) {
+function Simplify_Type_Def (node) {
 	node.tokens = [
 		Simplify_Name(node.tokens[2][0]),   // name
 		Simplify_Integer(node.tokens[6][0]) // size
@@ -241,13 +241,23 @@ function Simplify_Struct_Stmt (node) {
 	switch (node.tokens[0].type) {
 		case "comment":
 			break;
-		case "declare":
-			node.tokens = [ Simplify_Declare(node.tokens[0]) ];
+		case "struct_attribute":
+			node.tokens = [ Simplify_Struct_Attribute(node.tokens[0]) ];
 			break;
 		default:
 			throw new Error(`Unexpected structure statement "${node.tokens[0].type}"`);
 	}
 
+	node.reached = null;
+	return node;
+}
+function Simplify_Struct_Attribute (node) {
+	let out = [
+		Simplify_Data_Type(node.tokens[4][0]),
+		Simplify_Name(node.tokens[0][0])
+	];
+
+	node.tokens = out;
 	node.reached = null;
 	return node;
 }
@@ -448,7 +458,7 @@ function Simplify_Boolean (node) {
 
 
 
-function Simplify_Function(node) {
+function Simplify_Function (node) {
 	node.tokens = [
 		Simplify_Function_Head(node.tokens[0][0]), // head
 		Simplify_Function_Body(node.tokens[2][0])  // body
@@ -456,7 +466,7 @@ function Simplify_Function(node) {
 	node.reached = null;
 	return node;
 }
-function Simplify_Function_Outline(node) {
+function Simplify_Function_Outline (node) {
 	node.tokens = [
 		Simplify_Function_Head(node.tokens[0][0])  // head
 	];
@@ -465,12 +475,39 @@ function Simplify_Function_Outline(node) {
 }
 function Simplify_Function_Head (node) {
 	node.tokens = [
-		Simplify_Data_Type  (node.tokens[0][0]), // Return type
+		node.tokens[6][0] ?                      // Return type
+			Simplify_Data_Type  (node.tokens[6][0].tokens[2][0]) :
+			null,
 		Simplify_Name       (node.tokens[2][0]), // Name
 		Simplify_Func_Args  (node.tokens[4][0]), // Arguments
-		Simplify_Func_Flags (node.tokens[6][0])  // Flags
+		[]
 	];
 	node.reached = null;
+
+	// Replace null return type with "void" datatype
+	if (node.tokens[0] === null) {
+		node.tokens[0] = new BNF.types.BNF_SyntaxNode (
+			'data_type',
+			[
+				0,
+				new BNF.types.BNF_SyntaxNode(
+					'name',
+					'void',
+					4,
+					new BNF.types.BNF_Reference(0,0,0),
+					new BNF.types.BNF_Reference(0,0,0),
+					null
+				),
+				[],
+				{ type: 'template', tokens: [], ref: {} }
+			],
+			[],
+			new BNF.types.BNF_Reference(0,0,0),
+			new BNF.types.BNF_Reference(0,0,0),
+			null
+		);
+	}
+
 	return node;
 }
 function Simplify_Function_Body (node) {
@@ -534,9 +571,9 @@ function Simplify_Func_Args_List (node) {
 
 	node.tokens = ittr.map((arg) => {
 		return [
-			Simplify_Data_Type(arg.tokens[0][0]), // type
-			Simplify_Name(arg.tokens[2][0]),      // name
-			arg.tokens[3].length > 0 ? arg.tokens[3].tokens[3][0] : null // default
+			Simplify_Data_Type(arg.tokens[4][0]), // type
+			Simplify_Name(arg.tokens[0][0]),      // name
+			arg.tokens[5].length > 0 ? arg.tokens[5].tokens[3][0] : null // default
 		]
 	});
 
@@ -637,7 +674,7 @@ function Simplify_Return (node) {
 
 function Simplify_Declare (node) {
 	let out = [
-		Simplify_Data_Type(node.tokens[0][0]),
+		Simplify_Data_Type(node.tokens[6][0]),
 		Simplify_Name(node.tokens[2][0])
 	];
 
@@ -647,9 +684,11 @@ function Simplify_Declare (node) {
 }
 function Simplify_Declare_Assign (node) {
 	let out = [
-		Simplify_Data_Type (node.tokens[0][0]),
+		node.tokens[4][0] ?
+			Simplify_Data_Type (node.tokens[4][0].tokens[2][0]) :
+			null,
 		Simplify_Name (node.tokens[2][0]),
-		Simplify_Expr (node.tokens[6][0])
+		Simplify_Expr (node.tokens[7][0])
 	];
 
 	node.tokens = out;
