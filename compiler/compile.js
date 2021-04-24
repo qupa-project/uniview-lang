@@ -111,7 +111,6 @@ if (config.source != "llvm") {
 	let clang = spawnSync('clang++', args);
 
 	if (clang.status === 0){
-		console.info();
 		process.stdout.write(clang.output[2]);
 
 		if (config.execute) {
@@ -122,7 +121,6 @@ if (config.source != "llvm") {
 		}
 	} else {
 		console.error("FAILED TO COMPILE");
-		console.error(clang.output[1]);
 		process.stderr.write(clang.output[2]);
 	}
 }

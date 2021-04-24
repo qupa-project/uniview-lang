@@ -4,6 +4,7 @@
 
 ### Fixes
 - [x] Fixed not parsing structures properly on return
+- [x] Fixed printing error buffer twice on clang compilation failure
 
 ## v0.0.0
 
