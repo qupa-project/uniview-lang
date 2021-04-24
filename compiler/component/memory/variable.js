@@ -114,7 +114,7 @@ class Variable extends Value {
 		return out;
 	}
 
-	lend (ref) {
+	lendValue (ref) {
 		if (!(this.type.type instanceof Structure)) {
 			return {
 				error: true,
@@ -123,7 +123,7 @@ class Variable extends Value {
 			};
 		}
 
-
+		// Resolve to composed state
 		let out = this.resolve(ref, false);
 		if (out.error) {
 			return out;
@@ -134,6 +134,34 @@ class Variable extends Value {
 		return {
 			preamble: out.preamble,
 			instruction: out.register,
+			type: this.type
+		};
+	}
+
+	cloneValue (ref) {
+		if (!(this.type.type instanceof Structure)) {
+			return {
+				error: true,
+				msg: `Error: Unable to lend non-linear types`,
+				ref: ref
+			};
+		}
+
+		// Resolve to composed state
+		let out = this.resolve(ref, false);
+		if (out.error) {
+			return out;
+		}
+		this.store = out.register;
+		let preamble = out.preamble;
+
+		// Clone the register
+		let clone = this.type.type.cloneInstance(out.register, ref);
+		preamble.merge(clone.preamble);
+
+		return {
+			preamble: preamble,
+			instruction: clone.instruction,
 			type: this.type
 		};
 	}

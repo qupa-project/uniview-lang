@@ -402,21 +402,6 @@ class ExecutionExpr extends ExecutionBase {
 	compile_expr_clone (ast) {
 		let preamble = new LLVM.Fragment();
 
-		let res = this.compile_loadVariable(ast);
-		preamble.merge(res.preamble);
-
-		if (!(res.type.type instanceof Structure)) {
-			this.getFile().throw(
-				`Error: Unable to clone non-linear types`,
-				ast.ref.start, ast.ref.end
-			);
-		}
-
-
-		let clone = res.type.type.cloneInstance(res.instruction, res.instruction.ref);
-		preamble.merge(clone.preamble);
-
-
 		let target = this.getVar(ast, false);
 		if (target.error) {
 			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
@@ -425,13 +410,18 @@ class ExecutionExpr extends ExecutionBase {
 		preamble.merge(target.preamble);
 		target = target.variable;
 
-		target.markUpdated(res.instruction);
+		let act = target.cloneValue(ast.ref);
+		if (act.error) {
+			this.getFile().throw( act.msg, act.ref.start, act.ref.end );
+			return null;
+		}
+		preamble.merge(act.preamble);
 
 		return {
 			preamble,
-			instruction: clone.instruction,
+			instruction: act.instruction,
 			epilog: new LLVM.Fragment(),
-			type: res.type
+			type: act.type
 		};
 	}
 
@@ -446,7 +436,11 @@ class ExecutionExpr extends ExecutionBase {
 		preamble.merge(target.preamble);
 		target = target.variable;
 
-		let act = target.lend(ast.ref);
+		let act = target.lendValue(ast.ref);
+		if (act.error) {
+			this.getFile().throw( act.msg, act.ref.start, act.ref.end );
+			return null;
+		}
 		preamble.merge(act.preamble);
 
 		return {
