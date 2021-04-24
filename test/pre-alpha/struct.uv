@@ -1,0 +1,22 @@
+struct Person {
+	id: int;
+	age: int;
+}
+
+
+fn init(ofAge: bool): Person {
+	Person p = Blank#[Person]();
+	if (ofAge) {
+		p.age = 21;
+	} else {
+		p.age = 16;
+	}
+
+	p.id = 0;
+	return p;
+}
+
+
+fn main(): int {
+
+}

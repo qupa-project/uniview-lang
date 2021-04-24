@@ -1,8 +1,8 @@
-void CompareFloats() {
-	float a = 3.0;
-	float b = 7.0;
-	bool c;
-	c = a == b;
+fn CompareFloats() {
+	let a = 3.0;
+	let b = 7.0;
+
+	let c = a == b;
 	c = a != b;
 	c = a > b;
 	c = a < b;
@@ -11,11 +11,11 @@ void CompareFloats() {
 	return;
 }
 
-void CompareInts() {
-	int a = 3;
-	int b = 7;
-	bool c;
-	c = a == b;
+fn CompareInts() {
+	let a = 3;
+	let b = 7;
+
+	let c = a == b;
 	c = a != b;
 	c = a > b;
 	c = a < b;
@@ -24,19 +24,18 @@ void CompareInts() {
 	return;
 }
 
-void CompareBools () {
-	bool a = true;
-	bool b = false;
-	bool c;
+fn CompareBools () {
+	let a = true;
+	let b = false;
 
-	c = !a;
+	let c = !a;
 	c = a || b;
 	c = a && b;
 
 	return;
 }
 
-int main() {
+fn main(): int {
 	CompareFloats();
 	CompareInts();
 	CompareBools();

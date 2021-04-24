@@ -8,21 +8,18 @@
 
 
 external assume {
-	void i32_println(i32 val);
+	fn i32_println(val: i32);
 }
 
 
-i32 main () {
-	i32 a;
-	i32 b;
-
-	a = 1;
-	b = 2;
+fn main (): int {
+	let a = 1;
+	let b = 2;
 
 	i32_println(a);
 	i32_println(b);
 
-	int c = a + b;
+	let c = a + b;
 	i32_println(c);
 
 	c = b;

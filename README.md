@@ -13,6 +13,8 @@ fn main(): int {
 }
 ```
 
+You can also find a few examples in `test/pre-alpha/`.
+
 
 ## Compiler Arguments
 
