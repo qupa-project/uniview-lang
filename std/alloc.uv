@@ -1,0 +1,4 @@
+external assume {
+	fn malloc(bytes: i32): string;
+	fn free(addr: string);
+}

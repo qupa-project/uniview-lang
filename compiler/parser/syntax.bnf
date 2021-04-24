@@ -1,0 +1,197 @@
+program ::= w* ( stmt_top w* )*
+	stmt_top ::= comment | library | class | template_def | struct | flag_definition | external | function
+
+#=============================
+#  Helper patterns
+#=============================
+	w ::= " " | "\t" | nl
+	nl ::= "\r\n" | "\n"
+
+	digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+		digit_nz ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+	letter ::= letter_upper | letter_lower
+		letter_lower ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "t" | "s" | "u" | "v" | "w" | "x" | "y" | "z"
+		letter_upper ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "T" | "S" | "U" | "V" | "W" | "X" | "Y" | "Z"
+
+
+#=============================
+#  Comments
+#=============================
+	comment ::= comment_single | comment_multi
+		comment_single ::= "//" !( nl )* nl
+		comment_multi  ::= "/*" ( "\\*" | !( "*/" )* )* "*/"
+
+
+#=============================
+#  Constants
+#=============================
+	constant ::= boolean | string | hexidecimal | octal | binary | float | integer
+
+	string ::= string_unicode | string_text
+		string_unicode   ::= "\"" ( "\\\"" | !( "\"" ) )* "\""
+		string_text      ::= "'" ( "\\'"  | !( "'"  ) )* "'"
+
+	hexidecimal ::= "0x" hex_char+
+		hex_char ::= digit | "a" | "b" | "c" | "d" | "e" | "f" | "A" | "B" | "C" | "D" | "E" | "F"
+
+	octal ::= "0o" octal_char+
+		octal_char ::= "0" | "1" | "2" | "3"
+
+	binary ::= "0b" ( "0" | "1" )+
+
+	boolean ::= "true" | "false"
+
+	integer ::= "-"? integer_u
+		integer_u ::= ( digit_nz digit* ) | zero
+		zero ::= "0"
+	float   ::= integer "." integer_u ( "e" integer )?
+
+
+#=============================
+#  Variables
+#=============================
+	assign  ::= variable w* "=" w* expr w* ";"
+	declare ::= "let" w+ name w* ":" w* data_type w* ";"
+	declare_assign ::= "let" w+ name w* ( ":" w* data_type w* )? "=" w* expr w* ";"
+
+	name ::= letter ( letter | digit | "_" )*
+	variable ::= name accessor*
+		accessor ::= accessor_dynamic | accessor_static
+			accessor_dynamic ::= "[" w* variable_args w* "]"
+			accessor_static  ::= "." name
+		variable_args ::= variable_arg ( w* "," w* variable_arg )*
+			variable_arg ::= constant | variable
+
+	data_type ::= name data_type_access* template?
+		data_type_access ::= "." name
+
+
+#=============================
+#  Flags
+#=============================
+	flags ::= ":" w* "[" w* flag_args w* "]"
+		flag_args ::= variable ( w* "," w* variable )*
+	flag_definition ::= "flag" w+ name w+ "[" w* name ( w* "," w* name )* w* "]" w* ";"
+
+
+#=============================
+#  Function
+#=============================
+	function ::= func_head w* function_body w* ";"?
+		func_head ::= "fn" w+ name w* func_arguments w* ( ":" w* data_type )?
+			func_arguments ::= "(" w* func_arg_list? ")"
+				func_arg_list ::= func_arg w* ( "," w* func_arg w* )*
+				func_arg      ::= name w* ":" w* data_type ( w* "=" w* constant )?
+		function_body ::= "{" w* ( func_stmt w* )* "}"
+			func_stmt ::= comment | if | for | while | return | composition | declare | assign | declare_assign | call_procedure
+
+	function_outline ::= func_head w* ";"
+
+	call ::= variable template? w* "(" w* call_args? w* ")"
+		call_args ::= expr ( w* "," w* expr )*
+	call_procedure ::= call ";"
+
+	return ::= "return" ( w+ expr )? w* ";"
+
+
+#=============================
+#  Structure
+#=============================
+	struct  ::= "struct" w+ name w+ "{" w* struct_body w* "}" w* ";"?
+		struct_body ::= ( w* struct_stmt )*
+		struct_stmt ::= comment | struct_attribute
+			struct_attribute ::= name w* ":" w* data_type w* ";"
+
+	composition ::= compose | decompose
+		decompose ::= "decompose" w+ variable w* ";"
+		compose   ::= "compose" w+ variable w* ";"
+
+
+#=============================
+#  Class
+#=============================
+	class ::= "class" w+ name w* flags? w* class_inherit? w* "{" class_body "}" w* ";"?
+		class_inherit ::= "extends" w+ variable
+		class_body ::= ( w* class_stmt )* w*
+		class_stmt ::= comment | template | class_access | function | declare | function_outline
+		class_access ::= "public:" | "private:" | "protected:" | "static:"
+
+
+#=============================
+#  Template
+#=============================
+	template_def ::= "template" w* template_arguments w* template_opperand
+		template_def_arguments ::= "(" w* ( template_arg w* )? ( "," w* template_arg w* )* ")"
+			template_def_arg ::= "^"? data_type w+ name flags?
+		template_opperand ::= function_outline | function | class
+
+	template ::= "#[" w* template_args w* "]"
+		template_args ::= template_arg ( w* "," w* template_arg )*
+		template_arg  ::= constant | data_type
+
+
+#=============================
+#  Expression
+#=============================
+	expr ::= w* expr_np
+
+	expr_np       ::= expr_compare | expr_arithmetic | expr_bool | call | expr_op
+		expr_ternary ::= expr_op w* "?" w* expr_op w* ":" w* expr_op
+	expr_bool ::= expr_and | expr_or | expr_not
+		expr_and     ::= expr_op w* "&&" w* expr_op
+		expr_or      ::= expr_op w* "||" w* expr_op
+		expr_not  ::= "!" w* expr_op
+	expr_compare ::= expr_eq | expr_neq | expr_gt | expr_lt | expr_gt_eq | expr_lt_eq
+		expr_eq      ::= expr_op w* "==" w* expr_op
+		expr_neq     ::= expr_op w* "!=" w* expr_op
+		expr_gt      ::= expr_op w* ">" w* expr_op
+		expr_lt      ::= expr_op w* "<" w* expr_op
+		expr_gt_eq   ::= expr_op w* ">=" w* expr_op
+		expr_lt_eq   ::= expr_op w* "<=" w* expr_op
+	expr_arithmetic ::= expr_mod | expr_mul | expr_div | expr_add | expr_sub
+		expr_mod     ::= expr_op w* "%" w*  expr_op
+		expr_mul     ::= expr_op w* "*" w* expr_op
+		expr_div     ::= expr_op w* "/" w* expr_op
+		expr_add     ::= expr_op w* "+" w* expr_op
+		expr_sub     ::= expr_op w* "-" w* expr_op
+	expr_op ::= constant | variable
+		expr_brackets    ::= "(" w* expr w* ")"
+
+
+#=============================
+#  Library Management
+#=============================
+	library ::= import | import
+
+	import ::= import_as | import_direct
+		import_as ::= "import" w* string w* ";"
+		import_direct ::= "import" w* string w+ "as" w+ name w* ";"
+
+
+#=============================
+#  External
+#=============================
+	external ::= "external" w+ external_mode w* "{" w* external_body w* "}" ";"?
+		external_mode ::= "assume" | "export"
+		external_body ::= ( external_term w* )*
+		external_term ::= type_def | struct | function_outline | declare | comment
+
+	type_def ::= "type" w+ name w+ "size" w+ integer w* ";"
+
+
+#=============================
+#  If statement
+#=============================
+	if ::= if_stmt ( w* elif_stmt )* w* else_stmt?
+		if_stmt   ::= "if"   w* "(" w* expr w* ")" w* function_body
+		elif_stmt ::= "elif" w* "(" w* expr w* ")" w* function_body
+		else_stmt ::= "else" w* function_body
+
+
+#=============================
+#  Loops
+#=============================
+	for ::= "for" w* "(" w* for_condition w* ")" w* function_body
+		for_condition ::= expr w* ";" w* expr w* ";" expr
+
+	while ::= "while" w* "(" w* expr w* ")" w* function_body

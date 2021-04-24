@@ -1,0 +1,3 @@
+# Ignore built syntax
+node_modules/*
+syntax.json

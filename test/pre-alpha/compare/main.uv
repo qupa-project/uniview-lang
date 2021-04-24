@@ -1,0 +1,45 @@
+void CompareFloats() {
+	float a = 3.0;
+	float b = 7.0;
+	bool c;
+	c = a == b;
+	c = a != b;
+	c = a > b;
+	c = a < b;
+	c = a >= b;
+	c = a <= b;
+	return;
+}
+
+void CompareInts() {
+	int a = 3;
+	int b = 7;
+	bool c;
+	c = a == b;
+	c = a != b;
+	c = a > b;
+	c = a < b;
+	c = a >= b;
+	c = a <= b;
+	return;
+}
+
+void CompareBools () {
+	bool a = true;
+	bool b = false;
+	bool c;
+
+	c = !a;
+	c = a || b;
+	c = a && b;
+
+	return;
+}
+
+int main() {
+	CompareFloats();
+	CompareInts();
+	CompareBools();
+
+	return 0;
+}
