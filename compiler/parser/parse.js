@@ -609,7 +609,7 @@ function Simplify_Call_Args (node) {
 }
 function Simplify_Call_Arg(node) {
 	if (node.tokens[0].type == "expr_lend") {
-		return Simplify_Expr_Lend(node.tokens[0][0]);
+		return Simplify_Expr_Lend(node.tokens[0]);
 	} else {
 		return Simplify_Expr(node.tokens[0]);
 	}

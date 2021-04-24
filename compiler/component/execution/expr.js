@@ -1,5 +1,6 @@
 const LLVM     = require("../../middle/llvm.js");
 const TypeRef  = require('../typeRef.js');
+const Structure = require('../struct.js');
 
 const Primative = {
 	types: require('../../primative/types.js')
@@ -398,6 +399,74 @@ class ExecutionExpr extends ExecutionBase {
 	}
 
 
+	compile_expr_clone (ast) {
+		let preamble = new LLVM.Fragment();
+
+		let res = this.compile_loadVariable(ast);
+		preamble.merge(res.preamble);
+
+		if (!(res.type.type instanceof Structure)) {
+			this.getFile().throw(
+				`Error: Unable to clone non-linear types`,
+				ast.ref.start, ast.ref.end
+			);
+		}
+
+
+		let clone = res.type.type.cloneInstance(res.instruction, res.instruction.ref);
+		preamble.merge(clone.preamble);
+
+
+		let target = this.getVar(ast, false);
+		if (target.error) {
+			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
+			return null;
+		}
+		preamble.merge(target.preamble);
+		target = target.variable;
+
+		target.markUpdated(res.instruction);
+
+		return {
+			preamble,
+			instruction: clone.instruction,
+			epilog: new LLVM.Fragment(),
+			type: res.type
+		};
+	}
+
+	compile_expr_lend(ast) {
+		let preamble = new LLVM.Fragment();
+
+		let res = this.compile_loadVariable(ast);
+		preamble.merge(res.preamble);
+
+		if (!(res.type.type instanceof Structure)) {
+			this.getFile().throw(
+				`Error: Unable to clone non-linear types`,
+				ast.ref.start, ast.ref.end
+			);
+		}
+
+		let target = this.getVar(ast, false);
+		if (target.error) {
+			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
+			return null;
+		}
+		preamble.merge(target.preamble);
+		target = target.variable;
+
+		target.markUpdated(res.instruction);
+
+		return {
+			preamble,
+			instruction: res.instruction,
+			epilog: new LLVM.Fragment(),
+			type: res.type
+		};
+	}
+
+
 
 	/**
 	 *
@@ -425,6 +494,12 @@ class ExecutionExpr extends ExecutionBase {
 				break;
 			case "expr_bool":
 				res = this.compile_expr_bool(ast.tokens[0]);
+				break;
+			case "expr_clone":
+				res = this.compile_expr_clone(ast.tokens[0]);
+				break;
+			case "expr_lend":
+				res = this.compile_expr_lend(ast.tokens[0]);
 				break;
 			default:
 				throw new Error(`Unexpected expression type ${ast.type}`);

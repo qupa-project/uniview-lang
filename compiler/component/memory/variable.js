@@ -105,9 +105,9 @@ class Variable extends Value {
 			return out;
 		}
 
-		if (this.type.typeSystem == 'linear') {
+		if (this.type.type.typeSystem == 'linear') {
 			this.store = null;
-			this.lastUninit = ref;
+			this.lastUninit = ref.start;
 		}
 
 		out.type = this.type;

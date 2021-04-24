@@ -2,6 +2,10 @@
 
 ## Upcoming
 
+### Added
+- [x] Able to create a clone of any linear value
+- [x] Able to parse any linear variable forward to a function call and reassign the result
+
 ### Fixes
 - [x] Fixed not parsing structures properly on return
 - [x] Fixed printing error buffer twice on clang compilation failure
