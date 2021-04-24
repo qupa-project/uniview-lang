@@ -684,9 +684,11 @@ function Simplify_Declare (node) {
 }
 function Simplify_Declare_Assign (node) {
 	let out = [
-		Simplify_Data_Type (node.tokens[6][0]),
+		node.tokens[4][0] ?
+			Simplify_Data_Type (node.tokens[4][0].tokens[2][0]) :
+			null,
 		Simplify_Name (node.tokens[2][0]),
-		Simplify_Expr (node.tokens[10][0])
+		Simplify_Expr (node.tokens[7][0])
 	];
 
 	node.tokens = out;

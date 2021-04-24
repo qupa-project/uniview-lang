@@ -12,6 +12,7 @@
 - [x] Implemented if statements
 - [x] Clearer Error logs. Embeds code snippet with line ref
 - [x] Strucutre manipulation support
+- [x] No longer required to specify type on define_assign statement
 
 # Changes
 - [x] Now uses colon notation for types
