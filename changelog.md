@@ -22,3 +22,5 @@
 
 ### Tweaks
 - [x] Internal representation of LLVM-IR now allows for latent code branches (sections of code which can be enabled after initial compilation)
+- [x] Now executes clang compilation synchonously for cleaner outputs
+- [x] Won't execute the output if clang compilation fails

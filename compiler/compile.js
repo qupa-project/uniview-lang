@@ -6,7 +6,7 @@ const Project = require('./component/project.js');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { exec, spawn } = require('child_process');
+const { exec, spawn, spawnSync } = require('child_process');
 
 const version = "Compiler v0.0.0";
 const root = path.resolve("./");
@@ -107,18 +107,22 @@ if (config.source != "llvm") {
 	}
 	args = args.concat(["-o", exec_out]);
 
-	let clang = spawn('clang++', args);
 	console.info(`\nclang++ ${args.join(" ")}`);
-	clang.stderr.pipe (process.stderr);
-	clang.stdout.pipe (process.stdout);
+	let clang = spawnSync('clang++', args);
 
+	if (clang.status === 0){
+		console.info();
+		process.stdout.write(clang.output[2]);
 
-	if (config.execute) {
-		clang.on('exit', ()=> {
+		if (config.execute) {
 			console.info('\nRunning...');
 			let app = spawn(exec_out);
 			app.stderr.pipe (process.stderr);
 			app.stdout.pipe (process.stdout);
-		});
+		}
+	} else {
+		console.error("FAILED TO COMPILE");
+		console.error(clang.output[1]);
+		process.stderr.write(clang.output[2]);
 	}
 }

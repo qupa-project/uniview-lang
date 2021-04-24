@@ -82,7 +82,7 @@ class Function_Instance {
 			if (search instanceof TypeRef) {
 				search.pointer = type.tokens[0]; // Copy the pointer level across
 
-				if (search.type instanceof Structure) {
+				if (search.type.typeSystem == "linear") {
 					search.offsetPointer(1);
 				}
 
@@ -154,7 +154,7 @@ class Function_Instance {
 		let argsRegs = res.registers;
 
 		let id = new LLVM.ID();
-		let complex = this.returnType.type instanceof Structure;
+		let complex = this.returnType.type.typeSystem == "linear";
 		if (complex) {
 			argsRegs = [
 				new LLVM.Argument(

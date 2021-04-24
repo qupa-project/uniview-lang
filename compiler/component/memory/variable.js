@@ -129,7 +129,7 @@ class Variable extends Value {
 		}
 
 		// Only structures can be decomposed
-		if (!(this.type.type instanceof Structure)) {
+		if (!(this.type.type.typeSystem == "linear")) {
 			return {
 				error: true,
 				msg: `Cannot decompose none decomposable type ${this.type.type.name}`,
@@ -226,7 +226,7 @@ class Variable extends Value {
 		}
 
 		let struct = this.type.type;
-		if (this.type.type instanceof Structure) {
+		if (this.type.type.typeSystem == "linear") {
 			let res = struct.getTerm(accessor, this, ref);
 			if (res === null) {
 				/* jshint ignore:start*/
