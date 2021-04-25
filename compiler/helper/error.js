@@ -43,7 +43,7 @@ function CodeSection (string, refStart, refEnd) {
 	// 	highlightB
 	// ].join("\n");
 
-	return string.join('\n') + `\n${refStart.toString()} -> ${refEnd.toString()}`;
+	return string.join('\n');
 }
 
 module.exports = {

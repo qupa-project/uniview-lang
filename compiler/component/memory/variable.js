@@ -80,50 +80,14 @@ class Variable extends Value {
 					end: ref.end
 				}
 			};
+		} else {
+			return {
+				register: this.store,
+				preamble: preamble
+			};
 		}
 
-
-		// If the current store is a non-loaded GEP
-		//   Load the GEP ready for use
-		if (this.store instanceof LLVM.GEP) {
-			let id = new LLVM.ID();
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(id, false, ref),
-				this.store,
-				ref
-			));
-
-			this.store = new LLVM.Argument(
-				this.type.toLLVM(ref),
-				new LLVM.Name(id.reference(), false, ref),
-				ref
-			);
-
-			// Non-linear type - hence the value must be loaded
-			if (this.type.type.typeSystem == "normal") {
-				let id = new LLVM.ID();
-				preamble.append(new LLVM.Set(
-					new LLVM.Name(id, false, ref),
-					new LLVM.Load(
-						this.type.toLLVM(),
-						this.store.name,
-						ref
-					),
-					ref
-				));
-				this.store = new LLVM.Argument(
-					this.type.toLLVM(ref),
-					new LLVM.Name(id.reference(), false, ref),
-					ref
-				);
-			}
-		}
-
-
-		return {
-			register: this.store,
-			preamble: preamble
-		};
+		throw "Bad code path";
 	}
 
 
@@ -133,7 +97,7 @@ class Variable extends Value {
 	/**
 	 * Read the value of a variable
 	 * @param {LLVM.BNF_Reference} ref
-	 * @returns {LLVM.Argument|Error}
+	 * @returns {LLVM.Argument}
 	 */
 	read (ref) {
 		let out = this.resolve(ref, false);
@@ -141,158 +105,13 @@ class Variable extends Value {
 			return out;
 		}
 
-		if (this.type.type.typeSystem == 'linear') {
-			if (this.type.lent) {
-				return {
-					error: true,
-					msg: "Cannot give ownership of a borrowed value to a child function",
-					ref
-				};
-			}
-
+		if (this.type.typeSystem == 'linear') {
 			this.store = null;
-			this.lastUninit = ref.start;
+			this.lastUninit = ref;
 		}
 
 		out.type = this.type;
 		return out;
-	}
-
-	/**
-	 * Updated the variable to a new value
-	 * @param {LLVM.Argument} register
-	 * @param {Boolean} force apply the update even if the value is borrowed
-	 * @param {*} ref
-	 * @returns {Error?}
-	 */
-	markUpdated (register, force = false, ref) {
-		if (!force && this.type.lent) {
-			return {
-				error: true,
-				msg: "Cannot overwite a lent value",
-				ref
-			};
-		}
-
-		this.store = register;
-		this.lastUninit = null;
-		this.hasUpdated = true;
-		this.isDecomposed = false;
-
-		return true;
-	}
-
-		/**
-	 *
-	 * @param {BNF_Node} accessor
-	 * @param {BNF_Reference} ref
-	 * @returns {Object[Variable, LLVM.Fragment]|Error}
-	 */
-		 access (accessor, ref) {
-			let preamble = new LLVM.Fragment();
-			if (!this.isDecomposed) {
-				let res = this.decompose(ref);
-				/* jshint ignore:start*/
-				if (res?.error) {
-					return res;
-				}
-				/* jshint ignore:end*/
-				preamble.merge(res);
-			}
-
-			let struct = this.type.type;
-			if (this.type.type.typeSystem == "linear") {
-				let res = struct.getTerm(accessor, this, ref);
-				if (res === null) {
-					/* jshint ignore:start*/
-					return {
-						error: true,
-						msg: `Unable to access element "${accessor?.tokens || accessor}"`,
-						ref: accessor.ref
-					};
-					/* jshint ignore:end*/
-				}
-
-				if (!this.elements.has(res.index)) {
-					let elm = new Variable(res.type, res.index, ref);
-					let act = elm.markUpdated(res.instruction, false, ref);
-					if (act.error) {
-						return res;
-					}
-
-					this.elements.set(res.index, elm);
-				}
-
-				return {
-					variable: this.elements.get(res.index),
-					preamble: preamble
-				};
-			} else {
-				return {
-					error: true,
-					msg: "Unable to access sub-element of non-structure or static array",
-					ref: ref
-				};
-			}
-		}
-
-
-
-	lendValue (ref) {
-		if (!(this.type.type instanceof Structure)) {
-			return {
-				error: true,
-				msg: `Error: Unable to lend non-linear types`,
-				ref: ref
-			};
-		}
-
-		// Resolve to composed state
-		let out = this.resolve(ref, false);
-		if (out.error) {
-			return out;
-		}
-		this.store = out.register;
-
-		let type = this.type.duplicate();
-		type.lent = true;
-
-		return {
-			preamble: out.preamble,
-			instruction: out.register,
-			type: type
-		};
-	}
-
-	cloneValue (ref) {
-		if (!(this.type.type instanceof Structure)) {
-			return {
-				error: true,
-				msg: `Error: Unable to lend non-linear types`,
-				ref: ref
-			};
-		}
-
-		// Resolve to composed state
-		let out = this.resolve(ref, false);
-		if (out.error) {
-			return out;
-		}
-		this.store = out.register;
-		let preamble = out.preamble;
-
-		// Clone the register
-		let clone = this.type.type.cloneInstance(out.register, ref);
-		preamble.merge(clone.preamble);
-
-		let type = this.type.duplicate();
-		type.lent = false;
-
-		return {
-			preamble: preamble,
-			instruction: clone.instruction,
-			type: type
-		};
 	}
 
 
@@ -388,6 +207,70 @@ class Variable extends Value {
 
 
 
+	/**
+	 *
+	 * @param {BNF_Node} accessor
+	 * @param {BNF_Reference} ref
+	 * @returns {Object[Variable, LLVM.Fragment]|Error}
+	 */
+	access (accessor, ref) {
+		let preamble = new LLVM.Fragment();
+		if (!this.isDecomposed) {
+			let res = this.decompose(ref);
+			/* jshint ignore:start*/
+			if (res?.error) {
+				return res;
+			}
+			/* jshint ignore:end*/
+			preamble.merge(res);
+		}
+
+		let struct = this.type.type;
+		if (this.type.type.typeSystem == "linear") {
+			let res = struct.getTerm(accessor, this, ref);
+			if (res === null) {
+				/* jshint ignore:start*/
+				return {
+					error: true,
+					msg: `Unable to access element "${accessor?.tokens || accessor}"`,
+					ref: accessor.ref
+				};
+				/* jshint ignore:end*/
+			}
+
+			if (!this.elements.has(res.index)) {
+				let elm = new Variable(res.type, res.index, ref);
+				elm.markUpdated(res.instruction);
+
+				this.elements.set(res.index, elm);
+			}
+
+			return {
+				variable: this.elements.get(res.index),
+				preamble: preamble
+			};
+		} else {
+			return {
+				error: true,
+				msg: "Unable to access sub-element of non-structure or static array",
+				ref: ref
+			};
+		}
+	}
+
+
+
+
+
+	markUpdated (register) {
+		this.store = register;
+		this.lastUninit = null;
+		this.hasUpdated = true;
+		this.isDecomposed = false;
+	}
+
+
+
 
 
 	/**
@@ -428,7 +311,32 @@ class Variable extends Value {
 				instr.msg, instr.ref
 			), ref);
 		} else if (instr.register instanceof LLVM.GEP) {
-			throw new Error("Bad code path, GEP should have been removed within this.resolve()");
+			let id = new LLVM.ID();
+
+			preamble.append(new LLVM.Set(
+				new LLVM.Name(id, false, ref),
+				instr.register
+			));
+
+			if (this.type.type.primative) {
+				let nx_id = new LLVM.ID();
+				preamble.append(new LLVM.Set(
+					new LLVM.Name(nx_id, false, ref),
+					new LLVM.Load(
+						this.type.toLLVM(),
+						new LLVM.Name(id.reference(), false, ref),
+						ref
+					),
+					ref
+				));
+				id = nx_id;
+			}
+
+			reg = new LLVM.Argument(
+				this.type.toLLVM(),
+				new LLVM.Name(id.reference(), false, ref),
+				ref
+			);
 		} else {
 			reg = instr.register;
 		}
@@ -616,31 +524,6 @@ class Variable extends Value {
 		}
 
 		return out;
-	}
-
-
-	/**
-	 * Trigger falling out of scope behaviour
-	 * @param {BNF_Reference} ref
-	 * @returns {LLVM.Fragment|Error}
-	 */
-	cleanup(ref) {
-		let frag = new LLVM.Fragment();
-
-		if (this.isClone) {            // Do nothing as this variable is a clone
-			return frag;
-		} else if (this.type.lent) {   // Borrowed types need to be recomposed
-			let res = this.resolve(ref, false);
-			if (res.error) {
-				return err;
-			}
-
-			frag.merge(res.preamble);
-		} else {                       // Run destruct behaviour
-
-		}
-
-		return frag;
 	}
 }
 
