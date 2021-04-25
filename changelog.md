@@ -10,11 +10,15 @@
 - [x] Added lending a reference forward to child functions (linear variables only)
 - [x] Added borrow checker ensuring child function doesn't corrupt the reference
 - [x] Added the ability to include external files to the LLVM build pass
+- [x] Added ability to assume more complex external filenames
+- [x] Added a basic math library
+- [x] Added f64 printing
 
 ### Fixes
 - [x] Fixed not parsing structures properly on return
 - [x] Fixed printing error buffer twice on clang compilation failure
 - [x] Fixed crash when using undefined type in template
+- [x] Fixed returning within if-statement causing that branch's instructions to not be saved
 
 ## v0.0.0
 

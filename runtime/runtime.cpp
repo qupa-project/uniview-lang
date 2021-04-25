@@ -10,6 +10,9 @@ extern "C" {
 	void f32_print(float val) {
 		std::cout << val;
 	}
+	void f64_print(double val) {
+		std::cout << val;
+	}
 	void i1_print(bool val) {
 		if (val) {
 			std::cout << "true";
@@ -28,6 +31,9 @@ extern "C" {
 		std::cout << val << std::endl;
 	}
 	void f32_println(float val) {
+		std::cout << val << std::endl;
+	}
+	void f64_println(double val) {
 		std::cout << val << std::endl;
 	}
 	void i1_println(bool val) {

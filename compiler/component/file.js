@@ -109,6 +109,10 @@ class File {
 			case "function":
 				space = new Function(this, element, external, abstract);
 				break;
+			case "function_redirect":
+				space = new Function(this, element, external, false);
+				space.instances[0].represent = element.tokens[1];
+				break;
 			case "import":
 				space = new Import(this, element);
 				break;

@@ -83,9 +83,10 @@ program ::= w* ( stmt_top w* )*
 				func_arg_list ::= func_arg w* ( "," w* func_arg w* )*
 				func_arg      ::= name w* ":" w* "@"? w* data_type
 		function_body ::= "{" w* ( func_stmt w* )* "}"
-			func_stmt ::= comment | if | for | while | return | composition | declare | assign | declare_assign | call_procedure
+			func_stmt ::= comment | if | return | composition | declare | assign | declare_assign | call_procedure
 
 	function_outline ::= func_head w* ";"
+	function_redirect ::= "fn" w+ string w* func_arguments ( w* ":" w* data_type )? w+ "as" w+ name w* ";"
 
 	call ::= variable template? w* "(" w* call_args? w* ")"
 		call_args ::= call_arg ( w* "," w* call_arg )*
@@ -178,9 +179,10 @@ program ::= w* ( stmt_top w* )*
 		include_type ::= "llvm" | "cpp" | "c"
 
 	external ::= "external" w+ external_mode w* "{" w* external_body w* "}" ";"?
-		external_mode ::= "assume" | "assume"
+		external_mode ::= "assume" | "export"
 		external_body ::= ( external_term w* )*
-		external_term ::= type_def | struct | function_outline | declare | comment
+		external_term ::= function_redirect | function_outline | type_def | struct | comment
+		# function_outline
 
 	type_def ::= "type" w+ name w+ "size" w+ integer w* ";"
 
@@ -192,12 +194,3 @@ program ::= w* ( stmt_top w* )*
 		if_stmt   ::= "if"   w* "(" w* expr w* ")" w* function_body
 		elif_stmt ::= "elif" w* "(" w* expr w* ")" w* function_body
 		else_stmt ::= "else" w* function_body
-
-
-#=============================
-#  Loops
-#=============================
-	for ::= "for" w* "(" w* for_condition w* ")" w* function_body
-		for_condition ::= expr w* ";" w* expr w* ";" expr
-
-	while ::= "while" w* "(" w* expr w* ")" w* function_body
