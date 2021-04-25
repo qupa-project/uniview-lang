@@ -1,5 +1,5 @@
 program ::= w* ( stmt_top w* )*
-	stmt_top ::= comment | library | class | template_def | struct | flag_definition | external | function
+	stmt_top ::= comment | library | class | template_def | struct | flag_definition | external | include | function
 
 #=============================
 #  Helper patterns
@@ -174,8 +174,11 @@ program ::= w* ( stmt_top w* )*
 #=============================
 #  External
 #=============================
+	include ::= "include" w+ include_type w* string w* ";"
+		include_type ::= "llvm" | "cpp" | "c"
+
 	external ::= "external" w+ external_mode w* "{" w* external_body w* "}" ";"?
-		external_mode ::= "assume" | "export"
+		external_mode ::= "assume" | "assume"
 		external_body ::= ( external_term w* )*
 		external_term ::= type_def | struct | function_outline | declare | comment
 

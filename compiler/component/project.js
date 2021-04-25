@@ -6,6 +6,7 @@ const File = require('./file.js');
 
 const { dirname, resolve } = require('path');
 const fs = require('fs');
+const path = require('path');
 
 const base = new LLVM.Raw(`attributes #1 = { nounwind "unsafe-fp-math"="false" "use-soft-float"="false" }
 declare void @llvm.memmove.p0i8.p0i8.i64 (i8*, i8*, i64, i1)
@@ -25,6 +26,8 @@ class Project {
 
 		this.exports = [];
 		this.error = false;
+
+		this.includes = [];
 	}
 
 	import (path, entry = false, relation = this.rootPath) {
@@ -83,6 +86,22 @@ class Project {
 		}
 
 		return temp;
+	}
+
+	include (type, filename) {
+		// Shorten the filepath for better logging
+		filename = path.relative(this.rootPath, filename);
+
+		console.info("Including:", filename);
+		this.includes.push([
+			type,
+			filename
+		]);
+	}
+	hasIncluded (filename) {
+		return this.includes
+			.map(x => x[1])
+			.includes(filename);
 	}
 
 	/**
