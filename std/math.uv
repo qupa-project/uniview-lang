@@ -1,11 +1,8 @@
 external assume {
-	// fn "llvm.abs.i8" (val: i8, poison: bool): i8;
-	fn "llvm.abs.i8"  (val: i8, poison: bool) : i8  as abs;
+	fn "llvm.abs.i8"  (val: i8, poison: bool): i8 as abs;
 	fn "llvm.abs.i16" (val: i16, poison: bool): i16 as abs;
 	fn "llvm.abs.i32" (val: i32, poison: bool): i32 as abs;
 	fn "llvm.abs.i64" (val: i64, poison: bool): i64 as abs;
-	fn "llvm.abs.f32" (val: float, poison: bool): double as abs;
-	fn "llvm.abs.f64" (val: double, poison: bool): double as abs;
 
 	fn "llvm.sqrt.f32" (val: float): float as sqrt;
 	fn "llvm.sqrt.f64" (val: double): double as sqrt;
@@ -49,4 +46,38 @@ external assume {
 	fn "llvm.roundeven.f64" (val: double): double as roundeven;
 	fn "llvm.roundl.f64"    (val: double): double as roundTowardsZero;
 	fn "llvm.roundll.f64"   (val: double): double as roundAwayZero;
+}
+
+
+// Defaults for poisons
+fn abs(val: i8): i8 {
+	return abs(val, false);
+}
+fn abs(val: i16): i16 {
+	return abs(val, false);
+}
+fn abs(val: i32): i32 {
+	return abs(val, false);
+}
+fn abs(val: i64): i64 {
+	return abs(val, false);
+}
+fn abs(val: i8): i8 {
+	return abs(val, false);
+}
+
+fn abs(val: double): double {
+	let zero = static_cast#[double](0.0);
+	if (val < zero) {
+		return zero - val;
+	}
+
+	return val;
+}
+fn abs(val: float): float {
+	if (val < 0.0) {
+		return 0.0 - val;
+	} else {
+		return val;
+	}
 }
