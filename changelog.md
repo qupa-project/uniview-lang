@@ -1,5 +1,21 @@
 # Change Log
 
+## Upcoming
+
+### Added
+- [x] Able to create a clone of any linear value
+- [x] Able to parse any linear variable forward to a function call and reasign the modified result
+- [x] Added compiler parameter for llvm optimisation sweeps
+- [x] Added cloning of linear variables
+- [x] Added lending a reference forward to child functions (linear variables only)
+- [x] Added borrow checker ensuring child function doesn't corrupt the reference
+- [x] Added the ability to include external files to the LLVM build pass
+
+### Fixes
+- [x] Fixed not parsing structures properly on return
+- [x] Fixed printing error buffer twice on clang compilation failure
+- [x] Fixed crash when using undefined type in template
+
 ## v0.0.0
 
 ### Added

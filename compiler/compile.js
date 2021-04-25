@@ -26,7 +26,8 @@ if (process.argv.includes("--version")) {
 let config = {
 	output: "out",
 	source: false,
-	execute: false
+	execute: false,
+	optimisation: "0"
 };
 let index = process.argv.indexOf('-o');
 if (index != -1 && index > 2) {
@@ -38,6 +39,12 @@ if (process.argv.includes('--execute')) {
 index = process.argv.indexOf('-s');
 if (index != -1) {
 	config.source = process.argv[index+1] || "asm";
+}
+index = process.argv.indexOf('-opt');
+if (index != -1) {
+	config.optimisation = String(
+		Math.min(3, Number(process.argv[index+1]) || 0)
+	);
 }
 
 
@@ -85,14 +92,12 @@ if (config.execute && config.source !== false) {
 }
 
 if (config.source != "llvm") {
-	let runtime_path = path.resolve(__dirname, "./../runtime/runtime.ll");
-	// let prebuilt_path = path.resolve(__dirname, "./../runtime/prebuilt.ll");
-	let args = [
-		"-x", "ir",
-		runtime_path,
-		"-x", "ir",
-		`${config.output}.ll`
-	];
+	let args = project.includes
+		.concat([
+			["--language=ir", `${config.output}.ll`],
+			[`-O${config.optimisation}`]
+		])
+		.reduce((prev, curr) => prev.concat(curr), []);
 
 	let exec_out = config.output;
 	if (config.source == "asm") {
@@ -108,10 +113,11 @@ if (config.source != "llvm") {
 	args = args.concat(["-o", exec_out]);
 
 	console.info(`\nclang++ ${args.join(" ")}`);
-	let clang = spawnSync('clang++', args);
+	let clang = spawnSync('clang++', args, {
+		cwd: project.rootPath
+	});
 
 	if (clang.status === 0){
-		console.info();
 		process.stdout.write(clang.output[2]);
 
 		if (config.execute) {
@@ -122,7 +128,6 @@ if (config.source != "llvm") {
 		}
 	} else {
 		console.error("FAILED TO COMPILE");
-		console.error(clang.output[1]);
 		process.stderr.write(clang.output[2]);
 	}
 }

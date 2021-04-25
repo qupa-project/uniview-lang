@@ -1,5 +1,6 @@
 const LLVM     = require("../../middle/llvm.js");
 const TypeRef  = require('../typeRef.js');
+const Structure = require('../struct.js');
 
 const Primative = {
 	types: require('../../primative/types.js')
@@ -398,6 +399,59 @@ class ExecutionExpr extends ExecutionBase {
 	}
 
 
+	compile_expr_clone (ast) {
+		let preamble = new LLVM.Fragment();
+
+		let target = this.getVar(ast, false);
+		if (target.error) {
+			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
+			return null;
+		}
+		preamble.merge(target.preamble);
+		target = target.variable;
+
+		let act = target.cloneValue(ast.ref);
+		if (act.error) {
+			this.getFile().throw( act.msg, act.ref.start, act.ref.end );
+			return null;
+		}
+		preamble.merge(act.preamble);
+
+		return {
+			preamble,
+			instruction: act.instruction,
+			epilog: new LLVM.Fragment(),
+			type: act.type
+		};
+	}
+
+	compile_expr_lend(ast) {
+		let preamble = new LLVM.Fragment();
+
+		let target = this.getVar(ast, false);
+		if (target.error) {
+			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
+			return null;
+		}
+		preamble.merge(target.preamble);
+		target = target.variable;
+
+		let act = target.lendValue(ast.ref);
+		if (act.error) {
+			this.getFile().throw( act.msg, act.ref.start, act.ref.end );
+			return null;
+		}
+		preamble.merge(act.preamble);
+
+		return {
+			preamble,
+			instruction: act.instruction,
+			epilog: new LLVM.Fragment(),
+			type: act.type
+		};
+	}
+
+
 
 	/**
 	 *
@@ -425,6 +479,12 @@ class ExecutionExpr extends ExecutionBase {
 				break;
 			case "expr_bool":
 				res = this.compile_expr_bool(ast.tokens[0]);
+				break;
+			case "expr_clone":
+				res = this.compile_expr_clone(ast.tokens[0]);
+				break;
+			case "expr_lend":
+				res = this.compile_expr_lend(ast.tokens[0]);
 				break;
 			default:
 				throw new Error(`Unexpected expression type ${ast.type}`);

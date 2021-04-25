@@ -50,7 +50,7 @@ class Scope {
 			if (this.variables[arg.name]) {
 				this.getFile().throw(
 					`Duplicate use of argument ${arg.name} function`,
-					this.variables[arg.name].declared, ref
+					this.variables[arg.name].declared, arg.ref
 				);
 
 				return null;
@@ -71,10 +71,19 @@ class Scope {
 			));
 
 			// Assigning name space to argument value
-			this.variables[arg.name].markUpdated(new LLVM.Argument(
+			let chg = this.variables[arg.name].markUpdated(new LLVM.Argument(
 				this.variables[arg.name].type.toLLVM(),
 				new LLVM.Name(id.reference(), false)
-			));
+			),
+			true,
+			{
+				start: arg.ref,
+				end: arg.ref
+			});
+			if (chg.error) {
+				this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
+				return null;
+			}
 			this.variables[arg.name].hasUpdated = false;
 		}
 
@@ -191,6 +200,25 @@ class Scope {
 		out.hasUpdated = false;
 
 		return out;
+	}
+
+
+	/**
+	 * Trigger falling out of scope behaviour for all variables
+	 * @param {BNF_Reference} ref
+	 * @returns {LLVM.Fragment|Error}
+	 */
+	cleanup (ref) {
+		let frag = new LLVM.Fragment();
+		for (let name in this.variables) {
+			let res = this.variables[name].cleanup(ref);
+			if (res.error) {
+				return res;
+			}
+			frag.merge(res);
+		}
+
+		return frag;
 	}
 
 	/**
