@@ -130,11 +130,13 @@ class Variable extends Value {
 		}
 		this.store = out.register;
 
+		let type = this.type.duplicate();
+		type.lent = true;
 
 		return {
 			preamble: out.preamble,
 			instruction: out.register,
-			type: this.type
+			type: type
 		};
 	}
 
@@ -159,10 +161,13 @@ class Variable extends Value {
 		let clone = this.type.type.cloneInstance(out.register, ref);
 		preamble.merge(clone.preamble);
 
+		let type = this.type.duplicate();
+		type.lent = false;
+
 		return {
 			preamble: preamble,
 			instruction: clone.instruction,
-			type: this.type
+			type: type
 		};
 	}
 

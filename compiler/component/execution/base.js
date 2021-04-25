@@ -110,6 +110,7 @@ class ExecutionBase {
 		// Inject reference if it is missing
 		if (res.error) {
 			res.ref = res.ref || ast.ref;
+			return res;
 		}
 
 		let preamble = new LLVM.Fragment();

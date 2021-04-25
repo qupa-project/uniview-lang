@@ -569,13 +569,11 @@ function Simplify_Func_Args (node) {
 function Simplify_Func_Args_List (node) {
 	let ittr = node.tokens[0].concat(node.tokens[2].map(x => x.tokens[2][0]));
 
-	node.tokens = ittr.map((arg) => {
-		return [
-			Simplify_Data_Type(arg.tokens[4][0]), // type
-			Simplify_Name(arg.tokens[0][0]),      // name
-			arg.tokens[5].length > 0 ? arg.tokens[5].tokens[3][0] : null // default
-		]
-	});
+	node.tokens = ittr.map((arg) => [
+		arg.tokens[4].length > 0,             // borrowed?
+		Simplify_Data_Type(arg.tokens[6][0]), // type
+		Simplify_Name(arg.tokens[0][0])       // name
+	]);
 
 	node.reached = null;
 	return node;
