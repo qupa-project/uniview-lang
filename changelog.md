@@ -11,6 +11,7 @@
 - [x] Added borrow checker ensuring child function doesn't corrupt the reference
 - [x] Added the ability to include external files to the LLVM build pass
 - [x] Added ability to assume more complex external filenames
+- [x] Added a basic math library
 
 ### Fixes
 - [x] Fixed not parsing structures properly on return

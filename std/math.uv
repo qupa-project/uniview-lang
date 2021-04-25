@@ -1,0 +1,52 @@
+external assume {
+	// fn "llvm.abs.i8" (val: i8, poison: bool): i8;
+	fn "llvm.abs.i8"  (val: i8, poison: bool) : i8  as abs;
+	fn "llvm.abs.i16" (val: i16, poison: bool): i16 as abs;
+	fn "llvm.abs.i32" (val: i32, poison: bool): i32 as abs;
+	fn "llvm.abs.i64" (val: i64, poison: bool): i64 as abs;
+	fn "llvm.abs.f32" (val: float, poison: bool): double as abs;
+	fn "llvm.abs.f64" (val: double, poison: bool): double as abs;
+
+	fn "llvm.sqrt.f32" (val: float): float as sqrt;
+	fn "llvm.sqrt.f64" (val: double): double as sqrt;
+
+	fn "llvm.powi.f32" (val: float, exp: int): float as powi;
+	fn "llvm.pow.f32"  (val: float, exp: float): float as pow;
+	fn "llvm.powi.f64" (val: double, exp: int): double as powi;
+	fn "llvm.pow.f64"  (val: double, exp: double): double as pow;
+
+	fn "llvm.sin.f32" (val: float): float as sin;
+	fn "llvm.cos.f32" (val: float): float as cos;
+	fn "llvm.tan.f32" (val: float): float as tan;
+	fn "llvm.sin.f64" (val: double): double as sin;
+	fn "llvm.cos.f64" (val: double): double as cos;
+	fn "llvm.tan.f64" (val: double): double as tan;
+
+	fn "llvm.exp.f32"  (val: float): float as exp;
+	fn "llvm.exp2.f32" (val: float): float as exp2;
+	fn "llvm.exp.f64"  (val: double): double as exp;
+	fn "llvm.exp2.f64" (val: double): double as exp2;
+
+	fn "llvm.log.f32"   (val: float): float as log;
+	fn "llvm.log2.f32"  (val: float): float as log2;
+	fn "llvm.log10.f32" (val: float): float as log10;
+	fn "llvm.log.f64"   (val: double): double as log;
+	fn "llvm.log2.f64"  (val: double): double as log2;
+	fn "llvm.log10.f64" (val: double): double as log10;
+
+
+	fn "llvm.floor.f32"     (val: float): float as floor;
+	fn "llvm.ceil.f32"      (val: float): float as ceil;
+	fn "llvm.trunc.f32"     (val: float): float as trunc;
+	fn "llvm.round.f32"     (val: float): float as round;
+	fn "llvm.roundeven.f32" (val: float): float as roundeven;
+	fn "llvm.roundl.f32"    (val: float): float as roundTowardsZero;
+	fn "llvm.roundll.f32"   (val: float): float as roundAwayZero;
+	fn "llvm.floor.f64"     (val: double): double as floor;
+	fn "llvm.ceil.f64"      (val: double): double as ceil;
+	fn "llvm.trunc.f64"     (val: double): double as trunc;
+	fn "llvm.round.f64"     (val: double): double as round;
+	fn "llvm.roundeven.f64" (val: double): double as roundeven;
+	fn "llvm.roundl.f64"    (val: double): double as roundTowardsZero;
+	fn "llvm.roundll.f64"   (val: double): double as roundAwayZero;
+}
