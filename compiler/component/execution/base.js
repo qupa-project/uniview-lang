@@ -110,6 +110,7 @@ class ExecutionBase {
 		// Inject reference if it is missing
 		if (res.error) {
 			res.ref = res.ref || ast.ref;
+			return res;
 		}
 
 		let preamble = new LLVM.Fragment();
@@ -148,36 +149,7 @@ class ExecutionBase {
 		preamble.merge(out.preamble);
 
 		if (out.register instanceof LLVM.GEP) {
-			let id = new LLVM.ID();
-
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(id, false, ast.ref),
-				out.register,
-				ast.ref
-			));
-			out.register = new LLVM.Argument(
-				out.type.toLLVM(ast.ref),
-				new LLVM.Name(id.reference(), false, ast.ref),
-				ast.ref
-			);
-
-			if (out.type.type.primative) {
-				let id = new LLVM.ID();
-				preamble.append(new LLVM.Set(
-					new LLVM.Name(id, false, ast.ref),
-					new LLVM.Load(
-						out.type.toLLVM(),
-						out.register.name,
-						ast.ref
-					),
-					ast.ref
-				));
-				out.register = new LLVM.Argument(
-					out.type.toLLVM(ast.ref),
-					new LLVM.Name(id.reference(), false, ast.ref),
-					ast.ref
-				);
-			}
+			throw new Error ("Bad code path");
 		}
 
 		return {
@@ -204,6 +176,10 @@ class ExecutionBase {
 			Flattern.DataTypeList(node),
 			template
 		);
+
+		if (type === null) {
+			return null;
+		}
 
 		// Linear types are handled by address, not value
 		if (type.type.typeSystem == "linear") {
@@ -250,6 +226,15 @@ class ExecutionBase {
 			segment,
 			ref
 		);
+	}
+
+	/**
+	 * Trigger falling out of scope behaviour for all variables
+	 * @param {BNF_Reference} ref
+	 * @returns {LLVM.Fragment|Error}
+	 */
+	cleanup (ref) {
+		return this.scope.cleanup(ref);
 	}
 }
 

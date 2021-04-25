@@ -160,6 +160,100 @@ class Structure extends TypeDef {
 			this.ref
 		);
 	}
+
+
+	/**
+	 *
+	 * @param {LLVM.Argument} argument
+	 */
+	cloneInstance(argument, ref) {
+		let preamble = new LLVM.Fragment();
+
+		let type = new TypeRef(1, this);
+
+		let storeID = new LLVM.ID();
+		preamble.append(new LLVM.Set(
+			new LLVM.Name(storeID, false),
+			new LLVM.Alloc(type.duplicate().offsetPointer(-1).toLLVM())
+		));
+		let instruction = new LLVM.Argument(
+			type.toLLVM(),
+			new LLVM.Name(storeID.reference(), false)
+		);
+
+		let sizePtrID = new LLVM.ID();
+		preamble.append(new LLVM.Set(
+			new LLVM.Name(sizePtrID, false),
+			new LLVM.GEP(
+				type.duplicate().offsetPointer(-1).toLLVM(),
+				new LLVM.Argument(
+					type.duplicate().toLLVM(),
+					new LLVM.Constant("null")
+				),
+				[new LLVM.Argument(
+					new LLVM.Type("i64", 0),
+					new LLVM.Constant("1")
+				)]
+			)
+		));
+
+		let sizeID = new LLVM.ID();
+		preamble.append(new LLVM.Set(
+			new LLVM.Name(sizeID, false),
+			new LLVM.PtrToInt(
+				new LLVM.Type("i64", 0),
+				new LLVM.Argument(
+					type.duplicate().toLLVM(),
+					new LLVM.Name(sizePtrID.reference(), false),
+				)
+			)
+		));
+
+		let fromID = new LLVM.ID();
+		preamble.append(new LLVM.Set(
+			new LLVM.Name(fromID, false),
+			new LLVM.Bitcast(
+				new LLVM.Type("i8", 1),
+				argument
+			)
+		));
+		let toID = new LLVM.ID();
+		preamble.append(new LLVM.Set(
+			new LLVM.Name(toID, false),
+			new LLVM.Bitcast(
+				new LLVM.Type("i8", 1),
+				instruction
+			)
+		));
+
+		preamble.append(new LLVM.Call(
+			new LLVM.Type("void", 0),
+			new LLVM.Name("llvm.memcpy.p0i8.p0i8.i64", true),
+			[
+				new LLVM.Argument(
+					new LLVM.Type("i8", 1),
+					new LLVM.Name(toID.reference(), false)
+				),
+				new LLVM.Argument(
+					new LLVM.Type("i8", 1),
+					new LLVM.Name(fromID.reference(), false)
+				),
+				new LLVM.Argument(
+					new LLVM.Type("i64", 0),
+					new LLVM.Name(sizeID.reference(), false)
+				),
+				new LLVM.Argument(
+					new LLVM.Type('i1', 0),
+					new LLVM.Constant("0")
+				)
+			]
+		));
+
+		return {
+			preamble,
+			instruction
+		};
+	}
 }
 
 module.exports = Structure;
