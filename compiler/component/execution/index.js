@@ -335,6 +335,7 @@ class Execution extends ExecutionFlow {
 		let frag = new LLVM.Fragment();
 		let inner = null;
 
+		// Get the return result in LLVM.Argument form
 		let returnType = null;
 		if (ast.tokens.length == 0){
 			inner = new LLVM.Type("void", false);
@@ -440,6 +441,14 @@ class Execution extends ExecutionFlow {
 				ast.ref.start, ast.ref.end
 			);
 		}
+
+		// Clean up the scope
+		let res = this.scope.cleanup(ast.ref.start);
+		if (res.error) {
+			this.getFile().throw(res.msg, res.ref.start, res.ref.end);
+			return null;
+		}
+		frag.append(res);
 
 		frag.append(new LLVM.Return(inner, ast.ref.start));
 		this.returned = true;

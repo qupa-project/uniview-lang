@@ -144,7 +144,7 @@ class Function_Instance {
 			args.push({
 				type: this.signature[i],                     // TypeRef
 				name: head.tokens[2].tokens[i][2].tokens,    // Name
-				ref: head.tokens[2].tokens[i][2].ref.start  // Ref
+				ref: head.tokens[2].tokens[i][2].ref.start   // Ref
 			});
 		}
 

@@ -55,7 +55,7 @@ class TypeRef {
 	 * Creates a clone of this reference
 	 */
 	duplicate () {
-		return new TypeRef(this.pointer, this.type);
+		return new TypeRef(this.pointer, this.type, this.lent);
 	}
 
 

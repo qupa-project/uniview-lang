@@ -80,14 +80,50 @@ class Variable extends Value {
 					end: ref.end
 				}
 			};
-		} else {
-			return {
-				register: this.store,
-				preamble: preamble
-			};
 		}
 
-		throw "Bad code path";
+
+		// If the current store is a non-loaded GEP
+		//   Load the GEP ready for use
+		if (this.store instanceof LLVM.GEP) {
+			let id = new LLVM.ID();
+			preamble.append(new LLVM.Set(
+				new LLVM.Name(id, false, ref),
+				this.store,
+				ref
+			));
+
+			this.store = new LLVM.Argument(
+				this.type.toLLVM(ref),
+				new LLVM.Name(id.reference(), false, ref),
+				ref
+			);
+
+			// Non-linear type - hence the value must be loaded
+			if (this.type.type.typeSystem == "normal") {
+				let id = new LLVM.ID();
+				preamble.append(new LLVM.Set(
+					new LLVM.Name(id, false, ref),
+					new LLVM.Load(
+						this.type.toLLVM(),
+						this.store.name,
+						ref
+					),
+					ref
+				));
+				this.store = new LLVM.Argument(
+					this.type.toLLVM(ref),
+					new LLVM.Name(id.reference(), false, ref),
+					ref
+				);
+			}
+		}
+
+
+		return {
+			register: this.store,
+			preamble: preamble
+		};
 	}
 
 
@@ -368,32 +404,7 @@ class Variable extends Value {
 				instr.msg, instr.ref
 			), ref);
 		} else if (instr.register instanceof LLVM.GEP) {
-			let id = new LLVM.ID();
-
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(id, false, ref),
-				instr.register
-			));
-
-			if (this.type.type.primative) {
-				let nx_id = new LLVM.ID();
-				preamble.append(new LLVM.Set(
-					new LLVM.Name(nx_id, false, ref),
-					new LLVM.Load(
-						this.type.toLLVM(),
-						new LLVM.Name(id.reference(), false, ref),
-						ref
-					),
-					ref
-				));
-				id = nx_id;
-			}
-
-			reg = new LLVM.Argument(
-				this.type.toLLVM(),
-				new LLVM.Name(id.reference(), false, ref),
-				ref
-			);
+			throw new Error("Bad code path, GEP should have been removed within this.resolve()");
 		} else {
 			reg = instr.register;
 		}
@@ -581,6 +592,31 @@ class Variable extends Value {
 		}
 
 		return out;
+	}
+
+
+	/**
+	 * Trigger falling out of scope behaviour
+	 * @param {BNF_Reference} ref
+	 * @returns {LLVM.Fragment|Error}
+	 */
+	cleanup(ref) {
+		let frag = new LLVM.Fragment();
+
+		if (this.isClone) {            // Do nothing as this variable is a clone
+			return frag;
+		} else if (this.type.lent) {   // Borrowed types need to be recomposed
+			let res = this.resolve(ref, false);
+			if (res.error) {
+				return err;
+			}
+
+			frag.merge(res.preamble);
+		} else {                       // Run destruct behaviour
+
+		}
+
+		return frag;
 	}
 }
 

@@ -193,6 +193,25 @@ class Scope {
 		return out;
 	}
 
+
+	/**
+	 * Trigger falling out of scope behaviour for all variables
+	 * @param {BNF_Reference} ref
+	 * @returns {LLVM.Fragment|Error}
+	 */
+	cleanup (ref) {
+		let frag = new LLVM.Fragment();
+		for (let name in this.variables) {
+			let res = this.variables[name].cleanup(ref);
+			if (res.error) {
+				return res;
+			}
+			frag.merge(res);
+		}
+
+		return frag;
+	}
+
 	/**
 	 * PreSync must be ran in each scope first
 	 * @param {Scope} scopes
