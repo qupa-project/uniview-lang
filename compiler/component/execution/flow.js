@@ -19,7 +19,7 @@ class ExecutionFlow extends ExecutionExpr {
 				`Error: Elif statements are currently unsupported`,
 				ast.ref.start, ast.ref.end
 			);
-			return null;
+			return frag;
 		}
 
 
@@ -108,16 +108,8 @@ class ExecutionFlow extends ExecutionExpr {
 				branch.frag.append(merger.preambles[i]);
 
 				// If the branch didn't return
+				//   Jump to the endpoint label
 				if (!branch.env.returned) {
-					// Clean up any local variables
-					let res = branch.env.cleanup(branch.ref);
-					if (res.error) {
-						this.getFile().throw(res.msg, res.ref.start, res.ref.end);
-						return null;
-					}
-					branch.frag.append(res);
-
-					// Jump to endpoint
 					branch.frag.append(new LLVM.Branch_Unco(endpoint));
 				}
 
@@ -160,8 +152,7 @@ class ExecutionFlow extends ExecutionExpr {
 		return {
 			id: id.reference(),
 			env: env,
-			frag: frag,
-			ref: ref
+			frag: frag
 		};
 	}
 
