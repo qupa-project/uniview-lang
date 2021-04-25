@@ -6,6 +6,9 @@
 - [x] Able to create a clone of any linear value
 - [x] Able to parse any linear variable forward to a function call and reasign the modified result
 - [x] Added compiler parameter for llvm optimisation sweeps
+- [x] Added cloning of linear variables
+- [x] Added lending a reference forward to child functions (linear variables only)
+- [x] Added borrow checker ensuring child function doesn't corrupt the reference
 
 ### Fixes
 - [x] Fixed not parsing structures properly on return
