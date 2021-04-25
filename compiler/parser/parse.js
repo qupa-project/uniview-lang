@@ -27,6 +27,9 @@ function Simplify_Stmt_Top (node) {
 		case "external":
 			inner = Simplify_External(node.tokens[0]);
 			break;
+		case "include":
+			inner = Simplify_Include(node.tokens[0]);
+			break;
 		case "function":
 			inner = Simplify_Function(node.tokens[0]);
 			break;
@@ -216,6 +219,15 @@ function Simplify_Type_Def (node) {
 	node.tokens = [
 		Simplify_Name(node.tokens[2][0]),   // name
 		Simplify_Integer(node.tokens[6][0]) // size
+	];
+	node.reached = null;
+	return node;
+}
+
+function Simplify_Include (node) {
+	node.tokens = [
+		node.tokens[2][0].tokens,                    // mode
+		Simplify_String(node.tokens[4][0]).tokens[1] // path
 	];
 	node.reached = null;
 	return node;

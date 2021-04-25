@@ -9,6 +9,7 @@
 - [x] Added cloning of linear variables
 - [x] Added lending a reference forward to child functions (linear variables only)
 - [x] Added borrow checker ensuring child function doesn't corrupt the reference
+- [x] Added the ability to include external files to the LLVM build pass
 
 ### Fixes
 - [x] Fixed not parsing structures properly on return

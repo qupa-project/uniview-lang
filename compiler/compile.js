@@ -92,15 +92,12 @@ if (config.execute && config.source !== false) {
 }
 
 if (config.source != "llvm") {
-	let runtime_path = path.resolve(__dirname, "./../runtime/runtime.ll");
-	// let prebuilt_path = path.resolve(__dirname, "./../runtime/prebuilt.ll");
-	let args = [
-		"-x", "ir",
-		runtime_path,
-		"-x", "ir",
-		`${config.output}.ll`,
-		`-O${config.optimisation}`
-	];
+	let args = project.includes
+		.concat([
+			["--language=ir", `${config.output}.ll`],
+			[`-O${config.optimisation}`]
+		])
+		.reduce((prev, curr) => prev.concat(curr), []);
 
 	let exec_out = config.output;
 	if (config.source == "asm") {
@@ -116,7 +113,9 @@ if (config.source != "llvm") {
 	args = args.concat(["-o", exec_out]);
 
 	console.info(`\nclang++ ${args.join(" ")}`);
-	let clang = spawnSync('clang++', args);
+	let clang = spawnSync('clang++', args, {
+		cwd: project.rootPath
+	});
 
 	if (clang.status === 0){
 		process.stdout.write(clang.output[2]);
