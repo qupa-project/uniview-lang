@@ -54,7 +54,12 @@ class Execution extends ExecutionFlow {
 			return null;
 		}
 
-		access.markUpdated(expr.instruction);
+		let chg = access.markUpdated(expr.instruction, false, ast.ref);
+		if (chg.error) {
+			this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
+			return null;
+		}
+
 		frag.merge(expr.epilog);
 		return frag;
 	}
@@ -124,9 +129,14 @@ class Execution extends ExecutionFlow {
 			ast.tokens[1].tokens,   // name
 			ast.ref.start           // ref
 		);
-		variable.markUpdated(expr.instruction);
-		frag.merge(expr.epilog);
+		let chg = variable.markUpdated(expr.instruction, false, ast.ref);
+		if (chg.error) {
+			this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
+			return null;
+		}
 
+
+		frag.merge(expr.epilog);
 		return frag;
 	}
 
