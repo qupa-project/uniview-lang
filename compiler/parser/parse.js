@@ -197,6 +197,9 @@ function Simplify_External_Term (node) {
 		case "function_outline":
 			inner = Simplify_Function_Outline(node.tokens[0]);
 			break;
+		case "function_redirect":
+			inner = Simplify_Function_Redirect(node.tokens[0]);
+			break;
 		case "structure":
 			inner = Simplify_Struct(node.tokens[0]);
 			break;
@@ -483,6 +486,52 @@ function Simplify_Function_Outline (node) {
 		Simplify_Function_Head(node.tokens[0][0])  // head
 	];
 	node.reached = null;
+	return node;
+}
+function Simplify_Function_Redirect (node) {
+	node.tokens = [
+		new BNF.types.BNF_SyntaxNode (
+			'function_head',
+			[
+				node.tokens[5][0] ?                      // Return type
+					Simplify_Data_Type  (node.tokens[5][0].tokens[3][0]) :
+					null,
+				Simplify_Name       (node.tokens[9][0]), // Name
+				Simplify_Func_Args  (node.tokens[4][0]),  // Arguments
+				[],
+			],
+			0,
+			node.ref.start,
+			node.ref.end
+		),
+		Simplify_String     (node.tokens[2][0]).tokens[1],  // Representation
+	];
+	node.reached = null;
+
+	// Replace null return type with "void" datatype
+	if (node.tokens[0].tokens[0] === null) {
+		node.tokens[0].tokens[0] = new BNF.types.BNF_SyntaxNode (
+			'data_type',
+			[
+				0,
+				new BNF.types.BNF_SyntaxNode(
+					'name',
+					'void',
+					4,
+					new BNF.types.BNF_Reference(0,0,0),
+					new BNF.types.BNF_Reference(0,0,0),
+					null
+				),
+				[],
+				{ type: 'template', tokens: [], ref: {} }
+			],
+			[],
+			new BNF.types.BNF_Reference(0,0,0),
+			new BNF.types.BNF_Reference(0,0,0),
+			null
+		);
+	}
+
 	return node;
 }
 function Simplify_Function_Head (node) {
