@@ -32,7 +32,7 @@ class Execution extends ExecutionFlow {
 			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
 			return null;
 		}
-		frag.append(access.preamble);
+		frag.merge(access.preamble);
 		access = access.variable;
 
 
