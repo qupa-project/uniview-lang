@@ -227,6 +227,15 @@ class ExecutionBase {
 			ref
 		);
 	}
+
+	/**
+	 * Trigger falling out of scope behaviour for all variables
+	 * @param {BNF_Reference} ref
+	 * @returns {LLVM.Fragment|Error}
+	 */
+	cleanup (ref) {
+		return this.scope.cleanup(ref);
+	}
 }
 
 module.exports = ExecutionBase;
