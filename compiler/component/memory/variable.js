@@ -188,7 +188,7 @@ class Variable extends Value {
 	 * @param {BNF_Reference} ref
 	 * @returns {Object[Variable, LLVM.Fragment]|Error}
 	 */
-		 access (accessor, ref) {
+		access (accessor, ref) {
 			let preamble = new LLVM.Fragment();
 			if (!this.isDecomposed) {
 				let res = this.decompose(ref);
@@ -211,6 +211,11 @@ class Variable extends Value {
 						ref: accessor.ref
 					};
 					/* jshint ignore:end*/
+				}
+
+				// Linear types are managed by reference
+				if (res.type.type.typeSystem == "linear") {
+					res.type.offsetPointer(1);
 				}
 
 				if (!this.elements.has(res.index)) {
@@ -364,6 +369,28 @@ class Variable extends Value {
 			let access = this.type.type.accessGEPByIndex(elm[0], this, ref);
 			frag.merge(access.preamble);
 
+			let store = res.register;
+			let isLinear = elm[1].type.type.typeSystem == "linear";
+			if (isLinear) {
+				let type = elm[1].type.duplicate().offsetPointer(-1).toLLVM(ref);
+				let id = new LLVM.ID(ref);
+				frag.append(new LLVM.Set(
+					new LLVM.Name(id, false, ref),
+					new LLVM.Load(
+						type,
+						store.name,
+						ref
+					),
+					ref
+				));
+
+				store = new LLVM.Argument(
+					type,
+					new LLVM.Name(id.reference(), false, ref),
+					ref
+				);
+			}
+
 			let id = new LLVM.ID(ref);
 			frag.append(new LLVM.Set(
 				new LLVM.Name(id, false, ref),
@@ -375,7 +402,7 @@ class Variable extends Value {
 					access.type.duplicate().offsetPointer(1).toLLVM(),
 					new LLVM.Name(id.reference(), false, ref)
 				),
-				res.register,
+				store,
 				ref
 			));
 		}

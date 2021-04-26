@@ -20,6 +20,7 @@
 - [x] Fixed printing error buffer twice on clang compilation failure
 - [x] Fixed crash when using undefined type in template
 - [x] Fixed returning within if-statement causing that branch's instructions to not be saved
+- [x] Fixed composing structures with structure elements
 
 ## v0.0.0
 
