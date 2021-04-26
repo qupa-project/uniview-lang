@@ -26,6 +26,7 @@
 
 ### Tweaks
 - [x] Decomposed structure elements now have the correct internal names for error messages
+- [x] Compile errors now use path relative to root file (shorter printing)
 
 
 ---

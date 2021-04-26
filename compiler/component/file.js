@@ -18,7 +18,8 @@ const Template = require('./template.js');
 class File {
 	constructor (project, id, filepath) {
 		this.project = project;
-		this.path = filepath;
+		this.path    = filepath;
+		this.relPath = path.relative(this.project.rootPath, this.path);
 		this.id = id;
 
 		this.data = "";
@@ -39,7 +40,7 @@ class File {
 
 
 	parse () {
-		console.info("Parsing:", path.relative(this.project.rootPath, this.path));
+		console.info("Parsing:", this.relPath);
 
 		this.data = fs.readFileSync(this.path, 'utf8').replace(/\n\r/g, '\n');
 		let syntax = Parse(this.data, this.path);
@@ -309,7 +310,7 @@ class File {
 	throw (msg, refStart, refEnd) {
 		// let area = BNF.Message.HighlightArea(this.data, refStart, refEnd);
 		let area = helper.CodeSection(this.data, refStart, refEnd);
-		console.error(`\n${this.path}:\n ${msg}\n${area.replace(/\t/g, '  ')}`);
+		console.error(`\n${this.relPath}:\n ${msg}\n${area.replace(/\t/g, '  ')}`);
 		this.project.markError();
 	}
 
