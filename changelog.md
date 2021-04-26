@@ -21,6 +21,10 @@
 - [x] Fixed crash when using undefined type in template
 - [x] Fixed returning within if-statement causing that branch's instructions to not be saved
 - [x] Fixed composing structures with structure elements
+- [x] Fixed crash during scope cleanup due to bad code reference
+
+### Tweaks
+- [x] Decomposed structure elements now have the correct internal names for error messages
 
 ## v0.0.0
 

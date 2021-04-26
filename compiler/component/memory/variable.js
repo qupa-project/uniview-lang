@@ -219,7 +219,7 @@ class Variable extends Value {
 				}
 
 				if (!this.elements.has(res.index)) {
-					let elm = new Variable(res.type, res.index, ref);
+					let elm = new Variable(res.type, `${this.name}.${accessor.tokens}`, ref);
 					let act = elm.markUpdated(res.instruction, false, ref);
 					if (act.error) {
 						return res;
@@ -659,7 +659,7 @@ class Variable extends Value {
 		} else if (this.type.lent) {   // Borrowed types need to be recomposed
 			let res = this.resolve(ref, false);
 			if (res.error) {
-				return err;
+				return res;
 			}
 
 			frag.merge(res.preamble);

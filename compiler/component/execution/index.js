@@ -453,7 +453,7 @@ class Execution extends ExecutionFlow {
 		}
 
 		// Clean up the scope
-		let res = this.scope.cleanup(ast.ref.start);
+		let res = this.scope.cleanup(ast.ref);
 		if (res.error) {
 			this.getFile().throw(res.msg, res.ref.start, res.ref.end);
 			return null;
