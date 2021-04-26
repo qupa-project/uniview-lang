@@ -139,8 +139,6 @@ class ExecutionExpr extends ExecutionBase {
 				throw new Error(`Unexpected arithmetic expression type ${ast.type}`);
 		}
 
-
-
 		let preamble = new LLVM.Fragment();
 		let epilog = new LLVM.Fragment();
 
@@ -149,6 +147,18 @@ class ExecutionExpr extends ExecutionBase {
 			this.compile_expr_opperand(ast.tokens[0]),
 			this.compile_expr_opperand(ast.tokens[2])
 		];
+
+		// Catch any errors getting the opperands
+		let hasErr = false;
+		for (let opper of opperands) {
+			if (opper.error) {
+				this.getFile().throw(opper.msg, opper.ref.start, opper.ref.end);
+				hasErr = true;
+			}
+		}
+		if (hasErr) {
+			return null;
+		}
 
 		// Append the load instructions
 		preamble.merge(opperands[0].preamble);
@@ -224,6 +234,19 @@ class ExecutionExpr extends ExecutionBase {
 			this.compile_expr_opperand(ast.tokens[0]),
 			this.compile_expr_opperand(ast.tokens[2])
 		];
+
+
+		// Catch any errors getting the opperands
+		let hasErr = false;
+		for (let opper of opperands) {
+			if (opper.error) {
+				this.getFile().throw(opper.msg, opper.ref.start, opper.ref.end);
+				hasErr = true;
+			}
+		}
+		if (hasErr) {
+			return null;
+		}
 
 
 		// Check opperands are primatives
@@ -356,6 +379,18 @@ class ExecutionExpr extends ExecutionBase {
 				break;
 			default:
 				throw new Error(`Unexpected boolean expression type ${ast.type}`);
+		}
+
+		// Catch any errors getting the opperands
+		let hasErr = false;
+		for (let opper of opperands) {
+			if (opper.error) {
+				this.getFile().throw(opper.msg, opper.ref.start, opper.ref.end);
+				hasErr = true;
+			}
+		}
+		if (hasErr) {
+			return null;
 		}
 
 

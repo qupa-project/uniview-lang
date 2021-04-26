@@ -22,7 +22,6 @@ class Execution extends ExecutionFlow {
 	compile_assign (ast) {
 		let frag = new LLVM.Fragment();
 
-
 		// Load the target variable
 		//   This must occur after the expression is resolve
 		//   because this variable now needs to be accessed for writing

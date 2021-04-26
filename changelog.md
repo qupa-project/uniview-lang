@@ -22,6 +22,7 @@
 - [x] Returning within if-statement causing that branch's instructions to not be saved
 - [x] Composing structures with structure elements
 - [x] Frash during scope cleanup due to bad code reference
+- [x] Using undefined variables within expressions causing crash
 
 ### Tweaks
 - [x] Decomposed structure elements now have the correct internal names for error messages
