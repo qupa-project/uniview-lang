@@ -24,4 +24,5 @@ You can also find a few examples in `test/pre-alpha/`.
 | `-s` | The compilation level to perform `llvm`, `assembly` |
 | `--execute` | Executes the binary output after successful compilation |
 | `--version` | Prints the version of the compiler |
+| `--verifyOnly` | Compiles to LLVM, but does not store the results or compiles further |
 | `--opt {num}` | Runs optimisation passes over the output (any number between 0-3 inclusive) |

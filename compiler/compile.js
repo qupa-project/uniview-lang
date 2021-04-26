@@ -27,7 +27,8 @@ let config = {
 	output: "out",
 	source: false,
 	execute: false,
-	optimisation: "0"
+	optimisation: "0",
+	verifyOnly: false
 };
 let index = process.argv.indexOf('-o');
 if (index != -1 && index > 2) {
@@ -35,6 +36,9 @@ if (index != -1 && index > 2) {
 }
 if (process.argv.includes('--execute')) {
 	config.execute = true;
+}
+if (process.argv.includes('--verifyOnly')) {
+	config.verifyOnly = true;
 }
 index = process.argv.indexOf('-s');
 if (index != -1) {
@@ -74,6 +78,11 @@ console.info("Processing...");
 let asm = project.compile();
 if (project.error) {
 	console.error("\nUncompilable errors");
+	process.exit(1);
+}
+
+
+if (config.verifyOnly) {
 	process.exit(1);
 }
 

@@ -13,6 +13,7 @@
 - [x] Added ability to assume more complex external filenames
 - [x] Added a basic math library
 - [x] Added f64 printing
+- [x] Added verify only compilation mode
 
 ### Fixes
 - [x] Fixed not parsing structures properly on return
