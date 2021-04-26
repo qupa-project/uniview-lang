@@ -5,28 +5,31 @@
 ### Added
 - [x] Able to create a clone of any linear value
 - [x] Able to parse any linear variable forward to a function call and reasign the modified result
-- [x] Added compiler parameter for llvm optimisation sweeps
-- [x] Added cloning of linear variables
-- [x] Added lending a reference forward to child functions (linear variables only)
-- [x] Added borrow checker ensuring child function doesn't corrupt the reference
-- [x] Added the ability to include external files to the LLVM build pass
-- [x] Added ability to assume more complex external filenames
-- [x] Added a basic math library
-- [x] Added f64 printing
-- [x] Added verify only compilation mode
+- [x] Compiler parameter for llvm optimisation sweeps
+- [x] Cloning of linear variables
+- [x] Lending a reference forward to child functions (linear variables only)
+- [x] Borrow checker ensuring child function doesn't corrupt the reference
+- [x] Ability to include external files to the LLVM build pass
+- [x] Ability to assume more complex external filenames
+- [x] Basic math library
+- [x] f64 printing
+- [x] Verify only compilation mode
 
 ### Fixes
-- [x] Fixed not parsing structures properly on return
-- [x] Fixed printing error buffer twice on clang compilation failure
-- [x] Fixed crash when using undefined type in template
-- [x] Fixed returning within if-statement causing that branch's instructions to not be saved
-- [x] Fixed composing structures with structure elements
-- [x] Fixed crash during scope cleanup due to bad code reference
+- [x] Not parsing structures properly on return
+- [x] Printing error buffer twice on clang compilation failure
+- [x] Crash when using undefined type in template
+- [x] Returning within if-statement causing that branch's instructions to not be saved
+- [x] Composing structures with structure elements
+- [x] Frash during scope cleanup due to bad code reference
 
 ### Tweaks
 - [x] Decomposed structure elements now have the correct internal names for error messages
 
-## v0.0.0
+
+---
+## Version 0.0.0
+---
 
 ### Added
 - [x] Assign and return numbers
@@ -40,7 +43,7 @@
 - [x] Strucutre manipulation support
 - [x] Declaration type can be derived from assignment
 
-# Changes
+### Changes
 - [x] Now uses colon notation for types
 
 ### Fixes
