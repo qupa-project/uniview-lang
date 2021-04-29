@@ -88,9 +88,9 @@ program ::= w* ( stmt_top w* )*
 	function_outline ::= func_head w* ";"
 	function_redirect ::= "fn" w+ string w* func_arguments ( w* ":" w* data_type )? w+ "as" w+ name w* ";"
 
-	call ::= variable template? w* "(" w* call_args? w* ")"
-		call_args ::= call_arg ( w* "," w* call_arg )*
-			call_arg ::= expr | expr_lend
+	call ::= variable w* template? w* call_args
+		call_args ::= "(" w* ( call_arg ( w* "," w* call_arg )* w* )? ")"
+			call_arg ::= expr_lend | expr
 	call_procedure ::= call ";"
 
 	return ::= "return" ( w+ expr )? w* ";"
@@ -135,31 +135,14 @@ program ::= w* ( stmt_top w* )*
 #=============================
 #  Expression
 #=============================
-	expr ::= w* expr_np
+	expr ::= w* expr_arg w* ( expr_middle_opper w* expr_arg w* )*
+		expr_right_opper ::= "!" | "$"
+		expr_middle_opper ::= "?" | ":" | "&&" | "||" | "==" | "!=" | "<=" | ">=" | "<" | ">" | "%" | "*" | "/" | "+" | "-"
+		expr_arg ::= expr_val | expr_brackets
+			expr_val ::= expr_right_opper? w* ( variable | constant ) w* ( template? w* call_args )?
+			expr_brackets ::= "(" w* expr w* ")"
 
-	expr_np       ::= expr_compare | expr_arithmetic | expr_bool | call | expr_clone | expr_op
-		expr_ternary ::= expr_op w* "?" w* expr_op w* ":" w* expr_op
-	expr_bool ::= expr_and | expr_or | expr_not
-		expr_and     ::= expr_op w* "&&" w* expr_op
-		expr_or      ::= expr_op w* "||" w* expr_op
-		expr_not  ::= "!" w* expr_op
-	expr_compare ::= expr_eq | expr_neq | expr_gt | expr_lt | expr_gt_eq | expr_lt_eq
-		expr_eq      ::= expr_op w* "==" w* expr_op
-		expr_neq     ::= expr_op w* "!=" w* expr_op
-		expr_gt      ::= expr_op w* ">" w* expr_op
-		expr_lt      ::= expr_op w* "<" w* expr_op
-		expr_gt_eq   ::= expr_op w* ">=" w* expr_op
-		expr_lt_eq   ::= expr_op w* "<=" w* expr_op
-	expr_arithmetic ::= expr_mod | expr_mul | expr_div | expr_add | expr_sub
-		expr_mod     ::= expr_op w* "%" w*  expr_op
-		expr_mul     ::= expr_op w* "*" w* expr_op
-		expr_div     ::= expr_op w* "/" w* expr_op
-		expr_add     ::= expr_op w* "+" w* expr_op
-		expr_sub     ::= expr_op w* "-" w* expr_op
-	expr_op ::= constant | variable
-		expr_brackets    ::= "(" w* expr w* ")"
-	expr_clone ::= "$" w* variable
-	expr_lend  ::= "@" w* variable
+	expr_lend ::= "@" variable
 
 
 #=============================

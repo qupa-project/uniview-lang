@@ -111,6 +111,8 @@ class ExecutionExpr extends ExecutionBase {
 				return this.compile_loadVariable(ast);
 			case "constant":
 				return this.compile_constant(ast);
+			case "expr_brackets":
+				return this.compile_expr(ast.tokens[0], null, true);
 			default:
 				throw new Error(`Unexpected expression opperand type ${ast.type}`);
 		}

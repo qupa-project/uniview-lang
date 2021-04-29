@@ -642,14 +642,11 @@ function Simplify_Func_Args_List (node) {
 function Simplify_Call (node) {
 	let out = [
 		Simplify_Variable(node.tokens[0][0]),                                  // Call name
-		node.tokens[1].length > 0 ? Simplify_Template(node.tokens[1][0]) : {   // Template
+		node.tokens[2].length > 0 ? Simplify_Template(node.tokens[2][0]) : {   // Template
 			type: "template",
 			tokens: []
 		},
-		node.tokens[5].length > 0 ? Simplify_Call_Args(node.tokens[5][0]) : {  // Arguments
-			type: "call_args",
-			tokens: []
-		},
+		Simplify_Call_Args(node.tokens[4][0])
 	];
 
 	node.tokens = out;
@@ -657,11 +654,17 @@ function Simplify_Call (node) {
 	return node;
 }
 function Simplify_Call_Args (node) {
-	node.tokens =
-		[ node.tokens[0][0] ].concat(
-			node.tokens[1].map(arg => arg.tokens[3][0])
-		)
-		.map( x => Simplify_Call_Arg(x) );
+	if (node.tokens[2].length > 0) {
+		node.tokens = node.tokens[2][1];
+
+		node.tokens =
+			[ node.tokens[2][0] ]
+				.concat(
+					node.tokens[4].map(arg => arg.tokens[3][0])
+				).map( x => Simplify_Call_Arg(x) );
+	} else {
+		node.tokens = [];
+	}
 
 	node.reached = null;
 	return node;
@@ -750,8 +753,8 @@ function Simplify_Declare_Assign (node) {
 		node.tokens[4][0] ?
 			Simplify_Data_Type (node.tokens[4][0].tokens[2][0]) :
 			null,
-		Simplify_Name (node.tokens[2][0]),
-		Simplify_Expr (node.tokens[7][0])
+		Simplify_Name(node.tokens[2][0]),
+		Simplify_Expr(node.tokens[7][0])
 	];
 
 	node.tokens = out;
@@ -770,145 +773,192 @@ function Simplify_Assign  (node) {
 
 
 function Simplify_Expr (node) {
-	return Simplify_Expr_NoPrecedence (node.tokens[1][0]);
-}
-function Simplify_Expr_NoPrecedence (node) {
-	switch (node.tokens[0].type) {
-		case "call":
-			return Simplify_Call(node.tokens[0]);
-		case "expr_compare":
-			return Simplify_Expr_Compare(node.tokens[0]);
-		case "expr_arithmetic":
-			return Simplify_Expr_Arithmetic(node.tokens[0]);
-		case "expr_op":
-			return Simplify_Expr_Opperand(node.tokens[0]);
-		case "expr_bool":
-			return Simplify_Expr_Bool(node.tokens[0]);
-		case "expr_clone":
-			return Simplify_Expr_Clone(node.tokens[0]);
-		default:
-			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
-	}
-}
-function Simplify_Expr_Compare (node) {
-	let out = null;
-
-	switch (node.tokens[0].type) {
-		case "expr_eq":
-		case "expr_neq":
-		case "expr_gt":
-		case "expr_lt":
-		case "expr_gt_eq":
-		case "expr_lt_eq":
-			out = Simplify_Expr_Binary(node.tokens[0]);
-			break;
-		default:
-			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
-	}
-
-	node.tokens = [out];
-	node.reached = null;
-	return node;
-}
-function Simplify_Expr_Arithmetic (node) {
-	let out = null;
-
-	switch (node.tokens[0].type) {
-		case "expr_mod":
-		case "expr_mul":
-		case "expr_div":
-		case "expr_add":
-		case "expr_sub":
-			out = Simplify_Expr_Binary(node.tokens[0]);
-			break;
-		case "expr_invert":
-			out = Simplify_Expr_Unary(node.tokens[0]);
-			break;
-		default:
-			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
-	}
-
-
-	node.tokens = [out];
-	node.reached = null;
-	return node;
-}
-function Simplify_Expr_Bool (node) {
-	let out = null;
-
-	switch (node.tokens[0].type) {
-		case "expr_and":
-		case "expr_or":
-			out = Simplify_Expr_Binary(node.tokens[0]);
-			break;
-		case "expr_not":
-			out = Simplify_Expr_Unary(node.tokens[0]);
-			break;
-		default:
-			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
-	}
-
-	node.tokens = [out];
-	node.reached = null;
-	return node;
-}
-function Simplify_Expr_Unary (node) {
-	let out = [
-		Simplify_Expr_Opperand(node.tokens[2][0]),
+	console.log(773, node);
+	let queue = [
+		Simplify_Expr_Arg(node.tokens[1][0])
 	];
-
-	node.tokens  = out;
-	node.reached = null;
-	return node;
-}
-function Simplify_Expr_Binary (node) {
-	let out = [
-		Simplify_Expr_Opperand(node.tokens[0][0]),
-		node.tokens[2][0].tokens,
-		Simplify_Expr_Opperand(node.tokens[4][0]),
-	];
-
-	node.tokens  = out;
-	node.reached = null;
-	return node;
-}
-function Simplify_Expr_Opperand (node) {
-	switch (node.tokens[0].type) {
-		case "call":
-			node = Simplify_Call(node.tokens[0]);
-			break;
-		case "constant":
-			node = Simplify_Constant(node.tokens[0]);
-			break;
-		case "variable":
-			node = Simplify_Variable(node.tokens[0]);
-			break;
-		default:
-			throw new TypeError(`Unexpected expr_p1 statement ${node.tokens[0].type}`);
+	for (let next of node.tokens[3]) {
+		queue.push(next.tokens[0][0]);
+		queue.push(Simplify_Expr_Arg(next.tokens[2][0]));
 	}
 
-	node.reached = null;
-	return node;
+	// Implement shunting yard on queue
+
+	console.log(785, queue);
+
+	throw new Error("Failed to parse");
 }
+
+function Simplify_Expr_Arg (node) {
+	switch (node.tokens[0].type) {
+		case "expr_val":
+			return Simplify_Expr_Val(node.tokens[0]);
+		case "expr_brackets":
+			return Simplify_Expr_Brackets(node.tokens[0]);
+		default:
+			throw new Error(`Unexpected expression argument ${node.tokens[0].type}`);
+	}
+}
+
+function Simplify_Expr_Val (node) {
+	let subject = node.tokens[2][0].tokens[0];
+	subject = subject.type == "variable" ?
+		Simplify_Variable(subject) :
+		Simplify_Constant(subject);
+
+	let unary = node.tokens[0][0];
+	if (unary) {
+		throw new Error('Unimplemented Unary handler');
+	}
+
+	let call = node.tokens[4];
+	if (call.length > 0) {
+		throw new Error('Unimplemented call handler');
+	}
+
+	return subject;
+}
+
+// function Simplify_Expr_NoPrecedence (node) {
+// 	switch (node.tokens[0].type) {
+// 		case "call":
+// 			return Simplify_Call(node.tokens[0]);
+// 		case "expr_compare":
+// 			return Simplify_Expr_Compare(node.tokens[0]);
+// 		case "expr_arithmetic":
+// 			return Simplify_Expr_Arithmetic(node.tokens[0]);
+// 		case "expr_op":
+// 			return Simplify_Expr_Opperand(node.tokens[0]);
+// 		case "expr_bool":
+// 			return Simplify_Expr_Bool(node.tokens[0]);
+// 		case "expr_clone":
+// 			return Simplify_Expr_Clone(node.tokens[0]);
+// 		default:
+// 			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
+// 	}
+// }
+// function Simplify_Expr_Compare (node) {
+// 	let out = null;
+
+// 	switch (node.tokens[0].type) {
+// 		case "expr_eq":
+// 		case "expr_neq":
+// 		case "expr_gt":
+// 		case "expr_lt":
+// 		case "expr_gt_eq":
+// 		case "expr_lt_eq":
+// 			out = Simplify_Expr_Binary(node.tokens[0]);
+// 			break;
+// 		default:
+// 			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
+// 	}
+
+// 	node.tokens = [out];
+// 	node.reached = null;
+// 	return node;
+// }
+// function Simplify_Expr_Arithmetic (node) {
+// 	let out = null;
+
+// 	switch (node.tokens[0].type) {
+// 		case "expr_mod":
+// 		case "expr_mul":
+// 		case "expr_div":
+// 		case "expr_add":
+// 		case "expr_sub":
+// 			out = Simplify_Expr_Binary(node.tokens[0]);
+// 			break;
+// 		case "expr_invert":
+// 			out = Simplify_Expr_Unary(node.tokens[0]);
+// 			break;
+// 		default:
+// 			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
+// 	}
+
+
+// 	node.tokens = [out];
+// 	node.reached = null;
+// 	return node;
+// }
+// function Simplify_Expr_Bool (node) {
+// 	let out = null;
+
+// 	switch (node.tokens[0].type) {
+// 		case "expr_and":
+// 		case "expr_or":
+// 			out = Simplify_Expr_Binary(node.tokens[0]);
+// 			break;
+// 		case "expr_not":
+// 			out = Simplify_Expr_Unary(node.tokens[0]);
+// 			break;
+// 		default:
+// 			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
+// 	}
+
+// 	node.tokens = [out];
+// 	node.reached = null;
+// 	return node;
+// }
+// function Simplify_Expr_Unary (node) {
+// 	let out = [
+// 		Simplify_Expr_Opperand(node.tokens[2][0]),
+// 	];
+
+// 	node.tokens  = out;
+// 	node.reached = null;
+// 	return node;
+// }
+// function Simplify_Expr_Binary (node) {
+// 	let out = [
+// 		Simplify_Expr_Opperand(node.tokens[0][0]),
+// 		node.tokens[2][0].tokens,
+// 		Simplify_Expr_Opperand(node.tokens[4][0]),
+// 	];
+
+// 	node.tokens  = out;
+// 	node.reached = null;
+// 	return node;
+// }
+// function Simplify_Expr_Opperand (node) {
+// 	switch (node.tokens[0].type) {
+// 		case "call":
+// 			node = Simplify_Call(node.tokens[0]);
+// 			break;
+// 		case "constant":
+// 			node = Simplify_Constant(node.tokens[0]);
+// 			break;
+// 		case "variable":
+// 			node = Simplify_Variable(node.tokens[0]);
+// 			break;
+// 		case "expr_brackets":
+// 			node = Simplify_Expr_Brackets(node.tokens[0]);
+// 			break;
+// 		default:
+// 			throw new TypeError(`Unexpected expr_p1 statement ${node.tokens[0].type}`);
+// 	}
+
+// 	node.reached = null;
+// 	return node;
+// }
 function Simplify_Expr_Brackets (node) {
-	return Simplify_Expr ( node.tokens[2][0] );
+	return Simplify_Expr(node.tokens[2][0]);
 }
-function Simplify_Expr_Clone (node) {
-	node.tokens = [
-		Simplify_Variable(node.tokens[2][0])
-	];
-	node.reached = null;
+// function Simplify_Expr_Clone (node) {
+// 	node.tokens = [
+// 		Simplify_Variable(node.tokens[2][0])
+// 	];
+// 	node.reached = null;
+//
+// 	return node;
+// }
+// function Simplify_Expr_Lend (node) {
+// 	node.tokens = [
+// 		Simplify_Variable(node.tokens[2][0])
+// 	];
+// 	node.reached = null;
 
-	return node;
-}
-function Simplify_Expr_Lend (node) {
-	node.tokens = [
-		Simplify_Variable(node.tokens[2][0])
-	];
-	node.reached = null;
-
-	return node;
-}
+// 	return node;
+// }
 
 
 
