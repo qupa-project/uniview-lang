@@ -1,0 +1,38 @@
+include llvm "../runtime/runtime.ll";
+
+external assume {
+	fn Now (): i64;
+}
+
+struct Date {
+	day: uint;
+	month: uint;
+	year: uint;
+}
+
+
+// fn DateFromTime(unixTime: i64) {
+// 	let s: int = 1313905026;
+// 	let z: int = (s / 86400) + 719468;
+
+// 	let t1 = z - 146096;
+// 	if (z >= 0) {
+// 		t1 = z;
+// 	}
+
+// 	let era: int = t1 / 146097;
+// 	let doe: uint = static_cast#[unsigned](z - (era * 146097));
+// 	let yoe: uint = (((doe - (doe/1460)) + (doe/36524)) - (doe/146096)) / 365;
+// 	let y: int = static_cast#[int](yoe) + (era*400);
+// 	let doy: uint = doe - (((365*yoe) + (yoe/4)) - (yoe/100));
+// 	let mp: uint = ((5*doy) + 2)/153;
+// 	let d: uint = (doy - (((153*mp) + 2 )/5)) + 1;
+
+// 	let t2 = -9;
+// 	if (mp < 10) {
+// 		t2 = 3;
+// 	}
+
+// 	y = y + static_cast#[bool](m <= 2);
+// 	std::cout << m << '/' << d << '/' << y << '\n'; // 8/21/2011
+// }

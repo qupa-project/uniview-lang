@@ -1,6 +1,13 @@
 #include <iostream>
+#include <time.h>
 
 extern "C" {
+	long long Now() {
+		time_t u;
+		time(&u);
+		return static_cast<long long>(u);
+	}
+
 	void i32_print(int val) {
 		std::cout << val;
 	}
