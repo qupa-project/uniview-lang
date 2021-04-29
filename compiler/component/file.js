@@ -255,7 +255,10 @@ class File {
 
 
 	include (type, filename, ref) {
-		let res = path.resolve(this.path, filename);
+		let res = path.resolve(
+			path.dirname(this.path),
+			filename
+		);
 
 		// Check if this has already been included
 		if (this.project.hasIncluded(res)) {
@@ -298,7 +301,7 @@ class File {
 			// Include the file within the project
 			this.project.include(
 				type,
-				path.resolve(this.path, filename),
+				res,
 				ref
 			);
 		}
