@@ -642,6 +642,7 @@ function Simplify_Func_Args_List (node) {
 	return node;
 }
 function Simplify_Call (node) {
+	console.log(645, node);
 	let out = [
 		Simplify_Variable(node.tokens[0][0]),                                  // Call name
 		node.tokens[2].length > 0 ? Simplify_Template(node.tokens[2][0]) : {   // Template
@@ -810,7 +811,29 @@ function Simplify_Expr_Val (node) {
 
 	let call = node.tokens[4];
 	if (call.length > 0) {
-		throw new Error('Unimplemented call handler');
+		call = call[0];
+		let name = subject;
+
+		subject = new BNF.types.BNF_SyntaxNode(
+			"call",
+			[
+				name,                                     // name
+				call.tokens[0].length > 0 ?               // template
+					Simplify_Template(call.tokens[0][0]) :
+					new BNF.types.BNF_SyntaxNode(
+						"template",
+						[],
+						0,
+						call.ref.start,
+						call.ref.start
+					),
+				Simplify_Call_Args(call.tokens[2][0])      // args
+			],
+			0,
+			node.ref.start,
+			node.ref.end,
+			null
+		);
 	}
 
 	return subject;
