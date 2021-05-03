@@ -1,28 +1,52 @@
 const BNF = require('bnf-parser');
 const BNF_SytaxNode = BNF.types.BNF_SyntaxNode;
 
-let precedence = [
-	[ "||" ],
-	[ "&&" ],
-	[ "==", "!=" ],
-	[ ">=", "<=", ">", "<" ],
-	[ "+", "-" ],
-	[ "*", "/", "%" ],
-	[ "!", "$", "@" ]
-];
 
-for (let [i, collection] of precedence.entries()) {
-	for (let item of collection) {
-		precedence[item] = i;
+
+let precedence = {
+	expr_arithmetic: 4,
+	expr_compare: 2,
+	expr_bool: 0,
+
+	expr_mul: 6,
+	expr_div: 6,
+	expr_mod: 5,
+	expr_add: 4,
+	expr_sub: 4,
+
+	expr_lt: 3,
+	expr_lt_eq: 3,
+	expr_gt: 3,
+	expr_gt_eq: 3,
+	expr_eq: 2,
+
+	expr_and: 1,
+	expr_or: 0
+};
+
+function GetPrecedence (a, b) {
+	let A = precedence[a.type];
+	let B = precedence[b.type];
+	if (!B) {
+		return 1;
+	} else if (!A) {
+		return -1;
+	} else if (A == B) {
+		let A = precedence[a.tokens[0].type];
+		let B = precedence[b.tokens[0].type];
+
+		if (!B) {
+			return 1;
+		} else if (!A) {
+			return -1;
+		} else if (A == B) {
+			return 0;
+		} else {
+			return Math.max(1, Math.min(-1, A-B));
+		}
+	} else {
+		return Math.max(1, Math.min(-1, A-B));
 	}
-}
-
-function GetPrecedence (node) {
-	if (typeof(node.tokens) == "string") {
-		return precedence[node.tokens] || -1;
-	}
-
-	return -1;
 }
 
 
@@ -104,7 +128,7 @@ function Construct_Operation(lhs, opperation, rhs) {
 		[
 			new BNF_SytaxNode(
 				sub,
-				[lhs, rhs],
+				[],
 				0,
 				opperation.ref.start,
 				opperation.ref.end
@@ -115,7 +139,21 @@ function Construct_Operation(lhs, opperation, rhs) {
 		rhs.ref.end
 	);
 
-	return node;
+	if (GetPrecedence(lhs, node) == 1) {
+		node.tokens[0].tokens = [
+			lhs.tokens[0].tokens[1],
+			rhs
+		];
+		lhs.tokens[0].tokens[1] = node;
+
+		return lhs;
+	} else {
+		node.tokens[0].tokens = [
+			lhs, rhs
+		];
+
+		return node;
+	}
 }
 
 
