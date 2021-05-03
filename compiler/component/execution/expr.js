@@ -111,10 +111,8 @@ class ExecutionExpr extends ExecutionBase {
 				return this.compile_loadVariable(ast);
 			case "constant":
 				return this.compile_constant(ast);
-			case "expr_brackets":
-				return this.compile_expr(ast.tokens[0], null, true);
 			default:
-				throw new Error(`Unexpected expression opperand type ${ast.type}`);
+				return this.compile_expr(ast, null, true);
 		}
 	}
 
@@ -147,7 +145,7 @@ class ExecutionExpr extends ExecutionBase {
 		// Load the two operands ready for operation
 		let opperands = [
 			this.compile_expr_opperand(ast.tokens[0]),
-			this.compile_expr_opperand(ast.tokens[2])
+			this.compile_expr_opperand(ast.tokens[1])
 		];
 
 		// Catch any errors getting the opperands
@@ -234,7 +232,7 @@ class ExecutionExpr extends ExecutionBase {
 		// Load the two operands ready for operation
 		let opperands = [
 			this.compile_expr_opperand(ast.tokens[0]),
-			this.compile_expr_opperand(ast.tokens[2])
+			this.compile_expr_opperand(ast.tokens[1])
 		];
 
 
@@ -364,7 +362,7 @@ class ExecutionExpr extends ExecutionBase {
 				action = ast.type == "expr_and" ? "And" : "Or";
 				opperands = [
 					this.compile_expr_opperand(ast.tokens[0]),
-					this.compile_expr_opperand(ast.tokens[2])
+					this.compile_expr_opperand(ast.tokens[1])
 				];
 				break;
 			case "expr_not":

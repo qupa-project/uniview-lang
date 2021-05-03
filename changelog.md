@@ -14,6 +14,7 @@
 - [x] Basic math library
 - [x] f64 printing
 - [x] Verify only compilation mode
+- [x] Expression chaining `(1 + 2 + 3)`
 
 ### Fixes
 - [x] Not parsing structures properly on return

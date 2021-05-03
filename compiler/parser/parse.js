@@ -1,3 +1,5 @@
+const { ApplyPrecedence } = require('./expr.js');
+
 const BNF = require('bnf-parser');
 const fs = require('fs');
 
@@ -773,7 +775,6 @@ function Simplify_Assign  (node) {
 
 
 function Simplify_Expr (node) {
-	console.log(773, node);
 	let queue = [
 		Simplify_Expr_Arg(node.tokens[1][0])
 	];
@@ -782,11 +783,7 @@ function Simplify_Expr (node) {
 		queue.push(Simplify_Expr_Arg(next.tokens[2][0]));
 	}
 
-	// Implement shunting yard on queue
-
-	console.log(785, queue);
-
-	throw new Error("Failed to parse");
+	return ApplyPrecedence(queue);
 }
 
 function Simplify_Expr_Arg (node) {
@@ -819,130 +816,10 @@ function Simplify_Expr_Val (node) {
 	return subject;
 }
 
-// function Simplify_Expr_NoPrecedence (node) {
-// 	switch (node.tokens[0].type) {
-// 		case "call":
-// 			return Simplify_Call(node.tokens[0]);
-// 		case "expr_compare":
-// 			return Simplify_Expr_Compare(node.tokens[0]);
-// 		case "expr_arithmetic":
-// 			return Simplify_Expr_Arithmetic(node.tokens[0]);
-// 		case "expr_op":
-// 			return Simplify_Expr_Opperand(node.tokens[0]);
-// 		case "expr_bool":
-// 			return Simplify_Expr_Bool(node.tokens[0]);
-// 		case "expr_clone":
-// 			return Simplify_Expr_Clone(node.tokens[0]);
-// 		default:
-// 			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
-// 	}
-// }
-// function Simplify_Expr_Compare (node) {
-// 	let out = null;
-
-// 	switch (node.tokens[0].type) {
-// 		case "expr_eq":
-// 		case "expr_neq":
-// 		case "expr_gt":
-// 		case "expr_lt":
-// 		case "expr_gt_eq":
-// 		case "expr_lt_eq":
-// 			out = Simplify_Expr_Binary(node.tokens[0]);
-// 			break;
-// 		default:
-// 			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
-// 	}
-
-// 	node.tokens = [out];
-// 	node.reached = null;
-// 	return node;
-// }
-// function Simplify_Expr_Arithmetic (node) {
-// 	let out = null;
-
-// 	switch (node.tokens[0].type) {
-// 		case "expr_mod":
-// 		case "expr_mul":
-// 		case "expr_div":
-// 		case "expr_add":
-// 		case "expr_sub":
-// 			out = Simplify_Expr_Binary(node.tokens[0]);
-// 			break;
-// 		case "expr_invert":
-// 			out = Simplify_Expr_Unary(node.tokens[0]);
-// 			break;
-// 		default:
-// 			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
-// 	}
-
-
-// 	node.tokens = [out];
-// 	node.reached = null;
-// 	return node;
-// }
-// function Simplify_Expr_Bool (node) {
-// 	let out = null;
-
-// 	switch (node.tokens[0].type) {
-// 		case "expr_and":
-// 		case "expr_or":
-// 			out = Simplify_Expr_Binary(node.tokens[0]);
-// 			break;
-// 		case "expr_not":
-// 			out = Simplify_Expr_Unary(node.tokens[0]);
-// 			break;
-// 		default:
-// 			throw new TypeError(`Unexpected arrithmetic expression statement ${node.tokens[0].type}`);
-// 	}
-
-// 	node.tokens = [out];
-// 	node.reached = null;
-// 	return node;
-// }
-// function Simplify_Expr_Unary (node) {
-// 	let out = [
-// 		Simplify_Expr_Opperand(node.tokens[2][0]),
-// 	];
-
-// 	node.tokens  = out;
-// 	node.reached = null;
-// 	return node;
-// }
-// function Simplify_Expr_Binary (node) {
-// 	let out = [
-// 		Simplify_Expr_Opperand(node.tokens[0][0]),
-// 		node.tokens[2][0].tokens,
-// 		Simplify_Expr_Opperand(node.tokens[4][0]),
-// 	];
-
-// 	node.tokens  = out;
-// 	node.reached = null;
-// 	return node;
-// }
-// function Simplify_Expr_Opperand (node) {
-// 	switch (node.tokens[0].type) {
-// 		case "call":
-// 			node = Simplify_Call(node.tokens[0]);
-// 			break;
-// 		case "constant":
-// 			node = Simplify_Constant(node.tokens[0]);
-// 			break;
-// 		case "variable":
-// 			node = Simplify_Variable(node.tokens[0]);
-// 			break;
-// 		case "expr_brackets":
-// 			node = Simplify_Expr_Brackets(node.tokens[0]);
-// 			break;
-// 		default:
-// 			throw new TypeError(`Unexpected expr_p1 statement ${node.tokens[0].type}`);
-// 	}
-
-// 	node.reached = null;
-// 	return node;
-// }
 function Simplify_Expr_Brackets (node) {
 	return Simplify_Expr(node.tokens[2][0]);
 }
+
 // function Simplify_Expr_Clone (node) {
 // 	node.tokens = [
 // 		Simplify_Variable(node.tokens[2][0])
@@ -951,14 +828,17 @@ function Simplify_Expr_Brackets (node) {
 //
 // 	return node;
 // }
-// function Simplify_Expr_Lend (node) {
-// 	node.tokens = [
-// 		Simplify_Variable(node.tokens[2][0])
-// 	];
-// 	node.reached = null;
 
-// 	return node;
-// }
+function Simplify_Expr_Lend (node) {
+	node.tokens = [
+		Simplify_Variable(node.tokens[2][0])
+	];
+	node.reached = null;
+
+	return node;
+}
+
+
 
 
 
