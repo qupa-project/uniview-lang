@@ -135,6 +135,8 @@ class ExecutionExpr extends ExecutionBase {
 			case "expr_mod":
 				action = "Rem";
 				break;
+			case "expr_invert":
+				return this.compile_expr_arithmetic_invert(ast);
 			default:
 				throw new Error(`Unexpected arithmetic expression type ${ast.type}`);
 		}
@@ -221,6 +223,69 @@ class ExecutionExpr extends ExecutionBase {
 				opperands[1].instruction.name
 			),
 			type: opperands[0].type
+		};
+	}
+
+	compile_expr_arithmetic_invert (ast) {
+		let preamble = new LLVM.Fragment();
+		let epilog = new LLVM.Fragment();
+
+		// Load the two operands ready for operation
+		let opperand = this.compile_expr_opperand(ast.tokens[0]);
+
+		// Catch any errors getting the opperands
+		if (opperand.error) {
+			this.getFile().throw(opperand.msg, opperand.ref.start, opperand.ref.end);
+			return null;
+		}
+
+		// Append the load instructions
+		preamble.merge(opperand.preamble);
+		epilog.merge(opperand.epilog);
+
+
+		// Check opperands are primatives
+		if (!opperand.type.type.primative) {
+			this.getFile().throw(
+				`Error: Cannot run arithmetic opperation on non-primative type`,
+				ast.tokens[0].ref.start, ast.tokens[0].ref.end
+			);
+			return null;
+		}
+
+
+		// Get the arrithmetic mode
+		let mode = null;
+		if (opperand.type.type.cat == "int") {
+			mode = opperand.type.type.signed ? 0 : 1;
+		} else if (opperand.type.type.cat == "float") {
+			mode = 2;
+		}
+		if (mode === null) {
+			this.getFile().throw(
+				`Error: Unable to perform arithmetic opperation for unknown reason`,
+				ast.tokens[1].ref.start, ast.tokens[1].ref.end
+			);
+			return null;
+		} else if (mode === 1) {
+			this.getFile().throw(
+				`Error: Cannot invert a non signed integer`,
+				ast.tokens[1].ref.start, ast.tokens[1].ref.end
+			);
+			return null;
+		}
+
+		return {
+			preamble, epilog,
+			instruction: new LLVM.Sub(
+				mode,
+				opperand.instruction.type,
+				new LLVM.Constant(
+					mode == 2 ? "0.0" : 0
+				),
+				opperand.instruction.name
+			),
+			type: opperand.type
 		};
 	}
 

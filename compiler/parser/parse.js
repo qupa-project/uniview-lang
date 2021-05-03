@@ -3,6 +3,8 @@ const { ApplyPrecedence } = require('./expr.js');
 const BNF = require('bnf-parser');
 const fs = require('fs');
 
+const BNF_SyntaxNode = BNF.types.BNF_SyntaxNode;
+
 const syntax = BNF.types.BNF_Tree.fromJSON(
 	JSON.parse(fs.readFileSync(__dirname+"/syntax.json", 'utf8'))
 );
@@ -492,7 +494,7 @@ function Simplify_Function_Outline (node) {
 }
 function Simplify_Function_Redirect (node) {
 	node.tokens = [
-		new BNF.types.BNF_SyntaxNode (
+		new BNF_SyntaxNode (
 			'function_head',
 			[
 				node.tokens[5][0] ?                      // Return type
@@ -512,11 +514,11 @@ function Simplify_Function_Redirect (node) {
 
 	// Replace null return type with "void" datatype
 	if (node.tokens[0].tokens[0] === null) {
-		node.tokens[0].tokens[0] = new BNF.types.BNF_SyntaxNode (
+		node.tokens[0].tokens[0] = new BNF_SyntaxNode (
 			'data_type',
 			[
 				0,
-				new BNF.types.BNF_SyntaxNode(
+				new BNF_SyntaxNode(
 					'name',
 					'void',
 					4,
@@ -549,11 +551,11 @@ function Simplify_Function_Head (node) {
 
 	// Replace null return type with "void" datatype
 	if (node.tokens[0] === null) {
-		node.tokens[0] = new BNF.types.BNF_SyntaxNode (
+		node.tokens[0] = new BNF_SyntaxNode (
 			'data_type',
 			[
 				0,
-				new BNF.types.BNF_SyntaxNode(
+				new BNF_SyntaxNode(
 					'name',
 					'void',
 					4,
@@ -641,8 +643,8 @@ function Simplify_Func_Args_List (node) {
 	node.reached = null;
 	return node;
 }
+
 function Simplify_Call (node) {
-	console.log(645, node);
 	let out = [
 		Simplify_Variable(node.tokens[0][0]),                                  // Call name
 		node.tokens[2].length > 0 ? Simplify_Template(node.tokens[2][0]) : {   // Template
@@ -657,13 +659,13 @@ function Simplify_Call (node) {
 	return node;
 }
 function Simplify_Call_Args (node) {
-	if (node.tokens[2].length > 0) {
-		node.tokens = node.tokens[2][1];
 
+	if (node.tokens[2].length > 0) {
+		let inner = node.tokens[2][0];
 		node.tokens =
-			[ node.tokens[2][0] ]
+			[ inner.tokens[0][0] ]
 				.concat(
-					node.tokens[4].map(arg => arg.tokens[3][0])
+					inner.tokens[1].map(arg => arg.tokens[3][0])
 				).map( x => Simplify_Call_Arg(x) );
 	} else {
 		node.tokens = [];
@@ -804,39 +806,89 @@ function Simplify_Expr_Val (node) {
 		Simplify_Variable(subject) :
 		Simplify_Constant(subject);
 
-	let unary = node.tokens[0][0];
-	if (unary) {
-		throw new Error('Unimplemented Unary handler');
-	}
-
 	let call = node.tokens[4];
 	if (call.length > 0) {
-		call = call[0];
-		let name = subject;
+		return Simplify_Expr_Call(subject, call[0], subject.ref);
+	}
 
-		subject = new BNF.types.BNF_SyntaxNode(
-			"call",
-			[
-				name,                                     // name
-				call.tokens[0].length > 0 ?               // template
-					Simplify_Template(call.tokens[0][0]) :
-					new BNF.types.BNF_SyntaxNode(
-						"template",
-						[],
-						0,
-						call.ref.start,
-						call.ref.start
-					),
-				Simplify_Call_Args(call.tokens[2][0])      // args
-			],
-			0,
-			node.ref.start,
-			node.ref.end,
-			null
-		);
+	let unary = node.tokens[0][0];
+	if (unary) {
+		return Simplify_Expr_Unary(unary, subject);
 	}
 
 	return subject;
+}
+
+function Simplify_Expr_Unary (opperation, node) {
+	switch (opperation.tokens) {
+		case "-":
+			return new BNF_SyntaxNode(
+				"expr_arithmetic",
+				[
+					new BNF_SyntaxNode(
+						"expr_invert",
+						[
+							node
+						], 1,
+						opperation.ref.start,
+						opperation.ref.end
+					)
+				], 0,
+				opperation.ref.start,
+				node.ref.end
+			);
+		case "!":
+			return new BNF_SyntaxNode(
+				"expr_bool",
+				[
+					new BNF_SyntaxNode(
+						"expr_not",
+						[
+							node
+						], 1,
+						opperation.ref.start,
+						opperation.ref.end
+					)
+				], 0,
+				opperation.ref.start,
+				node.ref.end
+			);
+		case "@":
+			return new BNF_SyntaxNode(
+				"expr_clone",
+				[
+					node
+				],
+				0,
+				opperation.ref.start,
+				node.ref.end
+			);
+		default:
+			throw new Error(`Unexpected unary operation "${opperation.tokens}"`);
+	}
+}
+
+function Simplify_Expr_Call (name, node, ref) {
+	return new BNF_SyntaxNode(
+		"call",
+		[
+			name,                                     // name
+			node.tokens[0].length > 0 ?               // template
+				Simplify_Template(node.tokens[0][0]) :
+				new BNF_SyntaxNode(
+					"template",
+					[],
+					0,
+					node.ref.start,
+					node.ref.start
+				),
+			Simplify_Call_Args(node.tokens[2][0])      // args
+		],
+		0,
+		ref.start,
+		ref.end,
+		null
+	);
 }
 
 function Simplify_Expr_Brackets (node) {

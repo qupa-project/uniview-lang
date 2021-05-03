@@ -136,10 +136,10 @@ program ::= w* ( stmt_top w* )*
 #  Expression
 #=============================
 	expr ::= w* expr_arg w* ( expr_middle_opper w* expr_arg w* )*
-		expr_right_opper ::= "!" | "$"
+		expr_right_opper ::= "!" | "$" | "-"
 		expr_middle_opper ::= "?" | ":" | "&&" | "||" | "==" | "!=" | "<=" | ">=" | "<" | ">" | "%" | "*" | "/" | "+" | "-"
 		expr_arg ::= expr_val | expr_brackets
-			expr_val ::= expr_right_opper? w* ( variable | constant ) w* ( template? w* call_args )?
+			expr_val ::= expr_right_opper? w* ( constant | variable ) w* ( template? w* call_args )?
 			expr_brackets ::= "(" w* expr w* ")"
 
 	expr_lend ::= "@" variable
