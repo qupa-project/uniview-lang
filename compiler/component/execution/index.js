@@ -11,6 +11,7 @@ const Primative = {
 
 const ExecutionFlow = require('./flow.js');
 const Structure = require('../struct.js');
+const Variable = require('../memory/variable.js');
 
 class Execution extends ExecutionFlow {
 
@@ -280,9 +281,25 @@ class Execution extends ExecutionFlow {
 			return null;
 		}
 
-		// Merge the preable, execution, and epilog into one fragment
 		frag.merge(out.preamble);
-		frag.append(out.instruction);
+
+		let id = new LLVM.ID();
+		frag.append(new LLVM.Set(
+			new LLVM.Name(id, false, ast.ref),
+			out.instruction,
+			ast.ref
+		));
+
+		// Put the value into a temporary variable to destruct the non-used value
+		let temp = new Variable(out.type, "temp", ast.ref);
+		temp.markUpdated(new LLVM.Argument(
+			out.type.toLLVM(ast.ref),
+			new LLVM.Name(id.reference(), false, ast.ref),
+			ast.ref
+		));
+		frag.merge(temp.cleanup(ast.ref));
+
+		// merge any epilog of the call
 		frag.merge(out.epilog);
 		return frag;
 	}
