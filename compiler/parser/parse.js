@@ -899,15 +899,6 @@ function Simplify_Expr_Brackets (node) {
 	return node;
 }
 
-// function Simplify_Expr_Clone (node) {
-// 	node.tokens = [
-// 		Simplify_Variable(node.tokens[2][0])
-// 	];
-// 	node.reached = null;
-//
-// 	return node;
-// }
-
 function Simplify_Expr_Lend (node) {
 	node.tokens = [
 		Simplify_Variable(node.tokens[1][0])
