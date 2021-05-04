@@ -25,6 +25,7 @@
 - [x] Composing structures with structure elements
 - [x] Frash during scope cleanup due to bad code reference
 - [x] Using undefined variables within expressions causing crash
+- [x] Fixed crash with unhandled call return values
 
 ### Tweaks
 - [x] Decomposed structure elements now have the correct internal names for error messages
