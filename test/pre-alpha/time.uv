@@ -1,0 +1,23 @@
+import "time.uv" as Time;
+import "print.uv";
+
+fn main(): int {
+	let now = Time.Now();
+
+	let time = Time.GetTime(now);
+	print(time.hours);
+	print(":");
+	print(time.minutes);
+	print(":");
+	print(time.seconds);
+
+	print(" ");
+	let date = Time.GetDate(now);
+	print(date.day);
+	print("/");
+	print(date.month);
+	print("/");
+	print(date.year);
+
+	return 0;
+}
