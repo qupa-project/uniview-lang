@@ -83,7 +83,7 @@ if (project.error) {
 
 
 if (config.verifyOnly) {
-	process.exit(1);
+	process.exit(0);
 }
 
 fs.writeFileSync(`${config.output}.ll`, asm.flattern(), 'utf8');
@@ -134,9 +134,16 @@ if (config.source != "llvm") {
 			let app = spawn(exec_out);
 			app.stderr.pipe (process.stderr);
 			app.stdout.pipe (process.stdout);
+
+			app.on('close', (code) => {
+				process.exit(code);
+			});
+		} else {
+			process.exit(0);
 		}
 	} else {
 		console.error("FAILED TO COMPILE");
 		process.stderr.write(clang.output[2]);
+		process.exit(1);
 	}
 }
