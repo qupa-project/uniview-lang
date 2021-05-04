@@ -188,58 +188,58 @@ class Variable extends Value {
 	 * @param {BNF_Reference} ref
 	 * @returns {Object[Variable, LLVM.Fragment]|Error}
 	 */
-		access (accessor, ref) {
-			let preamble = new LLVM.Fragment();
-			if (!this.isDecomposed) {
-				let res = this.decompose(ref);
-				/* jshint ignore:start*/
-				if (res?.error) {
-					return res;
-				}
-				/* jshint ignore:end*/
-				preamble.merge(res);
+	access (accessor, ref) {
+		let preamble = new LLVM.Fragment();
+		if (!this.isDecomposed) {
+			let res = this.decompose(ref);
+			/* jshint ignore:start*/
+			if (res?.error) {
+				return res;
 			}
+			/* jshint ignore:end*/
+			preamble.merge(res);
+		}
 
-			let struct = this.type.type;
-			if (this.type.type.typeSystem == "linear") {
-				let res = struct.getTerm(accessor, this, ref);
-				if (res === null) {
-					/* jshint ignore:start*/
-					return {
-						error: true,
-						msg: `Unable to access element "${accessor?.tokens || accessor}"`,
-						ref: accessor.ref
-					};
-					/* jshint ignore:end*/
-				}
-
-				// Linear types are managed by reference
-				if (res.type.type.typeSystem == "linear") {
-					res.type.offsetPointer(1);
-				}
-
-				if (!this.elements.has(res.index)) {
-					let elm = new Variable(res.type, `${this.name}.${accessor.tokens}`, ref);
-					let act = elm.markUpdated(res.instruction, false, ref);
-					if (act.error) {
-						return res;
-					}
-
-					this.elements.set(res.index, elm);
-				}
-
-				return {
-					variable: this.elements.get(res.index),
-					preamble: preamble
-				};
-			} else {
+		let struct = this.type.type;
+		if (this.type.type.typeSystem == "linear") {
+			let res = struct.getTerm(accessor, this, ref);
+			if (res === null) {
+				/* jshint ignore:start*/
 				return {
 					error: true,
-					msg: "Unable to access sub-element of non-structure or static array",
-					ref: ref
+					msg: `Unable to access element "${accessor?.tokens || accessor}"`,
+					ref: accessor.ref
 				};
+				/* jshint ignore:end*/
 			}
+
+			// Linear types are managed by reference
+			if (res.type.type.typeSystem == "linear") {
+				res.type.offsetPointer(1);
+			}
+
+			if (!this.elements.has(res.index)) {
+				let elm = new Variable(res.type, `${this.name}.${accessor.tokens}`, ref);
+				let act = elm.markUpdated(res.instruction, false, ref);
+				if (act.error) {
+					return res;
+				}
+
+				this.elements.set(res.index, elm);
+			}
+
+			return {
+				variable: this.elements.get(res.index),
+				preamble: preamble
+			};
+		} else {
+			return {
+				error: true,
+				msg: "Unable to access sub-element of non-structure or static array",
+				ref: ref
+			};
 		}
+	}
 
 
 
