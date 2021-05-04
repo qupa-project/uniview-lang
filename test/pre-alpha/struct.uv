@@ -16,7 +16,15 @@ fn init(ofAge: bool): Person {
 	return p;
 }
 
+fn age(p: @Person) {
+	p.age = p.age + 1;
+	return;
+}
+
 
 fn main(): int {
+	let p = init(false);
+	age($p);
+
 	return 0;
 }
