@@ -892,7 +892,11 @@ function Simplify_Expr_Call (name, node, ref) {
 }
 
 function Simplify_Expr_Brackets (node) {
-	return Simplify_Expr(node.tokens[2][0]);
+	node.tokens = [
+		Simplify_Expr(node.tokens[2][0])
+	];
+	node.reached = null;
+	return node;
 }
 
 // function Simplify_Expr_Clone (node) {

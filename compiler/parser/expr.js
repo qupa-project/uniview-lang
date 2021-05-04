@@ -4,48 +4,56 @@ const BNF_SytaxNode = BNF.types.BNF_SyntaxNode;
 
 
 let precedence = {
-	expr_arithmetic: 4,
+	expr_arithmetic: 0,
 	expr_compare: 2,
-	expr_bool: 0,
+	expr_bool: 4,
 
-	expr_mul: 6,
-	expr_div: 6,
-	expr_mod: 5,
-	expr_add: 4,
-	expr_sub: 4,
+	expr_mul : 0,
+	expr_div : 0,
+	expr_mod : 0,
+	expr_add : 1,
+	expr_sub : 1,
 
-	expr_lt: 3,
-	expr_lt_eq: 3,
-	expr_gt: 3,
-	expr_gt_eq: 3,
-	expr_eq: 2,
+	expr_lt    : 2,
+	expr_lt_eq : 2,
+	expr_gt    : 2,
+	expr_gt_eq : 2,
+	expr_eq    : 3,
 
-	expr_and: 1,
-	expr_or: 0
+	expr_and : 4,
+	expr_or  : 5,
+
+	expr_brackets: 6
 };
 
 function GetPrecedence (a, b) {
+	if (a.type == "expr_brackets") {
+		return 0;
+	}
+
 	let A = precedence[a.type];
 	let B = precedence[b.type];
-	if (!B) {
-		return 1;
-	} else if (!A) {
-		return -1;
+	if (A == undefined && B == undefined) {
+		return 0;
 	} else if (A == B) {
 		let A = precedence[a.tokens[0].type];
 		let B = precedence[b.tokens[0].type];
 
-		if (!B) {
-			return 1;
-		} else if (!A) {
-			return -1;
-		} else if (A == B) {
+		if (A  == undefined && B  == undefined) {
 			return 0;
+		} else if (B == undefined) {
+			return 1;
+		} else if (A == undefined) {
+			return -1;
 		} else {
-			return Math.max(1, Math.min(-1, A-B));
+			return Math.min(1, Math.max(-1, A-B));
 		}
+	} else if (B == undefined) {
+		return 1;
+	} else if (A == undefined) {
+		return -1;
 	} else {
-		return Math.max(1, Math.min(-1, A-B));
+		return Math.min(1, Math.max(-1, A-B));
 	}
 }
 
@@ -139,7 +147,9 @@ function Construct_Operation(lhs, opperation, rhs) {
 		rhs.ref.end
 	);
 
-	if (GetPrecedence(lhs, node) == 1) {
+	let p = GetPrecedence(lhs, node);
+
+	if (p == 1) {
 		node.tokens[0].tokens = [
 			lhs.tokens[0].tokens[1],
 			rhs
