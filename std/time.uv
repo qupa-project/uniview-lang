@@ -12,6 +12,12 @@ struct Date {
 	year: int;
 }
 
+struct Time {
+	hours: int;
+	minutes: int;
+	seconds: int;
+}
+
 
 fn GetDate(unixTime: i64): Date {
 	// Needs higherlevel type casting to implement correctly
@@ -64,4 +70,15 @@ fn GetDate(unixTime: i64): Date {
 	compose date;
 
 	return date;
+}
+
+fn GetTime(unixTime: i64): Time {
+	let unix = static_cast#[int] (unixTime);
+
+	let t = Blank#[Time]();
+	t.seconds = unix % 60;
+	t.minutes = unix / 60 % 60;
+	t.hours   = unix / 3600 % 24;
+
+	return t;
 }
