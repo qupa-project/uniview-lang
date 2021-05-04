@@ -283,24 +283,30 @@ class Execution extends ExecutionFlow {
 
 		frag.merge(out.preamble);
 
-		// Put the value into a temporary variable to destruct the non-used value
-		if (out.type.type.represent !== "void") {
-			let id = new LLVM.ID();
-			frag.append(new LLVM.Set(
-				new LLVM.Name(id, false, ast.ref),
-				out.instruction,
-				ast.ref
-			));
+		// Put the value into a temporary variable to destruct the non-used value=
+		if (out.type.type.represent == "void") {
+			frag.append(out.instruction);
+		} else {
+			let target;
+			if (out.type.type.typeSystem == "linear") {
+				target = out.instruction;
+			} else {
+				let id = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(id, false, ast.ref),
+					out.instruction,
+					ast.ref
+				));
+				target = new LLVM.Argument(
+					out.type.toLLVM(ast.ref),
+					new LLVM.Name(id.reference(), false, ast.ref),
+					ast.ref
+				);
+			}
 
 			let temp = new Variable(out.type, "return", ast.ref);
-			temp.markUpdated(new LLVM.Argument(
-				out.type.toLLVM(ast.ref),
-				new LLVM.Name(id.reference(), false, ast.ref),
-				ast.ref
-			));
+			temp.markUpdated(target);
 			frag.merge(temp.cleanup(ast.ref));
-		} else {
-			frag.append(out.instruction);
 		}
 
 		// merge any epilog of the call
