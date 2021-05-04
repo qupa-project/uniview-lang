@@ -31,7 +31,7 @@ node -v
 ## Installing Uniview
 Simply run:
 ```
-npm install -g @qupa/uni-view
+npm install -g @qupa/uniview
 ```
 This will install uniview, bind the compile command, and pre-build the standard libraries.
 

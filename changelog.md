@@ -14,6 +14,8 @@
 - [x] Basic math library
 - [x] f64 printing
 - [x] Verify only compilation mode
+- [x] Expression chaining `(1 + 2 + 3)`
+- [x] Opperator Precedence
 
 ### Fixes
 - [x] Not parsing structures properly on return
@@ -23,6 +25,7 @@
 - [x] Composing structures with structure elements
 - [x] Frash during scope cleanup due to bad code reference
 - [x] Using undefined variables within expressions causing crash
+- [x] Fixed crash with unhandled call return values
 
 ### Tweaks
 - [x] Decomposed structure elements now have the correct internal names for error messages
