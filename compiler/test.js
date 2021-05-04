@@ -67,7 +67,7 @@ function Compile(filename, id) {
 
 			console.info("\nTest", completed, ' of ', total);
 			console.log(msg);
-			console.log(failed ? "  FAILED" : "  success");
+			console.info(failed ? "  FAILED" : "  success");
 			res();
 		});
 	});
@@ -91,8 +91,8 @@ total = tests.length;
 
 async function Test () {
 	let test_path = path.resolve(root, "./test/temp/");
-	console.log('Test space', test_path);
-	console.log(" ");
+	console.info('Test space', test_path);
+	console.info(" ");
 	if (!fs.existsSync(test_path) ) {
 		fs.mkdirSync(test_path);
 	}
@@ -105,7 +105,7 @@ async function Test () {
 
 	await Promise.all(tasks);
 
-	console.log(`\nFailed ${fails} of ${tests.length}`);
+	console.info(`\nFailed ${fails} of ${tests.length}`);
 
 	if (fails > 0) {
 		process.exit(1);
