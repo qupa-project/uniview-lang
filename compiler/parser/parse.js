@@ -853,7 +853,7 @@ function Simplify_Expr_Unary (opperation, node) {
 				opperation.ref.start,
 				node.ref.end
 			);
-		case "@":
+		case "$":
 			return new BNF_SyntaxNode(
 				"expr_clone",
 				[
@@ -910,7 +910,7 @@ function Simplify_Expr_Brackets (node) {
 
 function Simplify_Expr_Lend (node) {
 	node.tokens = [
-		Simplify_Variable(node.tokens[2][0])
+		Simplify_Variable(node.tokens[1][0])
 	];
 	node.reached = null;
 

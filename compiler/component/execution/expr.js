@@ -195,7 +195,6 @@ class ExecutionExpr extends ExecutionBase {
 
 		// Check opperands are the same type
 		if (!opperands[0].type.match(opperands[1].type)) {
-			console.log(ast.tokens);
 			this.getFile().throw(
 				`Error: Cannot perform arithmetic opperation on unequal types`,
 				ast.tokens[0].ref.start, ast.tokens[1].ref.end

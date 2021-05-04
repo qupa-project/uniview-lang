@@ -1,3 +1,5 @@
+import "print.uv";
+
 struct Person {
 	id: int;
 	age: int;
@@ -21,10 +23,23 @@ fn age(p: @Person) {
 	return;
 }
 
+fn print(p: Person) {
+	print("Person { id: ");
+	print(p.id);
+	print(", age: ");
+	print(p.age);
+	println(" }");
+
+	return;
+}
+
 
 fn main(): int {
 	let p = init(false);
-	age($p);
+	let b = $p;
+	age(@p);
+	print(p);
+	print(b);
 
 	return 0;
 }
