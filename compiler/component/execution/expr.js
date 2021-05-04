@@ -114,7 +114,7 @@ class ExecutionExpr extends ExecutionBase {
 			case "expr_brackets":
 				return this.compile_expr(ast.tokens[0], null, true);
 			default:
-				throw new Error(`Unexpected expression opperand type ${ast.type}`);
+				return this.compile_expr(ast, null, true)
 		}
 	}
 
@@ -155,7 +155,9 @@ class ExecutionExpr extends ExecutionBase {
 		// Catch any errors getting the opperands
 		let hasErr = false;
 		for (let opper of opperands) {
-			if (opper.error) {
+			if (opper == null) {
+				hasErr = true;
+			} else if (opper.error) {
 				this.getFile().throw(opper.msg, opper.ref.start, opper.ref.end);
 				hasErr = true;
 			}
@@ -185,7 +187,7 @@ class ExecutionExpr extends ExecutionBase {
 		if (!opperands[1].type.type.primative) {
 			this.getFile().throw(
 				`Error: Cannot run arithmetic opperation on non-primative type`,
-				ast.tokens[2].ref.start, ast.tokens[2].ref.end
+				ast.tokens[1].ref.start, ast.tokens[1].ref.end
 			);
 			return null;
 		}
@@ -193,9 +195,10 @@ class ExecutionExpr extends ExecutionBase {
 
 		// Check opperands are the same type
 		if (!opperands[0].type.match(opperands[1].type)) {
+			console.log(ast.tokens);
 			this.getFile().throw(
 				`Error: Cannot perform arithmetic opperation on unequal types`,
-				ast.tokens[0].ref.start, ast.tokens[2].ref.end
+				ast.tokens[0].ref.start, ast.tokens[1].ref.end
 			);
 			return null;
 		}
@@ -306,7 +309,9 @@ class ExecutionExpr extends ExecutionBase {
 		// Catch any errors getting the opperands
 		let hasErr = false;
 		for (let opper of opperands) {
-			if (opper.error) {
+			if (opper == null) {
+				hasErr = true;
+			} else if (opper.error) {
 				this.getFile().throw(opper.msg, opper.ref.start, opper.ref.end);
 				hasErr = true;
 			}
@@ -327,7 +332,7 @@ class ExecutionExpr extends ExecutionBase {
 		if (!opperands[1].type.type.primative) {
 			this.getFile().throw(
 				`Error: Cannot perform comparison opperation on non-primative type`,
-				ast.tokens[2].ref.start, ast.tokens[2].ref.end
+				ast.tokens[1].ref.start, ast.tokens[1].ref.end
 			);
 			return null;
 		}
@@ -337,7 +342,7 @@ class ExecutionExpr extends ExecutionBase {
 		if (!opperands[0].type.match(opperands[1].type)) {
 			this.getFile().throw(
 				`Error: Cannot perform comparison opperation on unequal types`,
-				ast.tokens[0].ref.start, ast.tokens[2].ref.end
+				ast.tokens[0].ref.start, ast.tokens[1].ref.end
 			);
 			return null;
 		}
@@ -451,7 +456,9 @@ class ExecutionExpr extends ExecutionBase {
 		// Catch any errors getting the opperands
 		let hasErr = false;
 		for (let opper of opperands) {
-			if (opper.error) {
+			if (opper == null) {
+				hasErr = true;
+			} else if (opper.error) {
 				this.getFile().throw(opper.msg, opper.ref.start, opper.ref.end);
 				hasErr = true;
 			}
@@ -472,7 +479,7 @@ class ExecutionExpr extends ExecutionBase {
 		if (!opperands[1].type.match(type)) {
 			this.getFile().throw(
 				`Error: Cannot perform boolean opperation on non boolean types`,
-				ast.tokens[2].ref.start, ast.tokens[2].ref.end
+				ast.tokens[1].ref.start, ast.tokens[1].ref.end
 			);
 			return null;
 		}
