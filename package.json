@@ -18,7 +18,7 @@
     "compile": "node compiler/compile.js",
     "test": "npm run test-exec",
     "test-translation": "node compiler/test.js",
-    "test-compile": "node compiler/test.js --bin",
+    "test-compilation": "node compiler/test.js --bin",
     "test-execution": "node compiler/test.js --bin --exec",
     "postinstall": "npm run build",
     "build": "npm run build-syntax && npm run build-runtime",
