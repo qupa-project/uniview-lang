@@ -1,140 +1,105 @@
-const Project = require('./component/project.js');
-
-const util = require('util');
-const { resolve, dirname } = require('path');
 const fs = require('fs');
 const os = require('os');
 
-const exec = util.promisify( require('child_process').exec );
-const writeFile = util.promisify( fs.writeFile );
-const readFile = util.promisify( fs.readFile );
-const exists = util.promisify( fs.exists );
-const mkdir = util.promisify( fs.mkdir );
+const util = require('util');
+const spawn = require("child_process").spawn;
+
+const path = require('path');
 
 let flags = {
 	clang: process.argv.includes('--bin'),
 	exec: process.argv.includes('--exec')
 };
-
 if (flags.exec) {
 	flags.clang = true;
 }
 
-let config = {
-	caching: true,
-	output: "out",
-	ext: os.platform() == "win32" ? "exe" :
-		os.platform() == "darwin" ? "app" :
-		"out",
-	source: false,
-	execute: false
-};
+let extraArgs = [];
+if (flags.exec) {
+	extraArgs.push('--execute');
+} else if (!flags.clang) {
+	extraArgs.push('--verifyOnly')
+}
+
+
+const root = path.resolve(__dirname, "../");
 
 let total = 0;
 let completed = 0;
 let fails = 0;
 
-async function Compile(root, id) {
-	let msg  = `  File : ${root}\n`;
+function Compile(filename, id) {
+	let target = path.relative(root, filename);
+
+	let msg  = `  File : ${target}\n`;
 	    msg += `  ID   : ${id}\n`;
 	let failed = false;
 
-	// Load required files
-	let project = new Project(root, {
-		caching: config.caching
+	return new Promise((res, rej) => {
+
+		let log = "";
+		let start = Date.now();
+		let compile = spawn(`node`, [
+			"compiler/compile.js", target,
+			"-o", `./test/temp/${id}`
+		].concat(extraArgs), {
+			cwd: path.resolve(__dirname, "../")
+		});
+		compile.stdout.on('data', (data) => {
+			log += data.toString();
+		});
+		compile.stderr.on('data', (data) => {
+			log += data.toString();
+		});
+
+		compile.on('close', (code) => {
+			let end = Date.now();
+			if (code !== 0) {
+				msg += log; // only include the log on failure
+				failed = true;
+				fails++;
+			}
+
+			let duration = (end-start)/1000;
+			msg += `\n\n  Time: ${duration}s`;
+
+			completed++;
+
+			console.info("\nTest", completed, ' of ', total);
+			console.log(msg);
+			console.log(failed ? "  FAILED" : "  success");
+		});
 	});
-	project.import(root, true);
-
-	try {
-		// Link elements
-		msg += "Linking...\n";
-		project.link();
-		if (project.error) {
-			throw new Error("Link Error");
-		}
-
-		// Compile to LLVM
-		let asm;
-		if (!failed) {
-			msg += "Processing...\n";
-			asm = project.compile();
-			if (project.error) {
-				throw new Error("Uncompilable errors");
-			}
-		}
-
-		let runtime_path = resolve(__dirname, "./../runtime/runtime.cpp");
-		let ir_path = resolve(__dirname, `./../test/temp/${id}.ll`);
-		let log_path = resolve( dirname(root), "./out.txt" );
-		let exe_path = resolve(__dirname, `./../test/temp/${id}.${config.ext}`);
-
-		// Compile completely using clang
-		if (!failed && ( flags.clang || flags.llvm)) {
-			msg += "Binerising...\n";
-			let data = asm.flattern();
-			await writeFile(ir_path, data, 'utf8');
-
-			await exec(`clang++ ${runtime_path} -x ir ${ir_path} -o ${exe_path}`);
-		}
-
-		// Test execution
-		if (!failed && flags.clang && flags.exec) {
-			msg += "Executing...\n";
-			let out = await exec(exe_path);
-
-			if (await exists(log_path)) {
-				let log = (await readFile(log_path, 'utf8'))
-					.replace(/\r\n/g, '\n')
-					.replace(/ \n/g, '\n');
-				let io = out.stdout
-					.replace(/\r\n/g, '\n')
-					.replace(/ \n/g, '\n');
-				if (io != log) {
-					console.log(81, [io, log])
-					throw new Error("Output does not match log");
-				}
-			}
-		}
-	} catch (e) {
-		msg += e.message;
-		failed = true;
-		fails++;
-	}
-
-	completed++;
-
-	console.info("\nTest", completed, ' of ', total);
-	console.log(msg);
-	console.log(failed ? "  FAILED" : "  success");
-
-	return;
 }
 
 
 
 
 let tests = [
-	"cast/main.uv",
-	"compare/main.uv",
-	"first-execution/main.uv",
-	"library-behaviour/main.uv",
-	"math/main.uv",
+	"cast.uv",
+	"compare.uv",
+	"first-execution.uv",
+	"library-behaviour.uv",
+	"math.uv",
+	"struct.uv"
 ].map( x => {
-	return resolve("./test/pre-alpha", x);
+	return path.resolve("./test/pre-alpha", x);
 });
 total = tests.length;
 
+
 async function Test () {
-	let test_path = resolve(__dirname, "../test/temp/");
+	let test_path = path.resolve(root, "./test/temp/");
 	console.log('Test space', test_path);
-	if (!await exists(test_path) ) {
-		await mkdir(test_path);
+	console.log(" ");
+	if (!fs.existsSync(test_path) ) {
+		fs.mkdirSync(test_path);
 	}
 
 	let tasks = [];
 	let id = 0;
 	for (let file of tests) {
-		tasks.push( Compile(file, id++) );
+		tasks.push(Compile(file, id++));
 	}
 
 	await Promise.all(tasks);

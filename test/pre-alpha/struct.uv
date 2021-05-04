@@ -5,7 +5,7 @@ struct Person {
 
 
 fn init(ofAge: bool): Person {
-	Person p = Blank#[Person]();
+	let p = Blank#[Person]();
 	if (ofAge) {
 		p.age = 21;
 	} else {
@@ -18,5 +18,5 @@ fn init(ofAge: bool): Person {
 
 
 fn main(): int {
-
+	return 0;
 }
