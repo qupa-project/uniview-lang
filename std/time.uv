@@ -1,38 +1,67 @@
 include llvm "../runtime/runtime.ll";
 
+import "print.uv";
+
 external assume {
 	fn Now (): i64;
 }
 
 struct Date {
-	day: uint;
-	month: uint;
-	year: uint;
+	day: int;
+	month: int;
+	year: int;
 }
 
 
-// fn DateFromTime(unixTime: i64) {
-// 	let s: int = 1313905026;
-// 	let z: int = (s / 86400) + 719468;
+fn GetDate(unixTime: i64): Date {
+	// Needs higherlevel type casting to implement correctly
+	// int s = 1313905026;
+	// int z = s / 86400 + 719468;
+	// int era = (z >= 0 ? z : z - 146096) / 146097;
+	// unsigned doe = static_cast<unsigned>(z - era * 146097);
+	// unsigned yoe = (doe - doe/1460 + doe/36524 - doe/146096) / 365;
+	// int y = static_cast<int>(yoe) + era * 400;
+	// unsigned doy = doe - (365*yoe + yoe/4 - yoe/100);
+	// unsigned mp = (5*doy + 2)/153;
+	// unsigned d = doy - (153*mp+2)/5 + 1;
+	// unsigned m = mp + (mp < 10 ? 3 : -9);
+	// y += (m <= 2);
+	// std::cout << m << '/' << d << '/' << y << '\n'; // 8/21/2011
 
-// 	let t1 = z - 146096;
-// 	if (z >= 0) {
-// 		t1 = z;
-// 	}
+	let date = Blank#[Date]();
 
-// 	let era: int = t1 / 146097;
-// 	let doe: uint = static_cast#[unsigned](z - (era * 146097));
-// 	let yoe: uint = (((doe - (doe/1460)) + (doe/36524)) - (doe/146096)) / 365;
-// 	let y: int = static_cast#[int](yoe) + (era*400);
-// 	let doy: uint = doe - (((365*yoe) + (yoe/4)) - (yoe/100));
-// 	let mp: uint = ((5*doy) + 2)/153;
-// 	let d: uint = (doy - (((153*mp) + 2 )/5)) + 1;
+	let s = static_cast#[i32](unixTime);
+	let z = s/86400 + 719468;
 
-// 	let t2 = -9;
-// 	if (mp < 10) {
-// 		t2 = 3;
-// 	}
+	let t1: int;
+	if (z >= 0) {
+		t1 = z;
+	} else {
+		t1 = z - 146096;
+	}
+	let era: int = t1/146097;
 
-// 	y = y + static_cast#[bool](m <= 2);
-// 	std::cout << m << '/' << d << '/' << y << '\n'; // 8/21/2011
-// }
+
+	let doe = z - era*146097;
+	let yoe = (doe - doe/1460 + doe/36524 - doe/146096) / 365;
+	let y = yoe + era*400;
+	let doy = doe - (365*yoe + yoe/4 - yoe/100);
+	let mp = (5*doy + 2)/153;
+	let d = doy - (153*mp + 2)/5 + 1;
+
+	let t2: int;
+	if (mp < 10) {
+		t2 = 3;
+	} else {
+		t2 = -9;
+	}
+	let m = mp + t2;
+	// y = y + static_cast#[int](m <= 2);
+
+	date.day = d;
+	date.month = m;
+	date.year = y;
+	compose date;
+
+	return date;
+}
