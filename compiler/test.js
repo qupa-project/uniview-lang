@@ -79,7 +79,6 @@ function Compile(filename, id) {
 let tests = [
 	"cast.uv",
 	"compare.uv",
-	"first-execution.uv",
 	"library-behaviour.uv",
 	"math.uv",
 	"struct.uv"
