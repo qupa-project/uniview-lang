@@ -1,11 +1,18 @@
 #include <iostream>
-#include <time.h>
+#include <ctime>
 
 extern "C" {
-	long long Now() {
+	long long NowUTC() {
 		time_t u;
 		time(&u);
 		return static_cast<long long>(u);
+	}
+
+	tm DateFrom(long long unixTime) {
+		tm out;
+		localtime_s (&out, &unixTime);
+
+		return out;
 	}
 
 	void i32_print(int val) {
