@@ -81,7 +81,8 @@ let tests = [
 	"compare.uv",
 	"library-behaviour.uv",
 	"math.uv",
-	"struct.uv"
+	"struct.uv",
+	"time.uv"
 ].map( x => {
 	return path.resolve("./test/pre-alpha", x);
 });
