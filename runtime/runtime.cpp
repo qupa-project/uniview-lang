@@ -8,12 +8,12 @@ extern "C" {
 		return static_cast<long long>(u);
 	}
 
-	tm DateFrom(long long unixTime) {
-		tm out;
-		localtime_s (&out, &unixTime);
+	// tm DateFrom(long long unixTime) {
+	// 	tm out;
+	// 	localtime_s (&out, &unixTime);
 
-		return out;
-	}
+	// 	return out;
+	// }
 
 	void i32_print(int val) {
 		std::cout << val;
