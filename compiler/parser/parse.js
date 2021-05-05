@@ -31,6 +31,9 @@ function Simplify_Stmt_Top (node) {
 		case "external":
 			inner = Simplify_External(node.tokens[0]);
 			break;
+		case "include":
+			inner = Simplify_Include(node.tokens[0]);
+			break;
 		case "function":
 			inner = Simplify_Function(node.tokens[0]);
 			break;
@@ -223,6 +226,15 @@ function Simplify_Type_Def (node) {
 	node.tokens = [
 		Simplify_Name(node.tokens[2][0]),   // name
 		Simplify_Integer(node.tokens[6][0]) // size
+	];
+	node.reached = null;
+	return node;
+}
+
+function Simplify_Include (node) {
+	node.tokens = [
+		node.tokens[2][0].tokens,                    // mode
+		Simplify_String(node.tokens[4][0]).tokens[1] // path
 	];
 	node.reached = null;
 	return node;
@@ -622,17 +634,16 @@ function Simplify_Func_Args (node) {
 function Simplify_Func_Args_List (node) {
 	let ittr = node.tokens[0].concat(node.tokens[2].map(x => x.tokens[2][0]));
 
-	node.tokens = ittr.map((arg) => {
-		return [
-			Simplify_Data_Type(arg.tokens[4][0]), // type
-			Simplify_Name(arg.tokens[0][0]),      // name
-			arg.tokens[5].length > 0 ? arg.tokens[5].tokens[3][0] : null // default
-		]
-	});
+	node.tokens = ittr.map((arg) => [
+		arg.tokens[4].length > 0,             // borrowed?
+		Simplify_Data_Type(arg.tokens[6][0]), // type
+		Simplify_Name(arg.tokens[0][0])       // name
+	]);
 
 	node.reached = null;
 	return node;
 }
+
 function Simplify_Call (node) {
 	let out = [
 		Simplify_Variable(node.tokens[0][0]),                                  // Call name
@@ -648,6 +659,7 @@ function Simplify_Call (node) {
 	return node;
 }
 function Simplify_Call_Args (node) {
+
 	if (node.tokens[2].length > 0) {
 		let inner = node.tokens[2][0];
 		node.tokens =
@@ -661,6 +673,13 @@ function Simplify_Call_Args (node) {
 
 	node.reached = null;
 	return node;
+}
+function Simplify_Call_Arg(node) {
+	if (node.tokens[0].type == "expr_lend") {
+		return Simplify_Expr_Lend(node.tokens[0]);
+	} else {
+		return Simplify_Expr(node.tokens[0]);
+	}
 }
 
 

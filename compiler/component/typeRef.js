@@ -9,9 +9,10 @@ class TypeRef {
 	 * @param {Number} pointerLvl
 	 * @param {Type} type
 	 */
-	constructor (pointerLvl, type) {
+	constructor (pointerLvl, type, lent = false) {
 		this.pointer = pointerLvl;
 		this.type = type;
+		this.lent = lent;
 	}
 
 	getName () {
@@ -35,7 +36,9 @@ class TypeRef {
 			return false;
 		}
 
-		return this.pointer == other.pointer && this.type == other.type;
+		return this.pointer == other.pointer &&
+			this.type == other.type &&
+			this.lent == other.lent;
 	}
 
 	/**
@@ -52,7 +55,7 @@ class TypeRef {
 	 * Creates a clone of this reference
 	 */
 	duplicate () {
-		return new TypeRef(this.pointer, this.type);
+		return new TypeRef(this.pointer, this.type, this.lent);
 	}
 
 
@@ -60,7 +63,7 @@ class TypeRef {
 	 * @returns {String}
 	 */
 	toString () {
-		return Flattern.DuplicateChar(this.pointer, "@")+this.type.name;
+		return ( this.lent ? "@" : "$" ) + this.type.name;
 	}
 
 	toLLVM (ref = null) {

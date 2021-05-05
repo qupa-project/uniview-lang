@@ -48,37 +48,43 @@ class File {
 		// read in imports, templates, functions
 		for (let element of syntax.tokens) {
 			// Ignore comments
-			if (element.type == "comment") {
-				continue;
-			} else if (element.type == "external") {
-				if (element.tokens[0] == "assume") {
-					for (let inner of element.tokens[1]){
-						this.register(inner, true);
+			switch (element.type) {
+				case "comment":
+					break;
+				case "external":
+					if (element.tokens[0] == "assume") {
+						for (let inner of element.tokens[1]){
+							this.register(inner, true);
+						}
+					} else if (element.tokens[0] == "export") {
+						for (let inner of element.tokens[1]){
+							this.exports.push(inner);
+						}
+					} else {
+						console.error(`Error: Unknown external type "${element.tokens[0]}"`);
+						this.project.markError();
+						return false;
 					}
-				} else if (element.tokens[0] == "export") {
-					for (let inner of element.tokens[1]){
-						this.exports.push(inner);
+					break;
+				case "library":
+					let inner = element.tokens[0];
+					if (inner.type == "import") {
+						inner.tokens = [
+							inner.tokens[0].tokens[1],
+							inner.tokens[1]
+						];
+						this.register(inner);
+					} else {
+						console.error(`  Parse Error: Unknown library action "${inner.type}"`);
+						this.project.markError();
+						return false;
 					}
-				} else {
-					console.error(`Error: Unknown external type "${element.tokens[0]}"`);
-					this.project.markError();
-					return false;
-				}
-			} else if (element.type == "library") {
-				let inner = element.tokens[0];
-				if (inner.type == "import") {
-					inner.tokens = [
-						inner.tokens[0].tokens[1],
-						inner.tokens[1]
-					];
-					this.register(inner);
-				} else {
-					console.error(`  Parse Error: Unknown library action "${inner.type}"`);
-					this.project.markError();
-					return false;
-				}
-			} else {
-				this.register(element);
+					break;
+				case "include":
+					this.include(element.tokens[0], element.tokens[1], element.ref);
+					break;
+				default:
+					this.register(element);
 			}
 		}
 

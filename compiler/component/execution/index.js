@@ -54,7 +54,12 @@ class Execution extends ExecutionFlow {
 			return null;
 		}
 
-		access.markUpdated(expr.instruction);
+		let chg = access.markUpdated(expr.instruction, false, ast.ref);
+		if (chg.error) {
+			this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
+			return null;
+		}
+
 		frag.merge(expr.epilog);
 		return frag;
 	}
@@ -124,9 +129,14 @@ class Execution extends ExecutionFlow {
 			ast.tokens[1].tokens,   // name
 			ast.ref.start           // ref
 		);
-		variable.markUpdated(expr.instruction);
-		frag.merge(expr.epilog);
+		let chg = variable.markUpdated(expr.instruction, false, ast.ref);
+		if (chg.error) {
+			this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
+			return null;
+		}
 
+
+		frag.merge(expr.epilog);
 		return frag;
 	}
 
@@ -361,6 +371,7 @@ class Execution extends ExecutionFlow {
 		let frag = new LLVM.Fragment();
 		let inner = null;
 
+		// Get the return result in LLVM.Argument form
 		let returnType = null;
 		if (ast.tokens.length == 0){
 			inner = new LLVM.Type("void", false);
@@ -386,8 +397,8 @@ class Execution extends ExecutionFlow {
 							ast.ref
 						),
 						[new LLVM.Argument(
-							new LLVM.Type("i64", 1, ast.ref),
-							new LLVM.Constant("0", ast.ref),
+							new LLVM.Type("i64", 0, ast.ref),
+							new LLVM.Constant("1", ast.ref),
 							ast.ref
 						)]
 					)

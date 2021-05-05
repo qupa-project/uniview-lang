@@ -1,5 +1,5 @@
 program ::= w* ( stmt_top w* )*
-	stmt_top ::= comment | library | class | template_def | struct | flag_definition | external | function
+	stmt_top ::= comment | library | class | template_def | struct | flag_definition | external | include | function
 
 #=============================
 #  Helper patterns
@@ -81,7 +81,7 @@ program ::= w* ( stmt_top w* )*
 		func_head ::= "fn" w+ name w* func_arguments w* ( ":" w* data_type )?
 			func_arguments ::= "(" w* func_arg_list? ")"
 				func_arg_list ::= func_arg w* ( "," w* func_arg w* )*
-				func_arg      ::= name w* ":" w* data_type ( w* "=" w* constant )?
+				func_arg      ::= name w* ":" w* "@"? w* data_type
 		function_body ::= "{" w* ( func_stmt w* )* "}"
 			func_stmt ::= comment | if | return | composition | declare | assign | declare_assign | call_procedure
 
@@ -158,6 +158,9 @@ program ::= w* ( stmt_top w* )*
 #=============================
 #  External
 #=============================
+	include ::= "include" w+ include_type w* string w* ";"
+		include_type ::= "llvm" | "cpp" | "c"
+
 	external ::= "external" w+ external_mode w* "{" w* external_body w* "}" ";"?
 		external_mode ::= "assume" | "export"
 		external_body ::= ( external_term w* )*

@@ -6,9 +6,11 @@ const File = require('./file.js');
 
 const { dirname, resolve } = require('path');
 const fs = require('fs');
+const path = require('path');
 
-const base = new LLVM.Raw(`attributes #0 = { nounwind optnone uwtable "unsafe-fp-math"="false" "use-soft-float"="false" }
-declare void @llvm.memmove.p0i8.p0i8.i64 (i8*, i8*, i64, i1)`);
+const base = new LLVM.Raw(`attributes #1 = { nounwind "unsafe-fp-math"="false" "use-soft-float"="false" }
+declare void @llvm.memmove.p0i8.p0i8.i64 (i8*, i8*, i64, i1)
+declare void @llvm.memcpy.p0i8.p0i8.i64 (i8*, i8*, i64, i1)`);
 
 class Project {
 	constructor(rootPath, config = {}) {
@@ -24,6 +26,8 @@ class Project {
 
 		this.exports = [];
 		this.error = false;
+
+		this.includes = [];
 	}
 
 	import (path, entry = false, relation = this.rootPath) {

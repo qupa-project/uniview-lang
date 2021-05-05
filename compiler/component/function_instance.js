@@ -64,10 +64,10 @@ class Function_Instance {
 
 		// Flaten signature types AST into a single array
 		let types = [ head.tokens[0] ];
+		let borrows = [ false ];
 		if (args.length > 0) {
-			types = types.concat(args.map((x) => {
-				return x[0];
-			}));
+			borrows = borrows.concat(args.map(x => x[0]));
+			types = types.concat(args.map((x) => x[1]));
 		}
 
 		// Generate an execution instance for type resolving
@@ -77,7 +77,7 @@ class Function_Instance {
 			new Scope(this, this.getFile().project.config.caching)
 		);
 
-		for (let type of types){
+		for (let [i, type] of types.entries()){
 			let search = exec.resolveType(type);
 			if (search instanceof TypeRef) {
 				search.pointer = type.tokens[0]; // Copy the pointer level across
@@ -85,6 +85,7 @@ class Function_Instance {
 				if (search.type.typeSystem == "linear") {
 					search.offsetPointer(1);
 				}
+				search.lent = borrows[i];
 
 				this.signature.push(search);
 			} else {
@@ -142,8 +143,8 @@ class Function_Instance {
 		for (let i=0; i<this.signature.length; i++) {
 			args.push({
 				type: this.signature[i],                     // TypeRef
-				name: head.tokens[2].tokens[i][1].tokens,    // Name
-				ref: head.tokens[2].tokens[i][0].ref.start  // Ref
+				name: head.tokens[2].tokens[i][2].tokens,    // Name
+				ref: head.tokens[2].tokens[i][2].ref.start   // Ref
 			});
 		}
 
