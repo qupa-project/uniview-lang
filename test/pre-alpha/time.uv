@@ -2,7 +2,7 @@ import "experimental/time.uv" as Time;
 import "print.uv";
 
 fn main(): int {
-	let now = Time.Now();
+	let now = Time.NowUTC();
 
 	let time = Time.GetTime(now);
 	print(time.hours);
