@@ -16,6 +16,7 @@
 - [x] Verify only compilation mode
 - [x] Expression chaining `(1 + 2 + 3)`
 - [x] Opperator Precedence
+- [x] Experimental Time Library
 
 ### Fixes
 - [x] Not parsing structures properly on return
@@ -26,6 +27,7 @@
 - [x] Frash during scope cleanup due to bad code reference
 - [x] Using undefined variables within expressions causing crash
 - [x] Fixed crash with unhandled call return values
+- [x] Crash when structures are defined after accessing attribute within IR
 
 ### Tweaks
 - [x] Decomposed structure elements now have the correct internal names for error messages
