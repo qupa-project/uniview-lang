@@ -1,6 +1,6 @@
 {
   "name": "@qupa/uniview",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Uniview Language",
   "main": "compile/compile.js",
   "preferGlobal": true,
