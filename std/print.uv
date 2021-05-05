@@ -1,4 +1,4 @@
-include llvm "./../../runtime/runtime.ll";
+include llvm "./../runtime/runtime.ll";
 external assume {
 	fn "i1_print"    (val: bool) as print;
 	fn "i1_println"  (val: bool) as println;

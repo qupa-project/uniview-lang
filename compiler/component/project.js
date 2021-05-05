@@ -90,9 +90,8 @@ class Project {
 
 	include (type, filename) {
 		// Shorten the filepath for better logging
-		filename = path.relative(this.rootPath, filename);
+		console.info("  Including:", path.relative(this.rootPath, filename));
 
-		console.info("Including:", filename);
 		this.includes.push([
 			type,
 			filename
