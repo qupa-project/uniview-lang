@@ -18,7 +18,8 @@ const Template = require('./template.js');
 class File {
 	constructor (project, id, filepath) {
 		this.project = project;
-		this.path = filepath;
+		this.path    = filepath;
+		this.relPath = path.relative(this.project.rootPath, this.path);
 		this.id = id;
 
 		this.data = "";
@@ -39,7 +40,7 @@ class File {
 
 
 	parse () {
-		console.info("Parsing:", this.path);
+		console.info("Parsing:", this.relPath);
 
 		this.data = fs.readFileSync(this.path, 'utf8').replace(/\n\r/g, '\n');
 		let syntax = Parse(this.data, this.path);
@@ -102,6 +103,10 @@ class File {
 				// continue to function case
 			case "function":
 				space = new Function(this, element, external, abstract);
+				break;
+			case "function_redirect":
+				space = new Function(this, element, external, false);
+				space.instances[0].represent = element.tokens[1];
 				break;
 			case "import":
 				space = new Import(this, element);
@@ -242,10 +247,67 @@ class File {
 		return this.project.import(filename, false, this.path);
 	}
 
+
+	include (type, filename, ref) {
+		let res = path.resolve(
+			path.dirname(this.path),
+			filename
+		);
+
+		// Check if this has already been included
+		if (this.project.hasIncluded(res)) {
+			return;
+		}
+
+		// Check the include type is valid
+		switch (type) {
+			case "llvm":
+				type = "--language=ir";
+				break;
+			case "cpp":
+				type = "--language=c++";
+				break;
+			case "c":
+				type = "--language=c";
+				break;
+			default:
+				this.throw(
+					`Error: Cannot include file, unable to handle include type ${type}`,
+					ref.start, ref.end
+				);
+				return;
+		}
+
+		// Check the file exists
+		try {
+			let search = fs.lstatSync(res);
+			if (!search.isFile()) {
+				throw "bad";
+			}
+		} catch (e) {
+			this.throw(
+				"Error: Cannot include file, as it does not exist\n"+
+				`  ${res}`,
+				ref.start,
+				ref.end
+			);
+		} finally {
+			// Include the file within the project
+			this.project.include(
+				type,
+				res,
+				ref
+			);
+		}
+
+		return;
+	}
+
+
 	throw (msg, refStart, refEnd) {
 		// let area = BNF.Message.HighlightArea(this.data, refStart, refEnd);
 		let area = helper.CodeSection(this.data, refStart, refEnd);
-		console.error(`\n${this.path}:\n ${msg}\n${area.replace(/\t/g, '  ')}`);
+		console.error(`\n${this.relPath}:\n ${msg}\n${area.replace(/\t/g, '  ')}`);
 		this.project.markError();
 	}
 
@@ -263,11 +325,14 @@ class File {
 
 	compile () {
 		let fragment = new LLVM.Fragment();
-		fragment.append(new LLVM.Comment(`ModuleID = '${this.getRelative()}'`));
 
 		for (let key in this.names) {
 			let res = this.names[key].compile();
-			fragment.append(res);
+			if (res instanceof LLVM.Fragment) {
+				fragment.merge(res);
+			} else {
+				fragment.append(res);
+			}
 		}
 
 		return fragment;

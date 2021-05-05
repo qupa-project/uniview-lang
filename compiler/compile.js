@@ -26,7 +26,9 @@ if (process.argv.includes("--version")) {
 let config = {
 	output: "out",
 	source: false,
-	execute: false
+	execute: false,
+	optimisation: "0",
+	verifyOnly: false
 };
 let index = process.argv.indexOf('-o');
 if (index != -1 && index > 2) {
@@ -34,6 +36,9 @@ if (index != -1 && index > 2) {
 }
 if (process.argv.includes('--execute')) {
 	config.execute = true;
+}
+if (process.argv.includes('--verifyOnly')) {
+	config.verifyOnly = true;
 }
 index = process.argv.indexOf('-s');
 if (index != -1) {
@@ -68,6 +73,11 @@ let asm = project.compile();
 if (project.error) {
 	console.error("\nUncompilable errors");
 	process.exit(1);
+}
+
+
+if (config.verifyOnly) {
+	process.exit(0);
 }
 
 fs.writeFileSync(`${config.output}.ll`, asm.flattern(), 'utf8');
@@ -119,10 +129,17 @@ if (config.source != "llvm") {
 			let app = spawn(exec_out);
 			app.stderr.pipe (process.stderr);
 			app.stdout.pipe (process.stdout);
+
+			app.on('close', (code) => {
+				process.exit(code);
+			});
+		} else {
+			process.exit(0);
 		}
 	} else {
 		console.error("FAILED TO COMPILE");
 		console.error(clang.output[1]);
 		process.stderr.write(clang.output[2]);
+		process.exit(1);
 	}
 }

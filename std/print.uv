@@ -1,61 +1,15 @@
+include llvm "./../runtime/runtime.ll";
 external assume {
-	fn i1_print(val: bool);
-	fn i1_println(val: bool);
-	fn i32_print(val: i32);
-	fn i32_println(val: i32);
-	fn i64_print(val: i64);
-	fn i64_println(val: i64);
-	fn f32_print(val: float);
-	fn f32_println(val: float);
-	fn str_print(val: string);
-	fn str_println(val: string);
-}
-
-
-
-/*------------------------------------
-	Merge multi name C style functions
-	 into single namespace
-------------------------------------*/
-fn print(val: int) {
-	i32_print(val);
-	return;
-}
-fn print(val: i64) {
-	i64_print(val);
-	return;
-}
-fn print(val: float) {
-	f32_print(val);
-	return;
-}
-fn print(val: bool) {
-	i1_print(val);
-	return;
-}
-fn print(val: string) {
-	str_print(val);
-	return;
-}
-
-
-fn println(val: int) {
-	i32_println(val);
-	return;
-}
-fn println(val: i64) {
-	i64_println(val);
-	return;
-}
-fn println(val: float) {
-	f32_println(val);
-	return;
-}
-fn println(val: bool) {
-	i1_println(val);
-	return;
-}
-fn println(val: string) {
-	str_println(val);
-	return;
+	fn "i1_print"    (val: bool) as print;
+	fn "i1_println"  (val: bool) as println;
+	fn "i32_print"   (val: i32) as print;
+	fn "i32_println" (val: i32) as println;
+	fn "i64_print"   (val: i64) as print;
+	fn "i64_println" (val: i64) as println;
+	fn "f32_print"   (val: float) as print;
+	fn "f32_println" (val: float) as println;
+	fn "f64_print"   (val: double) as print;
+	fn "f64_println" (val: double) as println;
+	fn "str_print"   (val: string) as print;
+	fn "str_println" (val: string) as println;
 }

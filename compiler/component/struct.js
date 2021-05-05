@@ -60,7 +60,7 @@ class Structure extends TypeDef {
 			preamble: res.preamble,
 			instruction: res.instruction,
 			index: i,
-			type: res.type
+			type: res.type.duplicate()
 		};
 	}
 

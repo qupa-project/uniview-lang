@@ -84,6 +84,21 @@ class Project {
 		return temp;
 	}
 
+	include (type, filename) {
+		// Shorten the filepath for better logging
+		console.info("  Including:", path.relative(this.rootPath, filename));
+
+		this.includes.push([
+			type,
+			filename
+		]);
+	}
+	hasIncluded (filename) {
+		return this.includes
+			.map(x => x[1])
+			.includes(filename);
+	}
+
 	/**
 	 * Returns the primative library
 	 */
@@ -124,10 +139,23 @@ class Project {
 
 		for (let file of this.files) {
 			let res = file.compile();
-			fragment.append(res);
-			fragment.append(new LLVM.WPad(3));
+			fragment.merge(res);
 		}
-		fragment.append(new LLVM.WPad(3));
+
+		// Move structures to the top of the IR
+		fragment.stmts.sort((a, b) => {
+			let aIsStruct = a instanceof LLVM.Struct;
+			let bIsStruct = b instanceof LLVM.Struct;
+
+			if (aIsStruct && bIsStruct) {
+				return 0;
+			} else if (aIsStruct && !bIsStruct) {
+				return -1;
+			} else if (!aIsStruct && bIsStruct) {
+				return 1;
+			}
+		});
+
 		fragment.append(base);
 
 		return fragment;

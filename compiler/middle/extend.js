@@ -18,7 +18,7 @@ class Extend extends Instruction {
 
 	flattern(indent) {
 		return super.flattern(
-			( this.mode == 2 ? "f" : ( this.mode == 1 ? "s" : "z" ) ) +
+			( this.mode == 2 ? "fp" : ( this.mode == 1 ? "s" : "z" ) ) +
 			`ext ` +
 			`${this.target.flattern()} to ` +
 			`${this.type.flattern()} `,

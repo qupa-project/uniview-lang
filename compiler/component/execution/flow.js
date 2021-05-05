@@ -81,6 +81,9 @@ class ExecutionFlow extends ExecutionExpr {
 		//   execution does not continue
 		//   thus cleanup is not needed
 		if (branch_true.env.returned && branch_false.env.returned) {
+			frag.append(branch_true.frag);
+			frag.append(branch_false.frag);
+
 			this.returned = true;
 		} else {
 
@@ -99,7 +102,6 @@ class ExecutionFlow extends ExecutionExpr {
 				endpoint_id,
 				ast.ref
 			);
-
 
 			// Merge branches
 			for (const [i, branch] of [branch_true, branch_false].entries()) {
@@ -140,7 +142,7 @@ class ExecutionFlow extends ExecutionExpr {
 
 		let frag = new LLVM.Fragment();
 		if (ast !== null) {
-			env.compile(ast);
+			frag.merge(env.compile(ast));
 		}
 
 		// Add the start label

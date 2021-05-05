@@ -1,6 +1,20 @@
 #include <iostream>
+#include <ctime>
 
 extern "C" {
+	long long NowUTC() {
+		time_t u;
+		time(&u);
+		return static_cast<long long>(u);
+	}
+
+	tm DateFrom(long long unixTime) {
+		tm out;
+		localtime_s (&out, &unixTime);
+
+		return out;
+	}
+
 	void i32_print(int val) {
 		std::cout << val;
 	}
@@ -8,6 +22,9 @@ extern "C" {
 		std::cout << val;
 	}
 	void f32_print(float val) {
+		std::cout << val;
+	}
+	void f64_print(double val) {
 		std::cout << val;
 	}
 	void i1_print(bool val) {
@@ -28,6 +45,9 @@ extern "C" {
 		std::cout << val << std::endl;
 	}
 	void f32_println(float val) {
+		std::cout << val << std::endl;
+	}
+	void f64_println(double val) {
 		std::cout << val << std::endl;
 	}
 	void i1_println(bool val) {

@@ -1,3 +1,5 @@
+import "print.uv";
+
 struct Person {
 	id: int;
 	age: int;
@@ -5,7 +7,7 @@ struct Person {
 
 
 fn init(ofAge: bool): Person {
-	Person p = Blank#[Person]();
+	let p = Blank#[Person]();
 	if (ofAge) {
 		p.age = 21;
 	} else {
@@ -16,7 +18,28 @@ fn init(ofAge: bool): Person {
 	return p;
 }
 
+fn age(p: @Person) {
+	p.age = p.age + 1;
+	return;
+}
+
+fn print(p: Person) {
+	print("Person { id: ");
+	print(p.id);
+	print(", age: ");
+	print(p.age);
+	println(" }");
+
+	return;
+}
+
 
 fn main(): int {
+	let p = init(false);
+	let b = $p;
+	age(@p);
+	print(p);
+	print(b);
 
+	return 0;
 }
