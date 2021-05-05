@@ -81,11 +81,6 @@ class Import {
 
 	compile () {
 		let frag = new LLVM.Fragment();
-		frag.append(new LLVM.Comment(`Imported under ${this.name}:`))
-		for (let extern of this.files) {
-			frag.append(new LLVM.Comment(`  ${extern.file.getRelative()}`));
-		}
-
 		return frag;
 	}
 
