@@ -6,9 +6,11 @@ const File = require('./file.js');
 
 const { dirname, resolve } = require('path');
 const fs = require('fs');
+const path = require('path');
 
-const base = new LLVM.Raw(`attributes #0 = { nounwind optnone uwtable "unsafe-fp-math"="false" "use-soft-float"="false" }
-declare void @llvm.memmove.p0i8.p0i8.i64 (i8*, i8*, i64, i1)`);
+const base = new LLVM.Raw(`attributes #1 = { nounwind "unsafe-fp-math"="false" "use-soft-float"="false" }
+declare void @llvm.memmove.p0i8.p0i8.i64 (i8*, i8*, i64, i1)
+declare void @llvm.memcpy.p0i8.p0i8.i64 (i8*, i8*, i64, i1)`);
 
 class Project {
 	constructor(rootPath, config = {}) {
@@ -24,6 +26,8 @@ class Project {
 
 		this.exports = [];
 		this.error = false;
+
+		this.includes = [];
 	}
 
 	import (path, entry = false, relation = this.rootPath) {
@@ -84,6 +88,21 @@ class Project {
 		return temp;
 	}
 
+	include (type, filename) {
+		// Shorten the filepath for better logging
+		console.info("  Including:", path.relative(this.rootPath, filename));
+
+		this.includes.push([
+			type,
+			filename
+		]);
+	}
+	hasIncluded (filename) {
+		return this.includes
+			.map(x => x[1])
+			.includes(filename);
+	}
+
 	/**
 	 * Returns the primative library
 	 */
@@ -124,10 +143,23 @@ class Project {
 
 		for (let file of this.files) {
 			let res = file.compile();
-			fragment.append(res);
-			fragment.append(new LLVM.WPad(3));
+			fragment.merge(res);
 		}
-		fragment.append(new LLVM.WPad(3));
+
+		// Move structures to the top of the IR
+		fragment.stmts.sort((a, b) => {
+			let aIsStruct = a instanceof LLVM.Struct;
+			let bIsStruct = b instanceof LLVM.Struct;
+
+			if (aIsStruct && bIsStruct) {
+				return 0;
+			} else if (aIsStruct && !bIsStruct) {
+				return -1;
+			} else if (!aIsStruct && bIsStruct) {
+				return 1;
+			}
+		});
+
 		fragment.append(base);
 
 		return fragment;

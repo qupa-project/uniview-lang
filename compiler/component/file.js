@@ -18,7 +18,8 @@ const Template = require('./template.js');
 class File {
 	constructor (project, id, filepath) {
 		this.project = project;
-		this.path = filepath;
+		this.path    = filepath;
+		this.relPath = path.relative(this.project.rootPath, this.path);
 		this.id = id;
 
 		this.data = "";
@@ -39,7 +40,7 @@ class File {
 
 
 	parse () {
-		console.info("Parsing:", this.path);
+		console.info("Parsing:", this.relPath);
 
 		this.data = fs.readFileSync(this.path, 'utf8').replace(/\n\r/g, '\n');
 		let syntax = Parse(this.data, this.path);
@@ -47,37 +48,43 @@ class File {
 		// read in imports, templates, functions
 		for (let element of syntax.tokens) {
 			// Ignore comments
-			if (element.type == "comment") {
-				continue;
-			} else if (element.type == "external") {
-				if (element.tokens[0] == "assume") {
-					for (let inner of element.tokens[1]){
-						this.register(inner, true);
+			switch (element.type) {
+				case "comment":
+					break;
+				case "external":
+					if (element.tokens[0] == "assume") {
+						for (let inner of element.tokens[1]){
+							this.register(inner, true);
+						}
+					} else if (element.tokens[0] == "export") {
+						for (let inner of element.tokens[1]){
+							this.exports.push(inner);
+						}
+					} else {
+						console.error(`Error: Unknown external type "${element.tokens[0]}"`);
+						this.project.markError();
+						return false;
 					}
-				} else if (element.tokens[0] == "export") {
-					for (let inner of element.tokens[1]){
-						this.exports.push(inner);
+					break;
+				case "library":
+					let inner = element.tokens[0];
+					if (inner.type == "import") {
+						inner.tokens = [
+							inner.tokens[0].tokens[1],
+							inner.tokens[1]
+						];
+						this.register(inner);
+					} else {
+						console.error(`  Parse Error: Unknown library action "${inner.type}"`);
+						this.project.markError();
+						return false;
 					}
-				} else {
-					console.error(`Error: Unknown external type "${element.tokens[0]}"`);
-					this.project.markError();
-					return false;
-				}
-			} else if (element.type == "library") {
-				let inner = element.tokens[0];
-				if (inner.type == "import") {
-					inner.tokens = [
-						inner.tokens[0].tokens[1],
-						inner.tokens[1]
-					];
-					this.register(inner);
-				} else {
-					console.error(`  Parse Error: Unknown library action "${inner.type}"`);
-					this.project.markError();
-					return false;
-				}
-			} else {
-				this.register(element);
+					break;
+				case "include":
+					this.include(element.tokens[0], element.tokens[1], element.ref);
+					break;
+				default:
+					this.register(element);
 			}
 		}
 
@@ -102,6 +109,10 @@ class File {
 				// continue to function case
 			case "function":
 				space = new Function(this, element, external, abstract);
+				break;
+			case "function_redirect":
+				space = new Function(this, element, external, false);
+				space.instances[0].represent = element.tokens[1];
 				break;
 			case "import":
 				space = new Import(this, element);
@@ -242,10 +253,67 @@ class File {
 		return this.project.import(filename, false, this.path);
 	}
 
+
+	include (type, filename, ref) {
+		let res = path.resolve(
+			path.dirname(this.path),
+			filename
+		);
+
+		// Check if this has already been included
+		if (this.project.hasIncluded(res)) {
+			return;
+		}
+
+		// Check the include type is valid
+		switch (type) {
+			case "llvm":
+				type = "--language=ir";
+				break;
+			case "cpp":
+				type = "--language=c++";
+				break;
+			case "c":
+				type = "--language=c";
+				break;
+			default:
+				this.throw(
+					`Error: Cannot include file, unable to handle include type ${type}`,
+					ref.start, ref.end
+				);
+				return;
+		}
+
+		// Check the file exists
+		try {
+			let search = fs.lstatSync(res);
+			if (!search.isFile()) {
+				throw "bad";
+			}
+		} catch (e) {
+			this.throw(
+				"Error: Cannot include file, as it does not exist\n"+
+				`  ${res}`,
+				ref.start,
+				ref.end
+			);
+		} finally {
+			// Include the file within the project
+			this.project.include(
+				type,
+				res,
+				ref
+			);
+		}
+
+		return;
+	}
+
+
 	throw (msg, refStart, refEnd) {
 		// let area = BNF.Message.HighlightArea(this.data, refStart, refEnd);
 		let area = helper.CodeSection(this.data, refStart, refEnd);
-		console.error(`\n${this.path}:\n ${msg}\n${area.replace(/\t/g, '  ')}`);
+		console.error(`\n${this.relPath}:\n ${msg}\n${area.replace(/\t/g, '  ')}`);
 		this.project.markError();
 	}
 
@@ -263,11 +331,14 @@ class File {
 
 	compile () {
 		let fragment = new LLVM.Fragment();
-		fragment.append(new LLVM.Comment(`ModuleID = '${this.getRelative()}'`));
 
 		for (let key in this.names) {
 			let res = this.names[key].compile();
-			fragment.append(res);
+			if (res instanceof LLVM.Fragment) {
+				fragment.merge(res);
+			} else {
+				fragment.append(res);
+			}
 		}
 
 		return fragment;

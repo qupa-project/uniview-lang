@@ -11,6 +11,7 @@ const Primative = {
 
 const ExecutionFlow = require('./flow.js');
 const Structure = require('../struct.js');
+const Variable = require('../memory/variable.js');
 
 class Execution extends ExecutionFlow {
 
@@ -22,7 +23,6 @@ class Execution extends ExecutionFlow {
 	compile_assign (ast) {
 		let frag = new LLVM.Fragment();
 
-
 		// Load the target variable
 		//   This must occur after the expression is resolve
 		//   because this variable now needs to be accessed for writing
@@ -32,7 +32,7 @@ class Execution extends ExecutionFlow {
 			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
 			return null;
 		}
-		frag.append(access.preamble);
+		frag.merge(access.preamble);
 		access = access.variable;
 
 
@@ -54,7 +54,12 @@ class Execution extends ExecutionFlow {
 			return null;
 		}
 
-		access.markUpdated(expr.instruction);
+		let chg = access.markUpdated(expr.instruction, false, ast.ref);
+		if (chg.error) {
+			this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
+			return null;
+		}
+
 		frag.merge(expr.epilog);
 		return frag;
 	}
@@ -124,9 +129,14 @@ class Execution extends ExecutionFlow {
 			ast.tokens[1].tokens,   // name
 			ast.ref.start           // ref
 		);
-		variable.markUpdated(expr.instruction);
-		frag.merge(expr.epilog);
+		let chg = variable.markUpdated(expr.instruction, false, ast.ref);
+		if (chg.error) {
+			this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
+			return null;
+		}
 
+
+		frag.merge(expr.epilog);
 		return frag;
 	}
 
@@ -271,9 +281,35 @@ class Execution extends ExecutionFlow {
 			return null;
 		}
 
-		// Merge the preable, execution, and epilog into one fragment
 		frag.merge(out.preamble);
-		frag.append(out.instruction);
+
+		// Put the value into a temporary variable to destruct the non-used value=
+		if (out.type.type.represent == "void") {
+			frag.append(out.instruction);
+		} else {
+			let target;
+			if (out.type.type.typeSystem == "linear") {
+				target = out.instruction;
+			} else {
+				let id = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(id, false, ast.ref),
+					out.instruction,
+					ast.ref
+				));
+				target = new LLVM.Argument(
+					out.type.toLLVM(ast.ref),
+					new LLVM.Name(id.reference(), false, ast.ref),
+					ast.ref
+				);
+			}
+
+			let temp = new Variable(out.type, "return", ast.ref);
+			temp.markUpdated(target);
+			frag.merge(temp.cleanup(ast.ref));
+		}
+
+		// merge any epilog of the call
 		frag.merge(out.epilog);
 		return frag;
 	}
@@ -335,6 +371,7 @@ class Execution extends ExecutionFlow {
 		let frag = new LLVM.Fragment();
 		let inner = null;
 
+		// Get the return result in LLVM.Argument form
 		let returnType = null;
 		if (ast.tokens.length == 0){
 			inner = new LLVM.Type("void", false);
@@ -360,8 +397,8 @@ class Execution extends ExecutionFlow {
 							ast.ref
 						),
 						[new LLVM.Argument(
-							new LLVM.Type("i64", 1, ast.ref),
-							new LLVM.Constant("0", ast.ref),
+							new LLVM.Type("i64", 0, ast.ref),
+							new LLVM.Constant("1", ast.ref),
 							ast.ref
 						)]
 					)
@@ -440,6 +477,14 @@ class Execution extends ExecutionFlow {
 				ast.ref.start, ast.ref.end
 			);
 		}
+
+		// Clean up the scope
+		let res = this.scope.cleanup(ast.ref);
+		if (res.error) {
+			this.getFile().throw(res.msg, res.ref.start, res.ref.end);
+			return null;
+		}
+		frag.append(res);
 
 		frag.append(new LLVM.Return(inner, ast.ref.start));
 		this.returned = true;

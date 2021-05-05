@@ -19,7 +19,7 @@ class ExecutionFlow extends ExecutionExpr {
 				`Error: Elif statements are currently unsupported`,
 				ast.ref.start, ast.ref.end
 			);
-			return frag;
+			return null;
 		}
 
 
@@ -81,6 +81,9 @@ class ExecutionFlow extends ExecutionExpr {
 		//   execution does not continue
 		//   thus cleanup is not needed
 		if (branch_true.env.returned && branch_false.env.returned) {
+			frag.append(branch_true.frag);
+			frag.append(branch_false.frag);
+
 			this.returned = true;
 		} else {
 
@@ -100,7 +103,6 @@ class ExecutionFlow extends ExecutionExpr {
 				ast.ref
 			);
 
-
 			// Merge branches
 			for (const [i, branch] of [branch_true, branch_false].entries()) {
 
@@ -108,8 +110,16 @@ class ExecutionFlow extends ExecutionExpr {
 				branch.frag.append(merger.preambles[i]);
 
 				// If the branch didn't return
-				//   Jump to the endpoint label
 				if (!branch.env.returned) {
+					// Clean up any local variables
+					let res = branch.env.cleanup(branch.ref);
+					if (res.error) {
+						this.getFile().throw(res.msg, res.ref.start, res.ref.end);
+						return null;
+					}
+					branch.frag.append(res);
+
+					// Jump to endpoint
 					branch.frag.append(new LLVM.Branch_Unco(endpoint));
 				}
 
@@ -140,7 +150,7 @@ class ExecutionFlow extends ExecutionExpr {
 
 		let frag = new LLVM.Fragment();
 		if (ast !== null) {
-			env.compile(ast);
+			frag.merge(env.compile(ast));
 		}
 
 		// Add the start label
@@ -152,7 +162,8 @@ class ExecutionFlow extends ExecutionExpr {
 		return {
 			id: id.reference(),
 			env: env,
-			frag: frag
+			frag: frag,
+			ref: ref
 		};
 	}
 
