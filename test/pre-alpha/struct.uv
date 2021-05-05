@@ -43,3 +43,28 @@ fn main(): int {
 
 	return 0;
 }
+
+
+
+
+// Test structs defined out of order
+import "print.uv";
+
+fn Test(): int {
+	print("cat");
+	let c = Blank#[Cat]();
+
+	let name = c.name;
+	print(name.placeholder);
+
+	return 0;
+}
+
+struct Name {
+	placeholder: i64;
+}
+
+struct Cat {
+	name: Name;
+	age: int;
+}
