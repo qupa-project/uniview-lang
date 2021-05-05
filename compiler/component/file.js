@@ -331,11 +331,14 @@ class File {
 
 	compile () {
 		let fragment = new LLVM.Fragment();
-		fragment.append(new LLVM.Comment(`ModuleID = '${this.getRelative()}'`));
 
 		for (let key in this.names) {
 			let res = this.names[key].compile();
-			fragment.append(res);
+			if (res instanceof LLVM.Fragment) {
+				fragment.merge(res);
+			} else {
+				fragment.append(res);
+			}
 		}
 
 		return fragment;

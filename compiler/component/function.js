@@ -79,8 +79,6 @@ class Function {
 
 	compile () {
 		let fragment = new LLVM.Fragment();
-		fragment.append(new LLVM.WPad(1));
-		fragment.append(new LLVM.Comment(`Function Group "${this.name}":`));
 
 		for (let instance of this.instances) {
 			let ir = instance.compile();

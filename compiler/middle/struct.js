@@ -1,7 +1,7 @@
 const Instruction = require("./instruction.js");
 const LLVM = require('./llvm.js');
 
-class Name extends Instruction {
+class Struct extends Instruction {
 	/**
 	 *
 	 * @param {LLVM.Name} name
@@ -25,4 +25,4 @@ class Name extends Instruction {
 		indent);
 	}
 }
-module.exports = Name;
+module.exports = Struct;
