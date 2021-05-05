@@ -1,4 +1,4 @@
-import "time.uv" as Time;
+import "experimental/time.uv" as Time;
 import "print.uv";
 
 fn main(): int {
