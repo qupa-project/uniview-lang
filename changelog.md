@@ -1,6 +1,6 @@
 # Change Log
 
-## Upcoming
+## Version 0.0.1
 
 ### Added
 - [x] Able to create a clone of any linear value
