@@ -27,12 +27,13 @@ const root = path.resolve(__dirname, "../");
 let total = 0;
 let completed = 0;
 let fails = 0;
+let totalDuration = 0;
 
 function Compile(filename, id) {
 	let target = path.relative(root, filename);
 
 	let msg  = `  File : ${target}\n`;
-	    msg += `  ID   : ${id}\n`;
+	    msg += `  ID   : ${id}`;
 	let failed = false;
 
 	return new Promise((res, rej) => {
@@ -55,13 +56,14 @@ function Compile(filename, id) {
 		compile.on('close', (code) => {
 			let end = Date.now();
 			if (code !== 0) {
-				msg += log; // only include the log on failure
+				msg += "\n\n" + log; // only include the log on failure
 				failed = true;
 				fails++;
 			}
 
 			let duration = (end-start)/1000;
-			msg += `\n\n  Time: ${duration}s`;
+			totalDuration += duration;
+			msg += `\n\n  Time: ${duration.toFixed(3)}s`;
 
 			completed++;
 
@@ -106,6 +108,7 @@ async function Test () {
 	await Promise.all(tasks);
 
 	console.info(`\nFailed ${fails} of ${tests.length}`);
+	console.info(` Total Time: ${totalDuration.toFixed(3)}s`);
 
 	if (fails > 0) {
 		process.exit(1);
