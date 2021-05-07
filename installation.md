@@ -37,3 +37,8 @@ This will install uniview, bind the compile command, and pre-build the standard 
 
 ## Installing IDE Tools
 There is a VSCode extension called `Uniview Language` which is the offical VSCode extension for the language.
+
+## Checking Installation
+```
+uvc --version
+```
