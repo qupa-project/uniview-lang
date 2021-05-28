@@ -34,6 +34,10 @@ class Template_Primative_Static_Cast extends Template {
 
 		let inputType = signature[0];
 		let outputType = template[0];
+		if (inputType == outputType) {
+			return false;
+		}
+
 		let match = this.findMatch(inputType, outputType);
 		if (match) {
 			return match;
@@ -69,25 +73,86 @@ class Template_Primative_Static_Cast extends Template {
 				let mode = inputType.type.cat == "float" ? 2 :
 				inputType.type.signed ? 1 : 0;
 
-				let action = inputType.type.size < outputType.type.size ? "Extend" : "Trunc";
+				let val; // LLVM.Name
+				if (inputType.type.size == outputType.type.size) {
+					val = new LLVM.Name("0", false);
+				} else {
+					let action = inputType.type.size < outputType.type.size ? "Extend" : "Trunc";
 
-				let temp = new LLVM.ID();
-				func.ir.append(new LLVM.Set(
-					new LLVM.Name(temp, false),
-					new LLVM[action](
-						mode,
-						outputType.toLLVM(),
-						new LLVM.Argument(
-							inputType.toLLVM(),
-							new LLVM.Name("0", false)
-						),
-						null
-					)
-				));
+					val = new LLVM.ID();
+					func.ir.append(new LLVM.Set(
+						new LLVM.Name(val, false),
+						new LLVM[action](
+							mode,
+							outputType.toLLVM(),
+							new LLVM.Argument(
+								inputType.toLLVM(),
+								new LLVM.Name("0", false)
+							),
+							null
+						)
+					));
+					val = new LLVM.Name(val.reference());
+				}
+
+				// Ensure safe conversion
+				if (inputType.type.cat == "int" && inputType.type.signed != outputType.type.signed) {
+					if (inputType.type.signed) { // Block underflows
+						let bool = new LLVM.ID();
+						func.ir.append(new LLVM.Set(
+							new LLVM.Name(bool, false),
+							new LLVM.Compare(
+								1, "sle", inputType.toLLVM(),
+								new LLVM.Name("0", false),
+								new LLVM.Constant("0")
+							)
+						));
+
+						let safe = new LLVM.ID();
+						func.ir.append(new LLVM.Set(
+							new LLVM.Name(safe),
+							new LLVM.Select(
+								new LLVM.Argument(types.bool.toLLVM(), new LLVM.Name(bool.reference(), false)),
+								[
+									new LLVM.Argument(outputType.toLLVM(), new LLVM.Constant("0")),
+									new LLVM.Argument(outputType.toLLVM(), val)
+								]
+							)
+						));
+
+						val = new LLVM.Name(safe.reference());
+					} else {                     // Block overflows
+						let limit = 2**(outputType.type.size*8 - 1);
+
+						let bool = new LLVM.ID();
+						func.ir.append(new LLVM.Set(
+							new LLVM.Name(bool, false),
+							new LLVM.Compare(
+								1, "uge", inputType.toLLVM(),
+								new LLVM.Name("0", false),
+								new LLVM.Constant(limit)
+							)
+						));
+
+						let safe = new LLVM.ID();
+						func.ir.append(new LLVM.Set(
+							new LLVM.Name(safe),
+							new LLVM.Select(
+								new LLVM.Argument(types.bool.toLLVM(), new LLVM.Name(bool.reference(), false)),
+								[
+									new LLVM.Argument(outputType.toLLVM(), new LLVM.Constant(limit -1)),
+									new LLVM.Argument(outputType.toLLVM(), val)
+								]
+							)
+						));
+						val = new LLVM.Name(safe.reference());
+					}
+				}
+
 				func.ir.append(new LLVM.Return(
 					new LLVM.Argument(
 						outputType.toLLVM(),
-						new LLVM.Name(temp.reference(), false)
+						val
 					)
 				));
 			} else {
