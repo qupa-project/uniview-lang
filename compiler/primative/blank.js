@@ -30,7 +30,7 @@ class Template_Primative_Blank extends Template {
 
 		let type = template[0];
 
-		let func = new Function_Instance(this, "Blank", type.toLLVM(), signature);
+		let func = new Function_Instance(this, "Blank", type, signature);
 		func.generate = (regs, ir_args) => {
 			return {
 				preamble: new LLVM.Fragment(),
@@ -40,8 +40,13 @@ class Template_Primative_Blank extends Template {
 				type: type.duplicate().offsetPointer(1)
 			};
 		};
+		func.compile();
 
 		return func;
+	}
+
+	toLLVM() {
+		return new LLVM.Fragment();
 	}
 }
 

@@ -29,6 +29,7 @@ const PtrToInt = require('./ptrtoint.js');
 const Raw = require('./raw.js');
 const Rem = require('./rem.js');
 const Return = require('./return.js');
+const Select = require('./select.js');
 const Set = require('./set.js');
 const Store = require('./store.js');
 const Struct = require('./struct.js');
@@ -55,7 +56,7 @@ module.exports = {
 	Phi, Procedure, PtrToInt,
 	Raw, Return,
 	Rem,
-	Set, Store, Struct, Sub,
+	Select, Set, Store, Struct, Sub,
 	Trunc, Type,
 	WPad,
 	XOr

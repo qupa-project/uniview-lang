@@ -139,10 +139,16 @@ class Project {
 
 
 	compile () {
+		for (let file of this.files) {
+			file.compile();
+		}
+	}
+
+	toLLVM () {
 		let fragment = new LLVM.Fragment();
 
 		for (let file of this.files) {
-			let res = file.compile();
+			let res = file.toLLVM();
 			fragment.merge(res);
 		}
 

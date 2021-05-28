@@ -22,7 +22,7 @@ class ExecutionExpr extends ExecutionBase {
 		let val = null;
 		switch (ast.tokens[0].type) {
 			case "float":
-				type = new TypeRef(0, Primative.types.float);
+				type = new TypeRef(0, Primative.types.double);
 				val = new LLVM.Constant(
 					ast.tokens[0].tokens,
 					ast.ref.start
@@ -36,7 +36,7 @@ class ExecutionExpr extends ExecutionBase {
 				);
 				break;
 			case "integer":
-				type = new TypeRef(0, Primative.types.i32);
+				type = new TypeRef(0, Primative.types.i64);
 				val = new LLVM.Constant(
 					ast.tokens[0].tokens,
 					ast.ref.start

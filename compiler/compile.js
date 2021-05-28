@@ -75,11 +75,12 @@ if (project.error) {
 
 // Compile to LLVM
 console.info("Processing...");
-let asm = project.compile();
+project.compile();
 if (project.error) {
 	console.error("\nUncompilable errors");
 	process.exit(1);
 }
+let asm = project.toLLVM();
 
 
 if (config.verifyOnly) {

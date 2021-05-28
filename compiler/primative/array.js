@@ -45,6 +45,10 @@ class Template_Array extends Template {
 
 		return new TypeRef(0, inst);
 	}
+
+	toLLVM() {
+		return new LLVM.Fragment();
+	}
 }
 
 class Array_Gen extends TypeDef {

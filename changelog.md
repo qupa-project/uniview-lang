@@ -1,5 +1,17 @@
 # Change Log
 
+## Upcoming
+
+### Added
+
+### Fixes
+
+### Tweaks
+- [x] Primitive numbers are 64bit by default.
+- [x] Compiler now generates all IR in fragments before joining (will assist with template implementation).
+- [x] Changed ``sizeof`` function to being a compiled default non-inlined function.
+- [x] Changed primitive function name ``static_cast`` to ``cast``.
+
 ## Version 0.0.1
 
 ### Added

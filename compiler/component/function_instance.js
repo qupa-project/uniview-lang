@@ -30,6 +30,9 @@ class Function_Instance {
 
 		this.name = ast.tokens[0].tokens[1].tokens;
 		this.represent = external ? `${this.name}` : `${this.name}.${this.ctx.getFileID().toString(36)}.${this.id.toString(36)}`;
+
+
+		this.ir = new LLVM.Fragment();
 	}
 
 	markExport () {
@@ -198,9 +201,13 @@ class Function_Instance {
 
 		let gen = new Generator_ID(0);
 		frag.assign_ID(gen);
-		frag.flattern();
 
-		return frag;
+		this.ir = frag;
+	}
+
+
+	toLLVM() {
+		return this.ir;
 	}
 }
 

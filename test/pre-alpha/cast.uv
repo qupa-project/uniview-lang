@@ -1,23 +1,78 @@
 import "print.uv";
 
-fn TestSignatureWrap() {
-	let a = static_cast#[u8](-3);
-	let b = static_cast#[i32](a);
-	println(b);
 
-	return;
+fn CheckOverFlow(): int {
+	let a = cast#[u8](128);
+	let b = cast#[i8](a);
+
+	if (b != cast#[i8](127)) {
+		return 1;
+	}
+
+
+	a = cast#[u8](256);
+	b = cast#[i8](a);
+	if (b != cast#[i8](127)) {
+		return 1;
+	}
+
+
+	b = cast#[i8](1024);
+	if (b != cast#[i8](127)) {
+		return 1;
+	}
+
+	let c = cast#[i16](9223372036854780000);
+	if (c != cast#[i16](32767)) {
+		return 1;
+	}
+
+	let d = cast#[i32](9223372036854780000);
+	if (d != cast#[i32](2147483647)) {
+		return 1;
+	}
+
+	return 0;
+}
+
+fn CheckUnderflow(): int {
+	let a = cast#[i8](-1);
+	let b = cast#[u8](a);
+
+	if (b != cast#[u8](0)) {
+		return 1;
+	}
+
+
+	a = cast#[i8](0);
+	b = cast#[u8](a);
+	if (b != cast#[u8](0)) {
+		return 1;
+	}
+
+
+	b = cast#[u8](1024);
+	if (b != cast#[u8](0)) {
+		return 1;
+	}
+
+	return 0;
 }
 
 
 fn main (): int {
-	let a: i32 = 0;
+	let res = CheckOverFlow();
+	if (res == -1) {
+		println("Failed overflow check");
+		return 1;
+	}
 
-	let b = static_cast#[u8](a);
-	a = static_cast#[i32](b);
-	let c = static_cast#[float](a);
-	b = static_cast#[u8](c);
 
-	TestSignatureWrap();
+	res = CheckUnderflow();
+	if (res == -1) {
+		println("Failed underflow check");
+		return 1;
+	}
 
 	return 0;
 }

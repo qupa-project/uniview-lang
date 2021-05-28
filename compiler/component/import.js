@@ -79,7 +79,9 @@ class Import {
 		return;
 	}
 
-	compile () {
+	compile () {}
+
+	toLLVM () {
 		let frag = new LLVM.Fragment();
 		return frag;
 	}

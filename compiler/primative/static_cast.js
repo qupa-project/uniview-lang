@@ -8,96 +8,198 @@ const TypeRef = require('../component/typeRef.js');
 class Template_Primative_Static_Cast extends Template {
 	constructor (ctx) {
 		super(ctx, null);
+
+		this.children = [];
+	}
+
+	findMatch(inputType, outputType) {
+		for (let child of this.children) {
+			if (child.input == inputType && child.output == outputType) {
+				return child.function;
+			}
+		}
+
+		return null;
 	}
 
 	getFunction (access, signature, template) {
-		return this.generate(access, signature, template);
-	}
-
-	generate (access, signature, template) {
-		if (access.length != 0) {
+		if (access.length !== 0) {
 			return false;
 		}
 
 		// Check input lengths are correct
-		if (signature.length != 1|| template.length != 1) {
+		if (signature.length != 1 || template.length != 1) {
 			return false;
 		}
 
-		// Constants are not able to be casted
-		if (!(signature[0] instanceof TypeRef) || !(template[0] instanceof TypeRef)) {
+		let inputType = signature[0];
+		let outputType = template[0];
+		if (inputType == outputType) {
 			return false;
 		}
 
-		let func = new Function_Instance(this, "static_cast", template[0].toLLVM(), signature);
+		let match = this.findMatch(inputType, outputType);
+		if (match) {
+			return match;
+		}
 
-		// Is this an address cast or a value cast?
-		if (signature[0].pointer == 0 || template[0].pointer == 0) {
-			// Invalid value cast as one value is a pointer
-			if (signature[0].pointer != template[0].pointer) {
-				return false;
-			}
+		let func = this.generate(inputType, outputType);
+		if (func) {
+			this.children.push({
+				input: inputType,
+				output: outputType,
+				function: func
+			});
 
-			// If both values are primatives
-			if (types[signature[0].type.represent] && types[template[0].type.represent]) {
-				// Same type of data
-				if (signature[0].type.cat == template[0].type.cat) {
-					let mode = signature[0].type.cat == "float" ? 2 :
-						signature[0].type.signed ? 1 : 0;
+			return func;
+		}
 
-					let action = signature[0].type.size < template[0].type.size ? "Extend" : "Trunc";
+		return false;
+	}
 
-					func.generate = (regs, ir_args) => {
-						return {
-							preamble: new LLVM.Fragment(),
-							instruction: new LLVM[action](
-								mode,
-								template[0].toLLVM(),
-								ir_args[0],
-								null
-							),
-							type: template[0]
-						}
-					}
+	generate (inputType, outputType) {
+		let func = new Function_Instance(this, "static_cast", outputType, [inputType]);
+		func.isInline = false;
+
+		// Invalid value cast as one value is a pointer
+		if (inputType.pointer != outputType.pointer) {
+			return false;
+		}
+
+		// If both types are primaives
+		if (types[inputType.type.name] && types[outputType.type.name]) {
+			// Same type of data (i.e. float float, or int int)
+			if (inputType.type.cat == outputType.type.cat) {
+				let mode = inputType.type.cat == "float" ? 2 :
+				inputType.type.signed ? 1 : 0;
+
+				let val; // LLVM.Name
+				if (inputType.type.size == outputType.type.size) {
+					val = new LLVM.Name("0", false);
 				} else {
-					let a = signature[0].type.cat == "float" ? "fp" :
-						signature[0].type.signed ? "si" : "ui";
-					let b = template[0].type.cat == "float" ? "fp" :
-					template[0].type.signed ? "si" : "ui";
+					let action = inputType.type.size < outputType.type.size ? "Extend" : "Trunc";
 
-					func.generate = (regs, ir_args) => {
-						return {
-							preamble: new LLVM.Fragment(),
-							instruction: new LLVM.FloatConvert(
-								a, b,
-								template[0].toLLVM(),
-								ir_args[0],
-								null
+					val = new LLVM.ID();
+					func.ir.append(new LLVM.Set(
+						new LLVM.Name(val, false),
+						new LLVM[action](
+							mode,
+							outputType.toLLVM(),
+							new LLVM.Argument(
+								inputType.toLLVM(),
+								new LLVM.Name("0", false)
 							),
-							type: template[0]
-						}
+							null
+						)
+					));
+					val = new LLVM.Name(val.reference());
+				}
+
+				// Ensure safe conversion
+				if (inputType.type.cat == "int" && inputType.type.signed != outputType.type.signed) {
+					if (inputType.type.signed) { // Block underflows
+						let bool = new LLVM.ID();
+						func.ir.append(new LLVM.Set(
+							new LLVM.Name(bool, false),
+							new LLVM.Compare(
+								1, "sle", inputType.toLLVM(),
+								new LLVM.Name("0", false),
+								new LLVM.Constant("0")
+							)
+						));
+
+						let safe = new LLVM.ID();
+						func.ir.append(new LLVM.Set(
+							new LLVM.Name(safe),
+							new LLVM.Select(
+								new LLVM.Argument(types.bool.toLLVM(), new LLVM.Name(bool.reference(), false)),
+								[
+									new LLVM.Argument(outputType.toLLVM(), new LLVM.Constant("0")),
+									new LLVM.Argument(outputType.toLLVM(), val)
+								]
+							)
+						));
+
+						val = new LLVM.Name(safe.reference());
+					} else {                     // Block overflows
+						let limit = 2**(outputType.type.size*8 - 1);
+
+						let bool = new LLVM.ID();
+						func.ir.append(new LLVM.Set(
+							new LLVM.Name(bool, false),
+							new LLVM.Compare(
+								1, "uge", inputType.toLLVM(),
+								new LLVM.Name("0", false),
+								new LLVM.Constant(limit)
+							)
+						));
+
+						let safe = new LLVM.ID();
+						func.ir.append(new LLVM.Set(
+							new LLVM.Name(safe),
+							new LLVM.Select(
+								new LLVM.Argument(types.bool.toLLVM(), new LLVM.Name(bool.reference(), false)),
+								[
+									new LLVM.Argument(outputType.toLLVM(), new LLVM.Constant(limit -1)),
+									new LLVM.Argument(outputType.toLLVM(), val)
+								]
+							)
+						));
+						val = new LLVM.Name(safe.reference());
 					}
 				}
 
+				func.ir.append(new LLVM.Return(
+					new LLVM.Argument(
+						outputType.toLLVM(),
+						val
+					)
+				));
 			} else {
-				return false;
+				let a = inputType.type.cat == "float" ? "fp" :
+				inputType.type.signed ? "si" : "ui";
+				let b = outputType.type.cat == "float" ? "fp" :
+				outputType.type.signed ? "si" : "ui";
+
+				let temp = new LLVM.ID();
+				func.ir.append(new LLVM.Set(
+					new LLVM.Name(temp, false),
+					new LLVM.FloatConvert(
+						a, b,
+						outputType.toLLVM(),
+						new LLVM.Argument(
+							inputType.toLLVM(),
+							new LLVM.Name("0", false)
+						),
+						null
+					)
+				));
+				func.ir.append(new LLVM.Return(
+					new LLVM.Argument(
+						outputType.toLLVM(),
+						new LLVM.Name(temp.reference(), false)
+					)
+				));
 			}
 		} else {
-			// Address cast
-			func.generate = (regs, ir_args) => {
-				return {
-					preamble: new LLVM.Fragment(),
-					instruction: new LLVM.Bitcast(
-						template[0].toLLVM(),
-						ir_args[0],
-						null
-					),
-					type: template[0]
-				};
-			};
+			return false;
 		}
 
+		func.compile();
+
 		return func;
+	}
+
+
+	toLLVM () {
+		let frag = new LLVM.Fragment();
+
+		for (let child of this.children) {
+			let asm = child.function.toLLVM();
+			frag.append(asm);
+		}
+
+		return frag;
 	}
 }
 

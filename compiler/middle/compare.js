@@ -3,7 +3,7 @@ const LLVM = require('./llvm.js');
 
 class Compare extends Instruction {
 	/**
-	 * @param {String} mode
+	 * @param {Number} mode {uint, int, float}
 	 * @param {String} condition
 	 * @param {LLVM.Type} type
 	 * @param {LLVM.Name} opperand_a
