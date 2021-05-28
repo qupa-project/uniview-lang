@@ -201,7 +201,6 @@ class Function_Instance {
 
 		let gen = new Generator_ID(0);
 		frag.assign_ID(gen);
-		frag.flattern();
 
 		this.ir = frag;
 	}

@@ -116,6 +116,8 @@ class Template_Primative_Static_Cast extends Template {
 			return false;
 		}
 
+		func.compile();
+
 		return func;
 	}
 

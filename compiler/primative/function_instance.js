@@ -53,7 +53,10 @@ class Function_Instance {
 
 	link () {}
 	match (other) {}
-	compile () {}
+	compile () {
+		let gen = new Generator_ID(this.signature.length + 1);
+		this.ir.assign_ID(gen);
+	}
 
 	toLLVM() {
 		return this.ir;
