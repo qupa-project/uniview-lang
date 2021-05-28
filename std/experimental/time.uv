@@ -49,7 +49,7 @@ fn GetDate(unixTime: i64): Date {
 
 	let date = Blank#[Date]();
 
-	let s = static_cast#[i32](unixTime);
+	let s = unixTime;
 	let z = s/86400 + 719468;
 
 	let t1: int;

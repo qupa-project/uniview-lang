@@ -1,5 +1,14 @@
 # Change Log
 
+## Upcoming
+
+### Added
+
+### Fixes
+
+### Tweaks
+- [x] Primative numbers are 64bit by default
+
 ## Version 0.0.1
 
 ### Added

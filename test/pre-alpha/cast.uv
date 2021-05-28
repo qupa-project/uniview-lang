@@ -10,10 +10,10 @@ fn TestSignatureWrap() {
 
 
 fn main (): int {
-	let a: i32 = 0;
+	let a = 0;
 
 	let b = static_cast#[u8](a);
-	a = static_cast#[i32](b);
+	a = static_cast#[i64](b);
 	let c = static_cast#[float](a);
 	b = static_cast#[u8](c);
 
