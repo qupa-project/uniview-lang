@@ -67,7 +67,7 @@ fn abs(val: i8): i8 {
 }
 
 fn abs(val: double): double {
-	let zero = static_cast#[double](0.0);
+	let zero = cast#[double](0.0);
 	if (val < zero) {
 		return zero - val;
 	}

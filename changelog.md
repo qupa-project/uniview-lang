@@ -7,9 +7,10 @@
 ### Fixes
 
 ### Tweaks
-- [x] Primative numbers are 64bit by default
-- [x] Compiler now generates all IR in fragments before joining (will assist with template implementation)
+- [x] Primative numbers are 64bit by default.
+- [x] Compiler now generates all IR in fragments before joining (will assist with template implementation).
 - [x] Changed ``sizeof`` function to being a compiled default non-inlined function.
+- [x] Changed primative function name ``static_cast`` to ``cast``.
 
 ## Version 0.0.1
 

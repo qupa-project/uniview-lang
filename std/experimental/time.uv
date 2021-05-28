@@ -75,7 +75,7 @@ fn GetDate(unixTime: i64): Date {
 		t2 = -9;
 	}
 	let m = mp + t2;
-	// y = y + static_cast#[int](m <= 2);
+	// y = y + cast#[int](m <= 2);
 
 	date.day = d;
 	date.month = m;
@@ -86,7 +86,7 @@ fn GetDate(unixTime: i64): Date {
 }
 
 fn GetTime(unixTime: i64): Time {
-	let unix = static_cast#[int] (unixTime);
+	let unix = cast#[int] (unixTime);
 
 	let t = Blank#[Time]();
 	t.seconds = unix % 60;

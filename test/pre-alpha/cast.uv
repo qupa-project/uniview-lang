@@ -2,33 +2,33 @@ import "print.uv";
 
 
 fn CheckOverFlow(): int {
-	let a = static_cast#[u8](128);
-	let b = static_cast#[i8](a);
+	let a = cast#[u8](128);
+	let b = cast#[i8](a);
 
-	if (b != static_cast#[i8](127)) {
+	if (b != cast#[i8](127)) {
 		return 1;
 	}
 
 
-	a = static_cast#[u8](256);
-	b = static_cast#[i8](a);
-	if (b != static_cast#[i8](127)) {
+	a = cast#[u8](256);
+	b = cast#[i8](a);
+	if (b != cast#[i8](127)) {
 		return 1;
 	}
 
 
-	b = static_cast#[i8](1024);
-	if (b != static_cast#[i8](127)) {
+	b = cast#[i8](1024);
+	if (b != cast#[i8](127)) {
 		return 1;
 	}
 
-	let c = static_cast#[i16](9223372036854780000);
-	if (c != static_cast#[i16](32767)) {
+	let c = cast#[i16](9223372036854780000);
+	if (c != cast#[i16](32767)) {
 		return 1;
 	}
 
-	let d = static_cast#[i32](9223372036854780000);
-	if (d != static_cast#[i32](2147483647)) {
+	let d = cast#[i32](9223372036854780000);
+	if (d != cast#[i32](2147483647)) {
 		return 1;
 	}
 
@@ -36,23 +36,23 @@ fn CheckOverFlow(): int {
 }
 
 fn CheckUnderflow(): int {
-	let a = static_cast#[i8](-1);
-	let b = static_cast#[u8](a);
+	let a = cast#[i8](-1);
+	let b = cast#[u8](a);
 
-	if (b != static_cast#[u8](0)) {
+	if (b != cast#[u8](0)) {
 		return 1;
 	}
 
 
-	a = static_cast#[i8](0);
-	b = static_cast#[u8](a);
-	if (b != static_cast#[u8](0)) {
+	a = cast#[i8](0);
+	b = cast#[u8](a);
+	if (b != cast#[u8](0)) {
 		return 1;
 	}
 
 
-	b = static_cast#[u8](1024);
-	if (b != static_cast#[u8](0)) {
+	b = cast#[u8](1024);
+	if (b != cast#[u8](0)) {
 		return 1;
 	}
 
