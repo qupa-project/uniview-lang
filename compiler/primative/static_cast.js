@@ -23,6 +23,10 @@ class Template_Primative_Static_Cast extends Template {
 	}
 
 	getFunction (access, signature, template) {
+		if (access.length !== 0) {
+			return false;
+		}
+
 		// Check input lengths are correct
 		if (signature.length != 1 || template.length != 1) {
 			return false;
@@ -35,7 +39,7 @@ class Template_Primative_Static_Cast extends Template {
 			return match;
 		}
 
-		let func = this.generate(inputType, outputType, template);
+		let func = this.generate(inputType, outputType);
 		if (func) {
 			this.children.push({
 				input: inputType,

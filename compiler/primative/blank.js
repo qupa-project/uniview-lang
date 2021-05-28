@@ -40,6 +40,7 @@ class Template_Primative_Blank extends Template {
 				type: type.duplicate().offsetPointer(1)
 			};
 		};
+		func.compile();
 
 		return func;
 	}
