@@ -330,10 +330,24 @@ class File {
 
 
 	compile () {
+		for (let key in this.names) {
+			this.names[key].compile();
+		}
+	}
+
+
+	toLLVM () {
 		let fragment = new LLVM.Fragment();
 
 		for (let key in this.names) {
-			let res = this.names[key].compile();
+			if (
+				!(this.names[key] instanceof Structure) &&
+				this.names[key] instanceof TypeDef
+			) {
+				continue;
+			}
+
+			let res = this.names[key].toLLVM();
 			if (res instanceof LLVM.Fragment) {
 				fragment.merge(res);
 			} else {

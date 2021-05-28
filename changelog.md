@@ -8,6 +8,7 @@
 
 ### Tweaks
 - [x] Primative numbers are 64bit by default
+- [x] Compiler now generates all IR in fragments before joining (will assist with template implementation)
 
 ## Version 0.0.1
 

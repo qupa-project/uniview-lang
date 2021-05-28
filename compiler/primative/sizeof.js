@@ -27,19 +27,23 @@ class Template_Primative_Size_Of extends Template {
 			return false;
 		}
 
-		let func = new Function_Instance(this, "sizeof", types.i32.toLLVM(), []);
+		let func = new Function_Instance(this, "sizeof", types.i64, []);
 		func.generate = (regs, ir_args) => {
 			return {
 				preamble: new LLVM.Fragment(),
 				instruction: new LLVM.Argument(
-					types.i32.toLLVM(),
-					new LLVM.Constant(template[0].pointer > 0 ? 4 : template[0].type.size, null)
+					types.i64.toLLVM(),
+					new LLVM.Constant(template[0].pointer > 0 ? 8 : template[0].type.size, null)
 				),
 				type: new TypeRef(0, types.i32)
 			};
 		};
 
 		return func;
+	}
+
+	toLLVM() {
+		return new LLVM.Fragment();
 	}
 }
 

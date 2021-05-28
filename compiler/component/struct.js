@@ -16,6 +16,8 @@ class Struct_Term {
 		this.size = typeRef.pointer > 0 ? 4 : typeRef.type.size;
 
 		this.typeSystem = "linear";
+
+		this.ir = new LLVM.Fragment();
 	}
 
 	toLLVM() {
@@ -154,11 +156,15 @@ class Structure extends TypeDef {
 			types.push(this.terms[name].toLLVM());
 		}
 
-		return new LLVM.Struct(
+		this.ir = new LLVM.Struct(
 			new LLVM.Name(this.represent, false, this.ref),
 			types,
 			this.ref
 		);
+	}
+
+	toLLVM() {
+		return this.ir;
 	}
 
 

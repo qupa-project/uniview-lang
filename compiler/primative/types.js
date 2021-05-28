@@ -130,7 +130,9 @@ for (let i=1; i<=8; i+=i) {
 
 // Bind float category
 types.float.cat  = "float";
+types.float.signed = true;
 types.double.cat = "float";
+types.double.signed = true;
 
 types.int   = types.i64;
 types.uint   = types.u64;

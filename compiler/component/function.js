@@ -78,13 +78,17 @@ class Function {
 	}
 
 	compile () {
+		for (let instance of this.instances) {
+			instance.compile();
+		}
+	}
+
+	toLLVM() {
 		let fragment = new LLVM.Fragment();
 
 		for (let instance of this.instances) {
-			let ir = instance.compile();
-			if (ir) {
-				fragment.append(ir);
-			}
+			let ir = instance.toLLVM();
+			fragment.append(ir);
 		}
 
 		return fragment;
