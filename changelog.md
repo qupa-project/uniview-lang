@@ -5,6 +5,7 @@
 ### Added
 
 ### Fixes
+- [x] Fixed being unable to use structure access chaining ``a.b.c``
 
 ### Tweaks
 - [x] Primitive numbers are 64bit by default.

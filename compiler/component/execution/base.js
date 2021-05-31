@@ -124,7 +124,7 @@ class ExecutionBase {
 			preamble.append(res.preamble);
 			res = res.variable;
 
-			access.splice(0, 2);
+			access.splice(0, 1);
 		}
 
 		return {
