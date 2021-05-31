@@ -1,9 +1,35 @@
 import "print.uv";
 
+// Keep this function before struct definition:
+//  - checks out of order declaration is working
+//  - checks storing structs within structs
+fn check(target: @Person, id: int, age: int, finger: int): int {
+	if (target.id != id) {
+		return 1;
+	}
+	if (target.age != age) {
+		return 1;
+	}
+	let f = target.finger;
+	if (f.id != finger) {
+		return 1;
+	}
+	target.finger = f;
+
+	return 0;
+}
+
+
+struct FingerPrint {
+	id: int;
+}
+
 struct Person {
 	id: int;
 	age: int;
+	finger: FingerPrint;
 }
+
 
 
 fn init(ofAge: bool): Person {
@@ -15,6 +41,9 @@ fn init(ofAge: bool): Person {
 	}
 
 	p.id = 0;
+	p.finger = Blank#[FingerPrint]();
+	p.finger.id = 1;
+
 	return p;
 }
 
@@ -28,43 +57,58 @@ fn print(p: Person) {
 	print(p.id);
 	print(", age: ");
 	print(p.age);
-	println(" }");
+	print(", finger: ");
+	print(p.finger);
+	print(" }");
+
+	return;
+}
+fn print(f: FingerPrint) {
+	print("FingerPrint { id: ");
+	print(f.id);
+	print(" }");
 
 	return;
 }
 
 
+
 fn main(): int {
 	let p = init(false);
-	let b = $p;
+	if (check(@p, 0, 16, 1) == 1) {
+		println("Failed init test");
+		return 1;
+	}
+
+
+	p = init(true);
+	if (check(@p, 0, 21, 1) == 1) {
+		println("Failed init test");
+		return 1;
+	}
+
+	let q = $p;
+	if (check(@q, 0, 21, 1) == 1) {
+		println("Failed clone test");
+		return 1;
+	}
+
 	age(@p);
-	print(p);
-	print(b);
+	if (check(@p, 0, 22, 1) == 1) {
+		println("Failed clone independence test");
+		return 1;
+	}
+	if (check(@q, 0, 21, 1) == 1) {
+		println("Failed clone independence test");
+		return 1;
+	}
+
+
+	p.finger = Blank#[FingerPrint]();
+	if (check(@p, 0, 22, 1) != 1) {
+		println("Failed changing sub structure");
+		return 1;
+	}
 
 	return 0;
-}
-
-
-
-
-// Test structs defined out of order
-import "print.uv";
-
-fn Test(): int {
-	print("cat");
-	let c = Blank#[Cat]();
-
-	let name = c.name;
-	print(name.placeholder);
-
-	return 0;
-}
-
-struct Name {
-	placeholder: i64;
-}
-
-struct Cat {
-	name: Name;
-	age: int;
 }
