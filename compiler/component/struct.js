@@ -225,7 +225,7 @@ class Structure extends TypeDef {
 		let storeID = new LLVM.ID();
 		preamble.append(new LLVM.Set(
 			new LLVM.Name(storeID, false),
-			new LLVM.Alloc(type.duplicate().offsetPointer(-1).toLLVM())
+			new LLVM.Alloc(type.toLLVM())
 		));
 		let instruction = new LLVM.Argument(
 			type.toLLVM(),

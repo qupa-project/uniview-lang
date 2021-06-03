@@ -222,7 +222,7 @@ class Execution extends ExecutionFlow {
 			let id = new LLVM.ID();
 			preamble.append(new LLVM.Set(
 				new LLVM.Name(id, false, ast.ref),
-				new LLVM.Alloc(target.returnType.duplicate().offsetPointer().toLLVM(), ast.ref),
+				new LLVM.Alloc(target.returnType.toLLVM(), ast.ref),
 				ast.ref
 			));
 
