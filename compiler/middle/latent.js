@@ -35,11 +35,9 @@ class Latent extends Instruction {
 	}
 
 	flattern(indent) {
-		return super.flattern(
-			this.active ?
-				this.action.flattern() :
-				"; Disabled latent action",
-		indent);
+		return this.active ?
+			this.action.flattern(indent) :
+			super.flattern("; Disabled latent action", indent);
 	}
 }
 

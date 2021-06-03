@@ -103,6 +103,8 @@ class ExecutionBase {
 	 * @param {Boolean} read
 	 */
 	getVar (ast, read = true) {
+		let preamble = new LLVM.Fragment();
+
 		// Link dynamic access arguments
 		ast = this.resolveAccess (ast);
 		let res = this.scope.getVar (ast, read);
@@ -113,7 +115,6 @@ class ExecutionBase {
 			return res;
 		}
 
-		let preamble = new LLVM.Fragment();
 		let access = ast.tokens[2];
 		while (access.length > 0) {
 			res.hasUpdated = res.hasUpdated || !read;
@@ -121,7 +122,7 @@ class ExecutionBase {
 			if (res.error) {
 				return res;
 			}
-			preamble.append(res.preamble);
+			preamble.merge(res.preamble);
 			res = res.variable;
 
 			access.splice(0, 1);

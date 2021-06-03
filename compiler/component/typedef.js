@@ -50,5 +50,22 @@ class TypeDef {
 	toLLVM () {
 		return new LLVM.Type(this.represent, 0, this.declared || null);
 	}
+
+	/**
+	* Generates the code to determine the size of the structure
+	* @param {BNF_Reference} ref
+	* @returns
+	*/
+	sizeof (ref) {
+		return {
+			preamble: new LLVM.Fragment(),
+			instruction: new LLVM.Argument(
+				new LLVM.Type("i64"),
+				new LLVM.Constant(this.size),
+				ref
+			)
+		};
+	}
 }
+
 module.exports = TypeDef;

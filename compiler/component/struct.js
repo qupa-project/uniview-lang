@@ -13,15 +13,14 @@ class Struct_Term {
 		this.name = name;
 		this.typeRef = typeRef;
 		this.declared = ref;
-		this.size = typeRef.pointer > 0 ? 4 : typeRef.type.size;
-
+		this.size = typeRef.type.size;
 		this.typeSystem = "linear";
 
 		this.ir = new LLVM.Fragment();
 	}
 
 	toLLVM() {
-		return this.typeRef.toLLVM(this.declared);
+		return this.typeRef.toLLVM(this.declared, true);
 	}
 }
 
@@ -38,7 +37,7 @@ class Structure extends TypeDef {
 	 * @param {String} name
 	 * @returns {Object}
 	 */
-	getTerm (name, register, ref) {
+	getTerm (name) {
 		let found = false;
 		let i = 0;
 		if (typeof(name) == "number") {
@@ -56,13 +55,10 @@ class Structure extends TypeDef {
 			return null;
 		}
 
-		let res = this.accessGEPByIndex(i, register, ref);
-
+		let type = this.terms[i].typeRef.duplicate();
 		return {
-			preamble: res.preamble,
-			instruction: res.instruction,
 			index: i,
-			type: res.type.duplicate()
+			type: type
 		};
 	}
 
@@ -70,12 +66,24 @@ class Structure extends TypeDef {
 		return this.terms.length;
 	}
 
-	accessGEPByIndex (i, register, ref) {
-		return {
-			preamble: new LLVM.Fragment(),
-			instruction: new LLVM.GEP(
-				register.type.duplicate().offsetPointer(-1, register.declared).toLLVM(),
-				register.store,
+	/**
+	 *
+	 * @param {Number} i
+	 * @param {LLVM.Argument} register
+	 * @param {BNF_Reference} ref
+	 * @returns {Object}
+	 */
+	accessGEPByIndex (i, register, ref, reading = true) {
+		let preamble = new LLVM.Fragment();
+		let type = this.terms[i].typeRef;
+
+		// Bind the gep value to a register
+		let gepID = new LLVM.ID(ref);
+		preamble.append(new LLVM.Set(
+			new LLVM.Name(gepID, false, ref),
+			new LLVM.GEP(
+				register.type.duplicate().offsetPointer(-1),
+				register,
 				[
 					new LLVM.Argument(
 						Primative.types.i32.toLLVM(),
@@ -83,14 +91,51 @@ class Structure extends TypeDef {
 						ref
 					),
 					new LLVM.Argument(
-						new LLVM.Type("i32", 0, ref),
+						Primative.types.i32.toLLVM(),
 						new LLVM.Constant(i.toString(), ref)
 					)
 				],
 				ref
 			),
-			type: this.terms[i].typeRef
+			ref
+		));
+
+		// The register is now the value representation
+		let val = new LLVM.Argument(
+			type.toLLVM(ref),
+			new LLVM.Name(gepID.reference(), false, ref),
+			ref
+		);
+
+		// Non-linear type - hence the value must be loaded
+		if (type.type.typeSystem == "normal") {
+			if (reading) {
+				let id = new LLVM.ID();
+				preamble.append(new LLVM.Set(
+					new LLVM.Name(id, false, ref),
+					new LLVM.Load(
+						type.toLLVM(),
+						val.name,
+						ref
+					),
+					ref
+				));
+
+				val = new LLVM.Argument(
+					type.toLLVM(ref),
+					new LLVM.Name(id.reference(), false, ref),
+					ref
+				);
+			} else {
+				val.type = type.toLLVM(ref, false, true);
+			}
 		}
+
+		return {
+			preamble: preamble,
+			instruction: val,
+			type: type
+		};
 	}
 
 	parse () {
@@ -187,33 +232,8 @@ class Structure extends TypeDef {
 			new LLVM.Name(storeID.reference(), false)
 		);
 
-		let sizePtrID = new LLVM.ID();
-		preamble.append(new LLVM.Set(
-			new LLVM.Name(sizePtrID, false),
-			new LLVM.GEP(
-				type.duplicate().offsetPointer(-1).toLLVM(),
-				new LLVM.Argument(
-					type.duplicate().toLLVM(),
-					new LLVM.Constant("null")
-				),
-				[new LLVM.Argument(
-					new LLVM.Type("i64", 0),
-					new LLVM.Constant("1")
-				)]
-			)
-		));
-
-		let sizeID = new LLVM.ID();
-		preamble.append(new LLVM.Set(
-			new LLVM.Name(sizeID, false),
-			new LLVM.PtrToInt(
-				new LLVM.Type("i64", 0),
-				new LLVM.Argument(
-					type.duplicate().toLLVM(),
-					new LLVM.Name(sizePtrID.reference(), false),
-				)
-			)
-		));
+		let size = this.sizeof(ref);
+		preamble.merge(size.preamble);
 
 		let fromID = new LLVM.ID();
 		preamble.append(new LLVM.Set(
@@ -244,10 +264,7 @@ class Structure extends TypeDef {
 					new LLVM.Type("i8", 1),
 					new LLVM.Name(fromID.reference(), false)
 				),
-				new LLVM.Argument(
-					new LLVM.Type("i64", 0),
-					new LLVM.Name(sizeID.reference(), false)
-				),
+				size.instruction,
 				new LLVM.Argument(
 					new LLVM.Type('i1', 0),
 					new LLVM.Constant("0")

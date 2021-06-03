@@ -384,38 +384,9 @@ class Execution extends ExecutionFlow {
 			returnType = res.type;
 			frag.merge(res.preamble);
 			if (returnType.type.typeSystem == "linear") {
-				// Structures are parsed by pointer
 
-				let sizePtrID = new LLVM.ID();
-				frag.append(new LLVM.Set(
-					new LLVM.Name(sizePtrID, false, ast.ref),
-					new LLVM.GEP(
-						returnType.duplicate().offsetPointer(-1).toLLVM(),
-						new LLVM.Argument(
-							returnType.duplicate().toLLVM(),
-							new LLVM.Constant("null", ast.ref),
-							ast.ref
-						),
-						[new LLVM.Argument(
-							new LLVM.Type("i64", 0, ast.ref),
-							new LLVM.Constant("1", ast.ref),
-							ast.ref
-						)]
-					)
-				));
-
-				let sizeID = new LLVM.ID();
-				frag.append(new LLVM.Set(
-					new LLVM.Name(sizeID, false, ast.ref),
-					new LLVM.PtrToInt(
-						new LLVM.Type("i64", 0),
-						new LLVM.Argument(
-							returnType.duplicate().toLLVM(),
-							new LLVM.Name(sizePtrID.reference(), false, ast.ref),
-							ast.ref
-						)
-					)
-				));
+				let size = returnType.type.sizeof(ast.ref);
+				frag.append(size.preamble);
 
 				let fromID = new LLVM.ID();
 				frag.append(new LLVM.Set(
@@ -450,10 +421,7 @@ class Execution extends ExecutionFlow {
 							new LLVM.Type("i8", 1),
 							new LLVM.Name(fromID.reference(), false)
 						),
-						new LLVM.Argument(
-							new LLVM.Type("i64", 0),
-							new LLVM.Name(sizeID.reference(), false)
-						),
+						size.instruction,
 						new LLVM.Argument(
 							new LLVM.Type('i1', 0),
 							new LLVM.Constant("0")

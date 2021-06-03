@@ -46,8 +46,10 @@ class ExecutionExpr extends ExecutionBase {
 				let bytes = ast.tokens[0].tokens[1].length + 1;
 				let str = ast.tokens[0].tokens[1].replace(/\"/g, "\\22").replace(/\n/g, '\\0A') + "\\00";
 
+				type = new TypeRef(0, Primative.types.string);
+
 				let ir_t1 = new LLVM.Type(`[ ${bytes} x i8 ]`, 0, ast.ref);
-				let ir_t2 = new LLVM.Type(`i8`, 1);
+				let ir_t2 = type.toLLVM();
 
 				let str_id = new LLVM.ID();
 				let ptr_id = new LLVM.ID();
@@ -86,7 +88,6 @@ class ExecutionExpr extends ExecutionBase {
 					ast.ref
 				));
 
-				type = new TypeRef(1, Primative.types.string);
 				val = new LLVM.Name(ptr_id, false, ast.ref);
 				break;
 			default:
@@ -95,7 +96,7 @@ class ExecutionExpr extends ExecutionBase {
 
 		return {
 			instruction: new LLVM.Argument(
-				new LLVM.Type(type.type.represent, type.pointer, ast.ref.start),
+				type.toLLVM(),
 				val,
 				ast.ref
 			),

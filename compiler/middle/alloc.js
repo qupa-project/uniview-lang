@@ -9,6 +9,8 @@ class Alloc extends Instruction {
 	constructor(type, ref) {
 		super (ref);
 		this.type = type;
+
+		type.pointer -= 1;
 	}
 
 	flattern(indent) {
