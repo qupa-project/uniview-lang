@@ -77,6 +77,8 @@ fn main(): int {
 	let p = init(false);
 	if (check(@p, 0, 16, 1) == 1) {
 		println("Failed init test");
+		print(p);
+		print(" != Person { id: 0, age: 16, finger: Finger Print { id: 1 } }");
 		return 1;
 	}
 
@@ -84,22 +86,30 @@ fn main(): int {
 	p = init(true);
 	if (check(@p, 0, 21, 1) == 1) {
 		println("Failed init test");
+		print(p);
+		print(" != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }");
 		return 1;
 	}
 
 	let q = $p;
 	if (check(@q, 0, 21, 1) == 1) {
 		println("Failed clone test");
+		print(q);
+		print(" != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }");
 		return 1;
 	}
 
 	age(@p);
 	if (check(@p, 0, 22, 1) == 1) {
 		println("Failed clone independence test");
+		print(p);
+		print(" != Person { id: 0, age: 22, finger: Finger Print { id: 1 } }");
 		return 1;
 	}
 	if (check(@q, 0, 21, 1) == 1) {
 		println("Failed clone independence test");
+		print(q);
+		print(" != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }");
 		return 1;
 	}
 
@@ -107,6 +117,8 @@ fn main(): int {
 	p.finger = Blank#[FingerPrint]();
 	if (check(@p, 0, 22, 1) != 1) {
 		println("Failed changing sub structure");
+		print(p);
+		print(" != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }");
 		return 1;
 	}
 
