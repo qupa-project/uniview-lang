@@ -18,8 +18,8 @@ external assume {
 	fn time(store: @i64): i64;
 	fn clock(): i64;
 
-	fn gmtime_safe(utc: i64): tm;
-	fn localtime_safe(utc: i64): tm;
+	fn gmtime_safe(utc: @i64): tm;
+	fn localtime_safe(utc: @i64): tm;
 }
 
 
@@ -60,10 +60,12 @@ fn Clock(): i64 {
 
 
 fn GetLocalDateTime(unixTime: i64): DateTime {
-	return tm_to_DateTime( localtime_safe(unixTime) );
+	let out = tm_to_DateTime( localtime_safe(@unixTime) );
+	return out;
 }
 fn GetUTCDateTime(unixTime: i64): DateTime {
-	return tm_to_DateTime( gmtime_safe(unixTime) );
+	let out = tm_to_DateTime( gmtime_safe(@unixTime) );
+	return out;
 }
 
 

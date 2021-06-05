@@ -109,7 +109,7 @@ if (config.source != "llvm") {
 		])
 		.reduce((prev, curr) => prev.concat(curr), []);
 
-	let exec_out = config.output;
+	let exec_out = "./" + config.output;
 	if (config.source == "asm") {
 		args.push('-S');
 		exec_out += ".s";

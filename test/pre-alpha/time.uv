@@ -1,13 +1,11 @@
 import "experimental/time.uv" as Time;
 import "print.uv";
 
-fn main(): int {
-	let now = Time.Now();
-
-	let dt = Time.GetUTCDateTime(now);
+fn println(dt: Time.DateTime) {
 	let time = dt.time;
 
-	if (time.hours > 12) {
+	let pm = time.hours > 12;
+	if (pm) {
 		time.hours = time.hours - 12;
 	}
 
@@ -17,13 +15,35 @@ fn main(): int {
 	print(":");
 	print(time.seconds);
 
+	if (pm) {
+		print("PM");
+	} else {
+		print("AM");
+	}
+
 	print(" ");
 	let date = dt.date;
 	print(date.day);
 	print("/");
 	print(date.month);
 	print("/");
-	print(date.year);
+	println(date.year);
+
+	return;
+}
+
+fn main(): int {
+	let now = Time.Now();
+	print("Unix  : ");
+	println(now);
+
+	let dt = Time.GetLocalDateTime(now);
+	print("Local : ");
+	println(dt);
+
+	print("UTC   : ");
+	dt = Time.GetUTCDateTime(now);
+	println(dt);
 
 	return 0;
 }
