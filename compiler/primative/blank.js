@@ -37,7 +37,7 @@ class Template_Primative_Blank extends Template {
 				instruction: new LLVM.Alloc(
 					type.toLLVM()
 				),
-				type: type.duplicate().offsetPointer(1)
+				type: type.duplicate()
 			};
 		};
 		func.compile();

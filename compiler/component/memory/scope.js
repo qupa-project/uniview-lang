@@ -58,7 +58,7 @@ class Scope {
 
 			// Creation of namespace
 			this.variables[arg.name] = new Variable(
-				arg.type.duplicate().offsetPointer(0),
+				arg.type.duplicate(),
 				arg.name,
 				arg.ref
 			);

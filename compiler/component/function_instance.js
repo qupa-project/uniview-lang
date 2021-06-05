@@ -84,10 +84,6 @@ class Function_Instance {
 			let search = exec.resolveType(type);
 			if (search instanceof TypeRef) {
 				search.pointer = type.tokens[0]; // Copy the pointer level across
-
-				if (search.type.typeSystem == "linear") {
-					search.offsetPointer(1);
-				}
 				search.lent = borrows[i];
 
 				this.signature.push(search);

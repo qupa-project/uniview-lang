@@ -5,12 +5,14 @@
 ### Added
 
 ### Fixes
+- [x] Fixed being unable to use structure access chaining ``a.b.c``
 
 ### Tweaks
 - [x] Primitive numbers are 64bit by default.
 - [x] Compiler now generates all IR in fragments before joining (will assist with template implementation).
 - [x] Changed ``sizeof`` function to being a compiled default non-inlined function.
 - [x] Changed primitive function name ``static_cast`` to ``cast``.
+- [x] Probabilities are now used to represent loading structure values (GEPs) to remove irrelevant code and clean up the compiler code base.
 
 ## Version 0.0.1
 

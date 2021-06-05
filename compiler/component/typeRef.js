@@ -66,8 +66,14 @@ class TypeRef {
 		return ( this.lent ? "@" : "$" ) + this.type.name;
 	}
 
-	toLLVM (ref = null) {
-		return new LLVM.Type(this.type.represent, this.pointer, ref);
+	toLLVM (ref = null, flat = false, pointer = false) {
+		return new LLVM.Type(
+			this.type.represent,
+			flat ? 0 :
+				pointer ? 1 :
+				this.lent || this.type.typeSystem == "linear" ? 1 : 0,
+			ref
+		);
 	}
 }
 

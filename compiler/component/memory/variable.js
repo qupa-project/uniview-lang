@@ -86,37 +86,7 @@ class Variable extends Value {
 		// If the current store is a non-loaded GEP
 		//   Load the GEP ready for use
 		if (this.store instanceof LLVM.GEP) {
-			let id = new LLVM.ID();
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(id, false, ref),
-				this.store,
-				ref
-			));
-
-			this.store = new LLVM.Argument(
-				this.type.toLLVM(ref),
-				new LLVM.Name(id.reference(), false, ref),
-				ref
-			);
-
-			// Non-linear type - hence the value must be loaded
-			if (this.type.type.typeSystem == "normal") {
-				let id = new LLVM.ID();
-				preamble.append(new LLVM.Set(
-					new LLVM.Name(id, false, ref),
-					new LLVM.Load(
-						this.type.toLLVM(),
-						this.store.name,
-						ref
-					),
-					ref
-				));
-				this.store = new LLVM.Argument(
-					this.type.toLLVM(ref),
-					new LLVM.Name(id.reference(), false, ref),
-					ref
-				);
-			}
+			throw new Error("GEPs should be handled by probability resolution");
 		}
 
 
@@ -175,6 +145,7 @@ class Variable extends Value {
 		}
 
 		this.store = register;
+		this.probability = null;
 		this.lastUninit = null;
 		this.hasUpdated = true;
 		this.isDecomposed = false;
@@ -190,6 +161,15 @@ class Variable extends Value {
 	 */
 	access (accessor, ref) {
 		let preamble = new LLVM.Fragment();
+
+		// Resolve any probabilities
+		let res = this.resolve(ref, true);
+		if (res.error) {
+			return res;
+		}
+		preamble.merge(res.preamble);
+
+		// Automatically decompoase the value if needed
 		if (!this.isDecomposed) {
 			let res = this.decompose(ref);
 			/* jshint ignore:start*/
@@ -202,8 +182,8 @@ class Variable extends Value {
 
 		let struct = this.type.type;
 		if (this.type.type.typeSystem == "linear") {
-			let res = struct.getTerm(accessor, this, ref);
-			if (res === null) {
+			let gep = struct.getTerm(accessor, this, ref);
+			if (gep === null) {
 				/* jshint ignore:start*/
 				return {
 					error: true,
@@ -213,23 +193,26 @@ class Variable extends Value {
 				/* jshint ignore:end*/
 			}
 
-			// Linear types are managed by reference
-			if (res.type.type.typeSystem == "linear") {
-				res.type.offsetPointer(1);
-			}
+			if (!this.elements.has(gep.index)) {
+				let read = struct.accessGEPByIndex(gep.index, this.store);
+				let elm = new Variable(
+					read.type,
+					`${this.name}.${accessor.tokens}`,
+					ref
+				);
 
-			if (!this.elements.has(res.index)) {
-				let elm = new Variable(res.type, `${this.name}.${accessor.tokens}`, ref);
-				let act = elm.markUpdated(res.instruction, false, ref);
-				if (act.error) {
-					return res;
-				}
+				let act = new LLVM.Latent(read.preamble, ref);
+				preamble.append(act);
 
-				this.elements.set(res.index, elm);
+				elm.probability = new Probability(
+					act,
+					read.instruction,
+				"0", ref);
+				this.elements.set(gep.index, elm);
 			}
 
 			return {
-				variable: this.elements.get(res.index),
+				variable: this.elements.get(gep.index),
 				preamble: preamble
 			};
 		} else {
@@ -366,13 +349,13 @@ class Variable extends Value {
 			}
 			frag.merge(res.preamble);
 
-			let access = this.type.type.accessGEPByIndex(elm[0], this, ref);
+			let access = this.type.type.accessGEPByIndex(elm[0], this.store, ref, false);
 			frag.merge(access.preamble);
 
 			let store = res.register;
 			let isLinear = elm[1].type.type.typeSystem == "linear";
 			if (isLinear) {
-				let type = elm[1].type.duplicate().offsetPointer(-1).toLLVM(ref);
+				let type = elm[1].type.duplicate().toLLVM(ref, true);
 				let id = new LLVM.ID(ref);
 				frag.append(new LLVM.Set(
 					new LLVM.Name(id, false, ref),
@@ -391,17 +374,8 @@ class Variable extends Value {
 				);
 			}
 
-			let id = new LLVM.ID(ref);
-			frag.append(new LLVM.Set(
-				new LLVM.Name(id, false, ref),
-				access.instruction,
-				ref
-			));
 			frag.append(new LLVM.Store(
-				new LLVM.Argument(
-					access.type.duplicate().offsetPointer(1).toLLVM(),
-					new LLVM.Name(id.reference(), false, ref)
-				),
+				access.instruction,
 				store,
 				ref
 			));
