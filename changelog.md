@@ -3,6 +3,7 @@
 ## Upcoming
 
 ### Added
+- [x] Ability to lend primative values
 
 ### Fixes
 - [x] Fixed being unable to use structure access chaining ``a.b.c``
