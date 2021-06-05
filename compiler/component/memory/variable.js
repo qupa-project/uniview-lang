@@ -252,6 +252,15 @@ class Variable extends Value {
 				new LLVM.Alloc(this.type.toLLVM(), ref)
 			));
 
+			preamble.append(new LLVM.Store(
+				new LLVM.Argument(
+					type.toLLVM(),
+					new LLVM.Name(ptr, false, ref)
+				),
+				out.register,
+				ref
+			));
+
 			let val = new LLVM.ID();
 			epilog.append(new LLVM.Set(
 				new LLVM.Name(val, false, ref),
