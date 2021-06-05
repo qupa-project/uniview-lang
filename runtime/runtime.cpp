@@ -1,6 +1,16 @@
 #include <iostream>
+#include <time.h>
 
 extern "C" {
+	void gmtime_safe(tm* buf, long long u) {
+		gmtime_s(buf, &u);
+		return;
+	}
+	void localtime_safe(tm* buf, long long u) {
+		localtime_s(buf, &u);
+		return;
+	}
+
 	void i32_print(int val) {
 		std::cout << val;
 	}

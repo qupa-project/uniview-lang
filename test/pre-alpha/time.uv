@@ -4,9 +4,13 @@ import "print.uv";
 fn main(): int {
 	let now = Time.Now();
 
-	let dateTime = Time.LocalDateTime(now);
+	let dt = Time.GetUTCDateTime(now);
+	let time = dt.time;
 
-	let time = dateTime.time;
+	if (time.hours > 12) {
+		time.hours = time.hours - 12;
+	}
+
 	print(time.hours);
 	print(":");
 	print(time.minutes);
@@ -14,7 +18,7 @@ fn main(): int {
 	print(time.seconds);
 
 	print(" ");
-	let date = dateTime.date;
+	let date = dt.date;
 	print(date.day);
 	print("/");
 	print(date.month);

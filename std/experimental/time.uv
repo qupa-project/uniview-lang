@@ -16,10 +16,10 @@ external assume {
 	}
 
 	fn time(store: @i64): i64;
-	fn Clock(): i64;
+	fn clock(): i64;
 
-	fn gmtime(utc: @i64): tm;
-	fn localtime(utc: @i64): tm;
+	fn gmtime_safe(utc: i64): tm;
+	fn localtime_safe(utc: i64): tm;
 }
 
 
@@ -54,16 +54,17 @@ fn Now(): i64 {
 	return t;
 }
 
-fn LocalDateTime(unix: i64): DateTime {
-	let info = localtime(@unix);
-	return tm_to_DateTime(info);
+fn Clock(): i64 {
+	return clock();
 }
 
-fn GTMDateTime(unix: i64): DateTime {
-	let info = gmtime(@unix);
-	return tm_to_DateTime(info);
-}
 
+fn GetLocalDateTime(unixTime: i64): DateTime {
+	return tm_to_DateTime( localtime_safe(unixTime) );
+}
+fn GetUTCDateTime(unixTime: i64): DateTime {
+	return tm_to_DateTime( gmtime_safe(unixTime) );
+}
 
 
 fn tm_to_DateTime(info: tm): DateTime {
@@ -74,11 +75,10 @@ fn tm_to_DateTime(info: tm): DateTime {
 	out.time.seconds = cast#[i64](info.tm_sec);
 
 	out.date.day   = cast#[i64](info.tm_mday);
-	out.date.month = cast#[i64](info.tm_mon);
+	out.date.month = cast#[i64](info.tm_mon) + 1;
 	out.date.year  = cast#[i64](info.tm_year) + 1900;
 	out.date.weekDay = cast#[i64](info.tm_wday);
 	out.date.days    = cast#[i64](info.tm_yday);
-
 	if (cast#[i64](info.tm_isdst) == 1) {
 		out.time.dayLightSavings = true;
 	} else {
