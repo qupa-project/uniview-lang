@@ -2,9 +2,11 @@ import "experimental/time.uv" as Time;
 import "print.uv";
 
 fn main(): int {
-	let now = Time.NowUTC();
+	let now = Time.Now();
 
-	let time = Time.GetTime(now);
+	let dateTime = Time.LocalDateTime(now);
+
+	let time = dateTime.time;
 	print(time.hours);
 	print(":");
 	print(time.minutes);
@@ -12,7 +14,7 @@ fn main(): int {
 	print(time.seconds);
 
 	print(" ");
-	let date = Time.GetDate(now);
+	let date = dateTime.date;
 	print(date.day);
 	print("/");
 	print(date.month);

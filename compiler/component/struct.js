@@ -162,6 +162,10 @@ class Structure extends TypeDef {
 		this.linked = true;
 		this.size = 0;
 		for (let node of this.ast.tokens[1].tokens) {
+			if ( node.type == "comment" ) {
+				continue;
+			}
+
 			let name = node.tokens[1].tokens;
 			if (termNames.indexOf(name) != -1) {
 				this.ctx.getFile().throw(
