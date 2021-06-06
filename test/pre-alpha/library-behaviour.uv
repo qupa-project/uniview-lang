@@ -6,8 +6,8 @@ import "print.uv" as std; // check name-space access
 
 fn main(): int {
 	let a: int;
-	let b: i32;
-	let c: i32;
+	let b: i64;
+	let c: i64;
 
 	a = 1;
 	b = 2;

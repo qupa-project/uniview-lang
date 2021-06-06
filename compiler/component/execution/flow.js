@@ -33,6 +33,9 @@ class ExecutionFlow extends ExecutionExpr {
 			new TypeRef(0, Primative.types.bool),
 			true
 		);
+		if (cond == null) {
+			return null;
+		}
 		if (cond.epilog.stmts.length > 0) {
 			throw new Error("Cannot do an if-statement using instruction with epilog");
 		}

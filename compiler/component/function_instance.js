@@ -30,6 +30,9 @@ class Function_Instance {
 
 		this.name = ast.tokens[0].tokens[1].tokens;
 		this.represent = external ? `${this.name}` : `${this.name}.${this.ctx.getFileID().toString(36)}.${this.id.toString(36)}`;
+
+
+		this.ir = new LLVM.Fragment();
 	}
 
 	markExport () {
@@ -81,10 +84,6 @@ class Function_Instance {
 			let search = exec.resolveType(type);
 			if (search instanceof TypeRef) {
 				search.pointer = type.tokens[0]; // Copy the pointer level across
-
-				if (search.type.typeSystem == "linear") {
-					search.offsetPointer(1);
-				}
 				search.lent = borrows[i];
 
 				this.signature.push(search);
@@ -198,9 +197,13 @@ class Function_Instance {
 
 		let gen = new Generator_ID(0);
 		frag.assign_ID(gen);
-		frag.flattern();
 
-		return frag;
+		this.ir = frag;
+	}
+
+
+	toLLVM() {
+		return this.ir;
 	}
 }
 

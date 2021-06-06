@@ -117,11 +117,11 @@ class File {
 			case "import":
 				space = new Import(this, element);
 				break;
-			case "alias":
-				space = new Alias(this, element);
-				break;
+			// case "alias":
+			// 	space = new Alias(this, element);
+			// 	break;
 			case "struct":
-				space = new Structure(this, element);
+				space = new Structure(this, element, external);
 				break;
 			default:
 				throw new Error(`Unexpected file scope namespace type "${element.type}"`);
@@ -330,10 +330,24 @@ class File {
 
 
 	compile () {
+		for (let key in this.names) {
+			this.names[key].compile();
+		}
+	}
+
+
+	toLLVM () {
 		let fragment = new LLVM.Fragment();
 
 		for (let key in this.names) {
-			let res = this.names[key].compile();
+			if (
+				!(this.names[key] instanceof Structure) &&
+				this.names[key] instanceof TypeDef
+			) {
+				continue;
+			}
+
+			let res = this.names[key].toLLVM();
 			if (res instanceof LLVM.Fragment) {
 				fragment.merge(res);
 			} else {

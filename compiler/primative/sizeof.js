@@ -8,38 +8,76 @@ const TypeRef = require('../component/typeRef.js');
 class Template_Primative_Size_Of extends Template {
 	constructor (ctx) {
 		super(ctx, null);
+
+		this.children = [];
+	}
+
+	findMatch(inputType) {
+		for (let child of this.children) {
+			if (child.type == inputType) {
+				return child.function;
+			}
+		}
+
+		return null;
 	}
 
 	getFunction (access, signature, template) {
-		return this.generate(access, signature, template);
+		if (access.length !== 0) {
+			return false;
+		}
+
+		// Check input lengths are correct
+		if (signature.length != 0 || template.length != 1) {
+			return false;
+		}
+
+		let inputType = template[0];
+		let outputType = new TypeRef(0, types.u64);
+		let match = this.findMatch(inputType);
+		if (match) {
+			return match;
+		}
+
+		let func = this.generate(inputType, outputType);
+		if (func) {
+			this.children.push({
+				type: inputType,
+				function: func
+			});
+
+			return func;
+		}
+
+		return false;
 	}
 
-	generate (access, signature, template) {
-		if (access.length != 0) {
-			return false;
-		}
+	generate (inputType, outputType) {
 
-		if (signature.length > 0) {
-			return false;
-		}
+		let func = new Function_Instance(this, "sizeof", outputType, []);
+		func.isInline = false;
 
-		if (template.length != 1) {
-			return false;
-		}
+		func.ir.append(new LLVM.Return(
+			new LLVM.Argument(
+				outputType.toLLVM(),
+				new LLVM.Constant(inputType.pointer > 0 ? 8 : inputType.type.size, null)
+			)
+		));
 
-		let func = new Function_Instance(this, "sizeof", types.i32.toLLVM(), []);
-		func.generate = (regs, ir_args) => {
-			return {
-				preamble: new LLVM.Fragment(),
-				instruction: new LLVM.Argument(
-					types.i32.toLLVM(),
-					new LLVM.Constant(template[0].pointer > 0 ? 4 : template[0].type.size, null)
-				),
-				type: new TypeRef(0, types.i32)
-			};
-		};
+		func.compile();
 
 		return func;
+	}
+
+	toLLVM () {
+		let frag = new LLVM.Fragment();
+
+		for (let child of this.children) {
+			let asm = child.function.toLLVM();
+			frag.append(asm);
+		}
+
+		return frag;
 	}
 }
 

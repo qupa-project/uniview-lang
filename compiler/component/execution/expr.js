@@ -22,7 +22,7 @@ class ExecutionExpr extends ExecutionBase {
 		let val = null;
 		switch (ast.tokens[0].type) {
 			case "float":
-				type = new TypeRef(0, Primative.types.float);
+				type = new TypeRef(0, Primative.types.double);
 				val = new LLVM.Constant(
 					ast.tokens[0].tokens,
 					ast.ref.start
@@ -36,7 +36,7 @@ class ExecutionExpr extends ExecutionBase {
 				);
 				break;
 			case "integer":
-				type = new TypeRef(0, Primative.types.i32);
+				type = new TypeRef(0, Primative.types.i64);
 				val = new LLVM.Constant(
 					ast.tokens[0].tokens,
 					ast.ref.start
@@ -46,8 +46,10 @@ class ExecutionExpr extends ExecutionBase {
 				let bytes = ast.tokens[0].tokens[1].length + 1;
 				let str = ast.tokens[0].tokens[1].replace(/\"/g, "\\22").replace(/\n/g, '\\0A') + "\\00";
 
+				type = new TypeRef(0, Primative.types.string);
+
 				let ir_t1 = new LLVM.Type(`[ ${bytes} x i8 ]`, 0, ast.ref);
-				let ir_t2 = new LLVM.Type(`i8`, 1);
+				let ir_t2 = type.toLLVM();
 
 				let str_id = new LLVM.ID();
 				let ptr_id = new LLVM.ID();
@@ -86,7 +88,6 @@ class ExecutionExpr extends ExecutionBase {
 					ast.ref
 				));
 
-				type = new TypeRef(1, Primative.types.string);
 				val = new LLVM.Name(ptr_id, false, ast.ref);
 				break;
 			default:
@@ -95,7 +96,7 @@ class ExecutionExpr extends ExecutionBase {
 
 		return {
 			instruction: new LLVM.Argument(
-				new LLVM.Type(type.type.represent, type.pointer, ast.ref.start),
+				type.toLLVM(),
 				val,
 				ast.ref
 			),
@@ -353,6 +354,8 @@ class ExecutionExpr extends ExecutionBase {
 			mode = opperands[0].type.type.signed ? 0 : 1;
 		} else if (opperands[0].type.type.cat == "float") {
 			mode = 2;
+		} else if (opperands[0].type.type.represent == "i1") {
+			mode = 1;
 		}
 		if (mode === null) {
 			this.getFile().throw(
@@ -535,6 +538,7 @@ class ExecutionExpr extends ExecutionBase {
 
 	compile_expr_lend(ast) {
 		let preamble = new LLVM.Fragment();
+		let epilog = new LLVM.Fragment();
 
 		let target = this.getVar(ast, false);
 		if (target.error) {
@@ -550,11 +554,12 @@ class ExecutionExpr extends ExecutionBase {
 			return null;
 		}
 		preamble.merge(act.preamble);
+		epilog.merge(act.epilog);
 
 		return {
 			preamble,
 			instruction: act.instruction,
-			epilog: new LLVM.Fragment(),
+			epilog: epilog,
 			type: act.type
 		};
 	}

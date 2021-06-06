@@ -14,6 +14,15 @@ class Type extends Instruction {
 		this.pointer = pointerDepth;
 	}
 
+	duplicate() {
+		return new Type(this.term, this.pointer, this.ref);
+	}
+
+	offsetPointer(inc = 1) {
+		this.pointer += inc;
+		return this;
+	}
+
 	flattern(indent) {
 		let lvl = "";
 		for (let i=0; i<this.pointer; i++) {

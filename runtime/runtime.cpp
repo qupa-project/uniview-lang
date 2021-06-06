@@ -1,18 +1,28 @@
 #include <iostream>
-#include <ctime>
+#include <time.h>
 
 extern "C" {
-	long long NowUTC() {
-		time_t u;
-		time(&u);
-		return static_cast<long long>(u);
-	}
+	// Too much of a headache and segfaults in unix
+	// tm gmtime_safe(const time_t time) {
+	// 	tm tm_snapshot;
+	// 	#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
+	// 		gmtime_s(&tm_snapshot, &time);
+	// 	#else
+	// 		gmtime_r(&time, &tm_snapshot); // POSIX
+	// 	#endif
 
-	// tm DateFrom(long long unixTime) {
-	// 	tm out;
-	// 	localtime_s (&out, &unixTime);
+	// 	return tm_snapshot;
+	// }
 
-	// 	return out;
+	// tm localtime_safe(const time_t time)	{
+	// 	tm tm_snapshot;
+	// 	#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
+	// 		localtime_s(&tm_snapshot, &time);
+	// 	#else
+	// 		localtime_r(&time, &tm_snapshot); // POSIX
+	// 	#endif
+
+	// 	return tm_snapshot;
 	// }
 
 	void i32_print(int val) {

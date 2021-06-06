@@ -204,7 +204,7 @@ function Simplify_External_Term (node) {
 		case "function_redirect":
 			inner = Simplify_Function_Redirect(node.tokens[0]);
 			break;
-		case "structure":
+		case "struct":
 			inner = Simplify_Struct(node.tokens[0]);
 			break;
 		case "type_def":
