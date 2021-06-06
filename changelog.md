@@ -1,9 +1,9 @@
 # Change Log
 
-## Upcoming
+## Version 0.0.2
 
 ### Added
-- [x] Ability to lend primative values
+- [x] Ability to lend primitive values
 - [x] Can now use external structures within uniview code
 
 ### Fixes
