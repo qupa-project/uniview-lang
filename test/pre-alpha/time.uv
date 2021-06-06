@@ -27,22 +27,26 @@ fn println(dt: Time.DateTime) {
 	print("/");
 	print(date.month);
 	print("/");
-	println(date.year);
+	print(date.year);
+	print("  ");
+	print(date.weekDay);
+	print("  ");
+	println(date.days);
 
 	return;
 }
 
 fn main(): int {
 	let now = Time.Now();
-	print("Unix  : ");
+	print("Unix   : ");
 	println(now);
 
-	let dt = Time.GetLocalDateTime(now);
-	print("Local : ");
+	print("UTC    : ");
+	let dt = Time.GetDateTime(now);
 	println(dt);
 
-	print("UTC   : ");
-	dt = Time.GetUTCDateTime(now);
+	dt = Time.GetDateTime(now + 10*60*60);
+	print("UTC+10 : ");
 	println(dt);
 
 	return 0;

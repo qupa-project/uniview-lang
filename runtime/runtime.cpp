@@ -2,27 +2,28 @@
 #include <time.h>
 
 extern "C" {
-	tm gmtime_safe(const time_t& time) {
-		tm tm_snapshot;
-		#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
-			gmtime_s(&tm_snapshot, &time);
-		#else
-			gmtime_r(&time, &tm_snapshot); // POSIX
-		#endif
+	// Too much of a headache and segfaults in unix
+	// tm gmtime_safe(const time_t time) {
+	// 	tm tm_snapshot;
+	// 	#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
+	// 		gmtime_s(&tm_snapshot, &time);
+	// 	#else
+	// 		gmtime_r(&time, &tm_snapshot); // POSIX
+	// 	#endif
 
-		return tm_snapshot;
-	}
+	// 	return tm_snapshot;
+	// }
 
-	tm localtime_safe(const time_t& time)	{
-		tm tm_snapshot;
-		#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
-			localtime_s(&tm_snapshot, &time);
-		#else
-			localtime_r(&time, &tm_snapshot); // POSIX
-		#endif
+	// tm localtime_safe(const time_t time)	{
+	// 	tm tm_snapshot;
+	// 	#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
+	// 		localtime_s(&tm_snapshot, &time);
+	// 	#else
+	// 		localtime_r(&time, &tm_snapshot); // POSIX
+	// 	#endif
 
-		return tm_snapshot;
-	}
+	// 	return tm_snapshot;
+	// }
 
 	void i32_print(int val) {
 		std::cout << val;

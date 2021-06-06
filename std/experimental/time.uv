@@ -3,23 +3,22 @@ include llvm "../../runtime/runtime.ll";
 import "print.uv";
 
 external assume {
-	struct tm {
-		tm_sec: i32;   // seconds after the minute - [0, 60] including leap second
-		tm_min: i32;   // minutes after the hour - [0, 59]
-		tm_hour: i32;  // hours since midnight - [0, 23]
-		tm_mday: i32;  // day of the month - [1, 31]
-		tm_mon: i32;   // months since January - [0, 11]
-		tm_year: i32;  // years since 1900
-		tm_wday: i32;  // days since Sunday - [0, 6]
-		tm_yday: i32;  // days since January 1 - [0, 365]
-		tm_isdst: i32; // daylight savings time flag
-	}
+	// struct tm {
+	// 	tm_sec: i32;   // seconds after the minute - [0, 60] including leap second
+	// 	tm_min: i32;   // minutes after the hour - [0, 59]
+	// 	tm_hour: i32;  // hours since midnight - [0, 23]
+	// 	tm_mday: i32;  // day of the month - [1, 31]
+	// 	tm_mon: i32;   // months since January - [0, 11]
+	// 	tm_year: i32;  // years since 1900
+	// 	tm_wday: i32;  // days since Sunday - [0, 6]
+	// 	tm_yday: i32;  // days since January 1 - [0, 365]
+	// 	tm_isdst: i32; // daylight savings time flag
+	// }
+	// fn gmtime_safe(info: @tm, utc: @i64);
+	// fn localtime_safe(info: @tm, utc: @i64);
 
 	fn time(store: @i64): i64;
 	fn clock(): i64;
-
-	fn gmtime_safe(utc: @i64): tm;
-	fn localtime_safe(utc: @i64): tm;
 }
 
 
@@ -30,7 +29,7 @@ struct Date {
 	year: int;    // Year
 
 	days: int;    // Day of the year [0, 365]
-	weekDay: int; // Day of the week [0, 6]
+	weekDay: int; // Day of the week [0, 6] Starting Sunday
 }
 
 struct Time {
@@ -59,33 +58,87 @@ fn Clock(): i64 {
 }
 
 
-fn GetLocalDateTime(unixTime: i64): DateTime {
-	let out = tm_to_DateTime( localtime_safe(@unixTime) );
-	return out;
-}
-fn GetUTCDateTime(unixTime: i64): DateTime {
-	let out = tm_to_DateTime( gmtime_safe(@unixTime) );
-	return out;
-}
 
 
-fn tm_to_DateTime(info: tm): DateTime {
-	let out = Blank#[DateTime]();
+fn GetDate(unixTime: i64): Date {
+	// Needs higherlevel type casting to implement correctly
+	// Source: http://howardhinnant.github.io/date_algorithms.html#civil_from_days
+	// int s = 1313905026;
+	// int z = s / 86400 + 719468;
+	// int era = (z >= 0 ? z : z - 146096) / 146097;
+	// unsigned doe = static_cast<unsigned>(z - era * 146097);
+	// unsigned yoe = (doe - doe/1460 + doe/36524 - doe/146096) / 365;
+	// int y = static_cast<int>(yoe) + era * 400;
+	// unsigned doy = doe - (365*yoe + yoe/4 - yoe/100);
+	// unsigned mp = (5*doy + 2)/153;
+	// unsigned d = doy - (153*mp+2)/5 + 1;
+	// unsigned m = mp + (mp < 10 ? 3 : -9);
+	// y += (m <= 2);
+	// std::cout << m << '/' << d << '/' << y << '\n'; // 8/21/2011
 
-	out.time.hours  = cast#[i64](info.tm_hour);
-	out.time.minutes = cast#[i64](info.tm_min);
-	out.time.seconds = cast#[i64](info.tm_sec);
+	let date = Blank#[Date]();
 
-	out.date.day   = cast#[i64](info.tm_mday);
-	out.date.month = cast#[i64](info.tm_mon) + 1;
-	out.date.year  = cast#[i64](info.tm_year) + 1900;
-	out.date.weekDay = cast#[i64](info.tm_wday);
-	out.date.days    = cast#[i64](info.tm_yday);
-	if (cast#[i64](info.tm_isdst) == 1) {
-		out.time.dayLightSavings = true;
+	let s = unixTime;
+	let z = s/86400 + 719468;
+
+	let t1: int;
+	if (z >= 0) {
+		t1 = z;
 	} else {
-		out.time.dayLightSavings = false;
+		t1 = z - 146096;
 	}
+	let era: int = t1/146097;
+
+
+	let doe = z - era*146097;
+	let yoe = (doe - doe/1460 + doe/36524 - doe/146096) / 365;
+	let y = yoe + era*400;
+	let doy = doe - (365*yoe + yoe/4 - yoe/100);
+	let mp = (5*doy + 2)/153;
+	let d = doy - (153*mp + 2)/5 + 1;
+
+	let t2: int;
+	if (mp < 10) {
+		t2 = 3;
+	} else {
+		t2 = -9;
+	}
+	let m = mp + t2;
+
+	if (m <= 2) {
+		y = y + 1;
+	}
+
+	date.day = d;
+	date.month = m;
+	date.year = y;
+
+	let totalDays = unixTime / (24*60*60);
+	date.weekDay = (totalDays + 4) % 7;
+
+
+	// const unsigned doy = (153*(m + (m > 2 ? -3 : 9)) + 2)/5 + d-1;  // [0, 365]
+	date.days = 0;
+
+	return date;
+}
+
+fn GetTime(unixTime: i64): Time {
+	let unix = cast#[int] (unixTime);
+
+	let t = Blank#[Time]();
+	t.seconds = unix % 60;
+	t.minutes = unix / 60 % 60;
+	t.hours   = unix / 3600 % 24;
+
+	return t;
+}
+
+
+fn GetDateTime(unixTime: i64): DateTime {
+	let out = Blank#[DateTime]();
+	out.time = GetTime(unixTime);
+	out.date = GetDate(unixTime);
 
 	return out;
 }

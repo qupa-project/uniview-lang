@@ -354,6 +354,8 @@ class ExecutionExpr extends ExecutionBase {
 			mode = opperands[0].type.type.signed ? 0 : 1;
 		} else if (opperands[0].type.type.cat == "float") {
 			mode = 2;
+		} else if (opperands[0].type.type.represent == "i1") {
+			mode = 1;
 		}
 		if (mode === null) {
 			this.getFile().throw(
