@@ -4,36 +4,65 @@ import "print.uv";
 
 external assume {
 	// struct tm {
-	// 	tm_sec: int;   // seconds after the minute - [0, 60] including leap second
-	// 	tm_min: int;   // minutes after the hour - [0, 59]
-	// 	tm_hour: int;  // hours since midnight - [0, 23]
-	// 	tm_mday: int;  // day of the month - [1, 31]
-	// 	tm_mon: int;   // months since January - [0, 11]
-	// 	tm_year: int;  // years since 1900
-	// 	tm_wday: int;  // days since Sunday - [0, 6]
-	// 	tm_yday: int;  // days since January 1 - [0, 365]
-	// 	tm_isdst: int; // daylight savings time flag
+	// 	tm_sec: i32;   // seconds after the minute - [0, 60] including leap second
+	// 	tm_min: i32;   // minutes after the hour - [0, 59]
+	// 	tm_hour: i32;  // hours since midnight - [0, 23]
+	// 	tm_mday: i32;  // day of the month - [1, 31]
+	// 	tm_mon: i32;   // months since January - [0, 11]
+	// 	tm_year: i32;  // years since 1900
+	// 	tm_wday: i32;  // days since Sunday - [0, 6]
+	// 	tm_yday: i32;  // days since January 1 - [0, 365]
+	// 	tm_isdst: i32; // daylight savings time flag
 	// }
+	// fn gmtime_safe(info: @tm, utc: @i64);
+	// fn localtime_safe(info: @tm, utc: @i64);
 
-	fn NowUTC (): i64;
-	// fn Now (): i64;
+	fn time(store: @i64): i64;
+	fn clock(): i64;
 }
 
+
+
 struct Date {
-	day: int;
-	month: int;
-	year: int;
+	day: int;     // Date [1, 31]
+	month: int;   // Month [0, 7]
+	year: int;    // Year
+
+	days: int;    // Day of the year [0, 365]
+	weekDay: int; // Day of the week [0, 6] Starting Sunday
 }
 
 struct Time {
-	hours: int;
-	minutes: int;
 	seconds: int;
+	minutes: int;
+	hours: int;
+
+	dayLightSavings: bool;
 }
+
+struct DateTime {
+	date: Date;
+	time: Time;
+}
+
+
+fn Now(): i64 {
+	let t: i64 = 0;
+	time(@t);
+
+	return t;
+}
+
+fn Clock(): i64 {
+	return clock();
+}
+
+
 
 
 fn GetDate(unixTime: i64): Date {
 	// Needs higherlevel type casting to implement correctly
+	// Source: http://howardhinnant.github.io/date_algorithms.html#civil_from_days
 	// int s = 1313905026;
 	// int z = s / 86400 + 719468;
 	// int era = (z >= 0 ? z : z - 146096) / 146097;
@@ -75,12 +104,21 @@ fn GetDate(unixTime: i64): Date {
 		t2 = -9;
 	}
 	let m = mp + t2;
-	// y = y + cast#[int](m <= 2);
+
+	if (m <= 2) {
+		y = y + 1;
+	}
 
 	date.day = d;
 	date.month = m;
 	date.year = y;
-	compose date;
+
+	let totalDays = unixTime / (24*60*60);
+	date.weekDay = (totalDays + 4) % 7;
+
+
+	// const unsigned doy = (153*(m + (m > 2 ? -3 : 9)) + 2)/5 + d-1;  // [0, 365]
+	date.days = 0;
 
 	return date;
 }
@@ -94,4 +132,13 @@ fn GetTime(unixTime: i64): Time {
 	t.hours   = unix / 3600 % 24;
 
 	return t;
+}
+
+
+fn GetDateTime(unixTime: i64): DateTime {
+	let out = Blank#[DateTime]();
+	out.time = GetTime(unixTime);
+	out.date = GetDate(unixTime);
+
+	return out;
 }

@@ -354,6 +354,8 @@ class ExecutionExpr extends ExecutionBase {
 			mode = opperands[0].type.type.signed ? 0 : 1;
 		} else if (opperands[0].type.type.cat == "float") {
 			mode = 2;
+		} else if (opperands[0].type.type.represent == "i1") {
+			mode = 1;
 		}
 		if (mode === null) {
 			this.getFile().throw(
@@ -536,6 +538,7 @@ class ExecutionExpr extends ExecutionBase {
 
 	compile_expr_lend(ast) {
 		let preamble = new LLVM.Fragment();
+		let epilog = new LLVM.Fragment();
 
 		let target = this.getVar(ast, false);
 		if (target.error) {
@@ -551,11 +554,12 @@ class ExecutionExpr extends ExecutionBase {
 			return null;
 		}
 		preamble.merge(act.preamble);
+		epilog.merge(act.epilog);
 
 		return {
 			preamble,
 			instruction: act.instruction,
-			epilog: new LLVM.Fragment(),
+			epilog: epilog,
 			type: act.type
 		};
 	}

@@ -117,11 +117,11 @@ class File {
 			case "import":
 				space = new Import(this, element);
 				break;
-			case "alias":
-				space = new Alias(this, element);
-				break;
+			// case "alias":
+			// 	space = new Alias(this, element);
+			// 	break;
 			case "struct":
-				space = new Structure(this, element);
+				space = new Structure(this, element, external);
 				break;
 			default:
 				throw new Error(`Unexpected file scope namespace type "${element.type}"`);

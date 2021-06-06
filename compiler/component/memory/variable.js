@@ -227,28 +227,65 @@ class Variable extends Value {
 
 
 	lendValue (ref) {
-		if (!(this.type.type instanceof Structure)) {
-			return {
-				error: true,
-				msg: `Error: Unable to lend non-linear types`,
-				ref: ref
-			};
-		}
-
 		// Resolve to composed state
 		let out = this.resolve(ref, false);
 		if (out.error) {
 			return out;
 		}
+
 		this.store = out.register;
+
+		let preamble = new LLVM.Fragment();
+		let epilog = new LLVM.Fragment();
+		let instruction = out.register;
+
+		preamble.merge(out.preamble);
 
 		let type = this.type.duplicate();
 		type.lent = true;
 
+		if (this.type.type.typeSystem == "normal") {
+			let ptr = new LLVM.ID();
+
+			preamble.append(new LLVM.Set(
+				new LLVM.Name(ptr, false, ref),
+				new LLVM.Alloc(this.type.toLLVM(), ref)
+			));
+
+			preamble.append(new LLVM.Store(
+				new LLVM.Argument(
+					type.toLLVM(),
+					new LLVM.Name(ptr, false, ref)
+				),
+				out.register,
+				ref
+			));
+
+			let val = new LLVM.ID();
+			epilog.append(new LLVM.Set(
+				new LLVM.Name(val, false, ref),
+				new LLVM.Load(
+					this.type.toLLVM(),
+					new LLVM.Name(ptr.reference(), false, ref),
+					ref
+				)
+			));
+
+			instruction = new LLVM.Argument(
+				type.toLLVM(),
+				new LLVM.Name(ptr.reference(), false, ref),
+				ref
+			);
+
+			this.store = new LLVM.Argument(
+				this.type.toLLVM(),
+				new LLVM.Name(val.reference(), false, ref),
+				ref
+			);
+		}
+
 		return {
-			preamble: out.preamble,
-			instruction: out.register,
-			type: type
+			preamble, epilog, instruction, type
 		};
 	}
 

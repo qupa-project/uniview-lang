@@ -109,7 +109,7 @@ if (config.source != "llvm") {
 		])
 		.reduce((prev, curr) => prev.concat(curr), []);
 
-	let exec_out = config.output;
+	let exec_out = "./" + config.output;
 	if (config.source == "asm") {
 		args.push('-S');
 		exec_out += ".s";
@@ -133,10 +133,16 @@ if (config.source != "llvm") {
 		if (config.execute) {
 			console.info('\nRunning...');
 			let app = spawn(exec_out);
+			process.stdin.pipe (process.stdin);
 			app.stderr.pipe (process.stderr);
 			app.stdout.pipe (process.stdout);
 
 			app.on('close', (code) => {
+				if (code === null) {
+					console.error(app.signalCode);
+					process.exit(1);
+				}
+
 				process.exit(code);
 			});
 		} else {

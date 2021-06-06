@@ -3,9 +3,12 @@
 ## Upcoming
 
 ### Added
+- [x] Ability to lend primative values
+- [x] Can now use external structures within uniview code
 
 ### Fixes
 - [x] Fixed being unable to use structure access chaining ``a.b.c``
+- [x] Fixed unix segfault not being picked up as a failed execution
 
 ### Tweaks
 - [x] Primitive numbers are 64bit by default.
