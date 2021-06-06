@@ -1,44 +1,44 @@
 {
-  "name": "@qupa/uniview",
-  "version": "0.0.3",
-  "description": "Uniview Language",
-  "main": "compile/compile.js",
-  "preferGlobal": true,
-  "engineStrict": true,
-  "engines": {
-    "node": ">=14"
-  },
-  "dependencies": {
-    "bnf-parser": "^2.2.1"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "setup": "npm install && npm run build",
-    "start": "node compiler/compile.js",
-    "compile": "node compiler/compile.js",
-    "test": "npm run test-execution",
-    "test-translation": "node compiler/test.js",
-    "test-compilation": "node compiler/test.js --bin",
-    "test-execution": "node compiler/test.js --bin --exec",
-    "postinstall": "npm run build",
-    "build": "npm run build-syntax && npm run build-runtime",
-    "build-syntax": "node compiler/parser/build.js",
-    "build-runtime": "clang++ runtime/runtime.cpp -S -emit-llvm -o runtime/runtime.ll"
-  },
-  "bin": {
-    "uvc": "compiler/compile.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/qupa-project/uniview-lang.git"
-  },
-  "author": "",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/qupa-project/uniview-lang/issues"
-  },
-  "homepage": "https://github.com/qupa-project/uniview-lang#readme",
-  "directories": {
-    "test": "test"
-  }
+	"name": "@qupa/uniview",
+	"version": "0.0.3",
+	"description": "Uniview Language",
+	"main": "compile/compile.js",
+	"preferGlobal": true,
+	"engineStrict": true,
+	"engines": {
+		"node": ">=14"
+	},
+	"dependencies": {
+		"bnf-parser": "^2.2.1"
+	},
+	"devDependencies": {},
+	"scripts": {
+		"setup": "npm install && npm run build",
+		"start": "node compiler/compile.js",
+		"compile": "node compiler/compile.js",
+		"test": "npm run test-execution",
+		"test-translation": "node compiler/test.js",
+		"test-compilation": "node compiler/test.js --bin",
+		"test-execution": "node compiler/test.js --bin --exec",
+		"postinstall": "npm run build",
+		"build": "npm run build-syntax && npm run build-runtime",
+		"build-syntax": "node compiler/parser/build.js",
+		"build-runtime": "clang++ runtime/runtime.cpp -S -emit-llvm -o runtime/runtime.ll"
+	},
+	"bin": {
+		"uvc": "compiler/compile.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/qupa-project/uniview-lang.git"
+	},
+	"author": "",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/qupa-project/uniview-lang/issues"
+	},
+	"homepage": "https://github.com/qupa-project/uniview-lang#readme",
+	"directories": {
+		"test": "test"
+	}
 }
