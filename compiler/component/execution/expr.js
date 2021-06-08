@@ -515,7 +515,7 @@ class ExecutionExpr extends ExecutionBase {
 
 		let target = this.getVar(ast, false);
 		if (target.error) {
-			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
+			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
 			return null;
 		}
 		preamble.merge(target.preamble);
