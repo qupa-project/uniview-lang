@@ -26,6 +26,8 @@ class Project {
 		this.error = false;
 
 		this.includes = [];
+
+		this.import (path.resolve(__dirname, "../../std/uniview.uv"), false);
 	}
 
 	import (path, entry = false, relation = this.rootPath) {
