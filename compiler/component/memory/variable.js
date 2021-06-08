@@ -40,6 +40,26 @@ class Variable extends Value {
 		return this.possiblity !== null;
 	}
 
+	isUndefined () {
+		if (this.isDecomposed) {
+			// Not all terms have GEPs let alone undefined
+			if (this.elements.size < this.type.type.terms.length) {
+				return false;
+			}
+
+			// Check all children are undefined
+			for (let elm of this.elements) {
+				if (elm[1].isUndefined() == false) {
+					return false;
+				}
+			}
+
+			return true;
+		} else {
+			return this.store == null && this.probability == null;
+		}
+	}
+
 
 	/**
 	 * Resolves the possible states of the variable into a single LLVM argument
@@ -676,7 +696,7 @@ class Variable extends Value {
 		} else {                       // Run destruct behaviour
 			if (
 				this.type.type.meta == "CLASS" &&
-				!(this.store == null && this.probability == null)
+				!this.isUndefined(ref)
 			) {
 				return {
 					error: true,
@@ -687,6 +707,14 @@ class Variable extends Value {
 		}
 
 		return frag;
+	}
+
+	delete (ref) {
+		this.elements = new Map();
+		this.isDecomposed = false;
+		this.probability = null;
+		this.store = null;
+		return new LLVM.Fragment();
 	}
 }
 
