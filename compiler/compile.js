@@ -114,6 +114,7 @@ if (config.execute && config.source !== false) {
 if (config.source != "llvm") {
 	let args = project.includes
 		.concat([
+			["-Wno-override-module"],
 			["--language=ir", `${config.output}.ll`],
 			[`-O${config.optimisation}`]
 		])
