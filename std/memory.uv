@@ -3,5 +3,8 @@ external assume {
 	fn "llvm.memcpy.p0i8.p0i8.i64" (dest: unsafe_blob, src: unsafe_blob, bytes: u64, volatile: bool) as Copy;
 
 	fn "malloc" (size: u64): unsafe_blob as Alloc;
+	fn "realloc" (src: unsafe_blob, size: u64): unsafe_blob as Realloc;
 	fn "free" (addr: unsafe_blob) as Free;
+
+	fn Offset(addr: unsafe_blob, amount: i64): unsafe_blob;
 }

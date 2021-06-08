@@ -4,34 +4,58 @@ import "memory.uv" as Memory;
 import "print.uv";
 
 external assume {
-	struct String {
-		data: unsafe_blob;
-		size: u64;
+	fn "qupa.cstring.length" (str: cstring): u64 as length;
+}
+
+class String {
+	data: unsafe_blob;
+	length: u64;
+
+	fn New(str: cstring): String {
+		let out = Blank#[String]();
+		out.length = length($str);
+
+		out.data = Memory.Alloc(out.length);
+
+		let other = bitcast#[unsafe_blob](str);
+		Memory.Move($out.data, $other, out.length, false);
+
+		return out;
 	}
 
-	fn "qupa.cstring.length" (str: cstring): u64 as length;
-	fn "qupa.string.fromcstring" (str: cstring): String as StringFrom;
+	fn Append(this: @String, other: String) {
+		let nx_len = this.length + other.length - cast#[u64](1);
+		this.data = Memory.Realloc(this.data, nx_len);
 
-	fn "qupa.string.append" (target: @String, val: String) as Append;
+		let insert = Memory.Offset($this.data, cast#[i64](this.length) -1 );
+		Memory.Move(insert, $other.data, other.length, false);
+
+		this.length = nx_len;
+		String.Delete(other);
+	}
+
+
+	fn Clone(this: @String): String {
+		// Initiliase the data structure
+		let out = Blank#[String]();
+		out.data = Memory.Alloc(this.length);
+		out.length = this.length;
+
+		// Copy the blob data to the new allocation
+		Memory.Copy($out.data, $this.data, this.length, false);
+
+		return out;
+	}
+
+
+	fn Say(this: @String) {
+		print($this.data);
+	}
+
+
+	fn Delete(this: String) {
+		Memory.Free(this.data);
+		delete this.data;
+		delete this.length;
+	}
 }
-
-
-fn print(str: String) {
-	print(str.data);
-	return;
-}
-fn println(str: String) {
-	println(str.data);
-	return;
-}
-
-// fn StringFrom(str: cstring): String {
-// 	let out = Blank#[String]();
-
-// 	out.size = length(str);
-// 	out.data = Memory.Alloc(out.size);
-
-// 	// Memory.Move($out.data, str, out.size, false);
-
-// 	return out;
-// }

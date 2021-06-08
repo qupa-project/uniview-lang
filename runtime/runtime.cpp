@@ -25,6 +25,10 @@ extern "C" {
 	// 	return tm_snapshot;
 	// }
 
+	char* Offset(char* ptr, long amount) {
+		return ptr + amount;
+	}
+
 	void i32_print(int val) {
 		std::cout << val;
 	}
