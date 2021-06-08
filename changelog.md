@@ -8,6 +8,9 @@
 ## Changes
 - [x] The ``uvc`` command now executes the result by default.
 
+## Tweaks
+- [x] Tweaked the automated testing to reflect the new argument changes
+
 ## Version 0.0.2
 
 ### Added
