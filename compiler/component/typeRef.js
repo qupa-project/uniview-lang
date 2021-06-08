@@ -1,4 +1,4 @@
-const Flattern = require("../parser/flattern");
+const Flattern = require("../parser/flattern.js");
 const LLVM = {
 	Type: require('./../middle/type.js')
 };

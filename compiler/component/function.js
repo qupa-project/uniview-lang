@@ -1,7 +1,5 @@
-const { Generator_ID } = require('./generate.js');
-
-const Function_Instance = require('./function_instance.js');
 const LLVM = require('../middle/llvm.js');
+const Function_Instance = require('./function_instance.js');
 
 
 class Function {

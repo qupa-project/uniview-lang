@@ -65,6 +65,8 @@ program ::= w* ( stmt_top w* )*
 	data_type ::= name data_type_access* template?
 		data_type_access ::= "." name
 
+	delete ::= "delete" w+ variable w* ";"
+
 
 #=============================
 #  Flags
@@ -83,7 +85,7 @@ program ::= w* ( stmt_top w* )*
 				func_arg_list ::= func_arg w* ( "," w* func_arg w* )*
 				func_arg      ::= name w* ":" w* "@"? w* data_type
 		function_body ::= "{" w* ( func_stmt w* )* "}"
-			func_stmt ::= comment | if | return | composition | declare | assign | declare_assign | call_procedure
+			func_stmt ::= comment | if | return | composition | declare | delete | assign | declare_assign | call_procedure
 
 	function_outline ::= func_head w* ";"
 	function_redirect ::= "fn" w+ string w* func_arguments ( w* ":" w* data_type )? w+ "as" w+ name w* ";"
@@ -99,7 +101,7 @@ program ::= w* ( stmt_top w* )*
 #=============================
 #  Structure
 #=============================
-	struct  ::= "struct" w+ name w+ "{" w* struct_body w* "}" w* ";"?
+	struct  ::= "struct" w+ name w* "{" w* struct_body w* "}" w* ";"?
 		struct_body ::= ( w* struct_stmt )*
 		struct_stmt ::= comment | struct_attribute
 			struct_attribute ::= name w* ":" w* data_type w* ";"
@@ -112,10 +114,10 @@ program ::= w* ( stmt_top w* )*
 #=============================
 #  Class
 #=============================
-	class ::= "class" w+ name w* flags? w* class_inherit? w* "{" class_body "}" w* ";"?
+	class ::= "class" w+ name w+ class_inherit? w* "{" class_body "}" w* ";"?
 		class_inherit ::= "extends" w+ variable
 		class_body ::= ( w* class_stmt )* w*
-		class_stmt ::= comment | template | class_access | function | declare | function_outline
+		class_stmt ::= comment | function | struct_attribute
 		class_access ::= "public:" | "private:" | "protected:" | "static:"
 
 

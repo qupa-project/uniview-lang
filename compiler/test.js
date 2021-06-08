@@ -18,7 +18,9 @@ let extraArgs = [];
 if (flags.exec) {
 	extraArgs.push('--execute');
 } else if (!flags.clang) {
-	extraArgs.push('--verifyOnly')
+	extraArgs.push('--verifyOnly');
+} else {
+	extraArgs.push('--compileOnly');
 }
 
 

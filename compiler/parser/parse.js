@@ -131,7 +131,36 @@ function Simplify_String (node) {
 
 
 function Simplify_Class (node) {
-	// TODO
+	let out = [
+		Simplify_Name(node.tokens[2][0]),
+		Simplify_Class_Body(node.tokens[7][0])
+	];
+	node.tokens  = out;
+	node.reached = null;
+	return node;
+}
+function Simplify_Class_Body (node) {
+	node.tokens = node.tokens[0]
+		.filter ( x => x.tokens[0].type != "comment")
+		.map( x => Simplify_Class_Stmt(x.tokens[1][0]).tokens[0] );
+	node.reached = null;
+	return node;
+}
+function Simplify_Class_Stmt (node) {
+	switch (node.tokens[0].type) {
+		case "comment":
+			break;
+		case "struct_attribute":
+			node.tokens = [ Simplify_Struct_Attribute(node.tokens[0]) ];
+			break;
+		case "function":
+			node.tokens = [ Simplify_Function(node.tokens[0]) ];
+			break;
+		default:
+			throw new Error(`Unexpected class statement "${node.tokens[0].type}"`);
+	}
+
+	node.reached = null;
 	return node;
 }
 
@@ -252,7 +281,9 @@ function Simplify_Struct (node) {
 	return node;
 }
 function Simplify_Struct_Body (node) {
-	node.tokens = node.tokens[0].map( x => Simplify_Struct_Stmt(x.tokens[1][0]).tokens[0] );
+	node.tokens = node.tokens[0]
+		.filter ( x => x.tokens[0].type != "comment")
+		.map( x => Simplify_Struct_Stmt(x.tokens[1][0]).tokens[0] );
 	node.reached = null;
 	return node;
 }
@@ -599,6 +630,9 @@ function Simplify_Function_Stmt (node) {
 		case "declare_assign":
 			inner = Simplify_Declare_Assign(node.tokens[0]);
 			break;
+		case "delete":
+			inner = Simplify_Delete(node.tokens[0]);
+			break;
 		case "assign":
 			inner = Simplify_Assign(node.tokens[0]);
 			break;
@@ -617,7 +651,6 @@ function Simplify_Function_Stmt (node) {
 		case "composition":
 			inner = Simplify_Composition(node.tokens[0]);
 			break;
-		case "asm":
 		default:
 			throw new TypeError(`Unexpected function statement ${node.tokens[0].type}`);
 	}
@@ -772,6 +805,15 @@ function Simplify_Assign  (node) {
 		Simplify_Expr     (node.tokens[4][0])  // value
 	];
 	node.reached = null;
+	return node;
+}
+
+function Simplify_Delete (node) {
+	node.tokens = [
+		Simplify_Variable(node.tokens[2][0])
+	];
+	node.reached = null;
+
 	return node;
 }
 
