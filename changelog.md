@@ -1,5 +1,20 @@
 # Change Log
 
+## Umcomming
+
+## Added
+- [x] ``--compileOnly`` flag which compiles to a binary, but does not execute the result
+- [x] Primitive class implementation
+- [x] Delete instruction to consume values
+- [x] Class destructors
+
+## Changes
+- [x] The ``uvc`` command now executes the result by default.
+- [x] No longer need a return statement for void functions
+
+## Tweaks
+- [x] Tweaked the automated testing to reflect the new argument changes
+
 ## Version 0.0.2
 
 ### Added

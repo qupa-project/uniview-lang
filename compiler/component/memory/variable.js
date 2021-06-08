@@ -2,7 +2,6 @@ const LLVM = require('../../middle/llvm.js');
 const Structure = require('../struct.js');
 const TypeRef = require('../typeRef.js');
 
-const Constant = require('./constant.js');
 const Value = require('./value.js');
 
 const Probability = require('./probability.js');
@@ -39,6 +38,26 @@ class Variable extends Value {
 
 	isSuperPosition () {
 		return this.possiblity !== null;
+	}
+
+	isUndefined () {
+		if (this.isDecomposed) {
+			// Not all terms have GEPs let alone undefined
+			if (this.elements.size < this.type.type.terms.length) {
+				return false;
+			}
+
+			// Check all children are undefined
+			for (let elm of this.elements) {
+				if (elm[1].isUndefined() == false) {
+					return false;
+				}
+			}
+
+			return true;
+		} else {
+			return this.store == null && this.probability == null;
+		}
 	}
 
 
@@ -290,19 +309,20 @@ class Variable extends Value {
 	}
 
 	cloneValue (ref) {
-		if (!(this.type.type instanceof Structure)) {
-			return {
-				error: true,
-				msg: `Error: Unable to lend non-linear types`,
-				ref: ref
-			};
-		}
-
-		// Resolve to composed state
+		// Resolve to composed/probability state
 		let out = this.resolve(ref, false);
 		if (out.error) {
 			return out;
 		}
+
+		if (this.type.type.typeSystem == "normal") {
+			return {
+				preamble: new LLVM.Fragment(),
+				instruction: this.store,
+				type: this.type.duplicate()
+			};
+		}
+
 		this.store = out.register;
 		let preamble = out.preamble;
 
@@ -675,10 +695,28 @@ class Variable extends Value {
 
 			frag.merge(res.preamble);
 		} else {                       // Run destruct behaviour
-
+			if (
+				this.type.type.meta == "CLASS" &&
+				!this.isUndefined(ref)
+			) {
+				return {
+					error: true,
+					msg: `${this.name} is still defined. All classes must be consumed`,
+					ref: ref
+				};
+			}
 		}
 
 		return frag;
+	}
+
+	delete (ref) {
+		this.elements = new Map();
+		this.isDecomposed = false;
+		this.probability = null;
+		this.store = null;
+		this.lastUninit = ref.start;
+		return new LLVM.Fragment();
 	}
 }
 

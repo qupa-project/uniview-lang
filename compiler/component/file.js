@@ -7,6 +7,7 @@ const LLVM = require('./../middle/llvm.js');
 const Function = require('./function.js');
 const TypeDef  = require('./typedef.js');
 const Structure = require('./struct.js');
+const Class = require('./class.js');
 const TypeRef = require('./typeRef.js');
 const Import  = require('./import.js');
 
@@ -117,11 +118,11 @@ class File {
 			case "import":
 				space = new Import(this, element);
 				break;
-			// case "alias":
-			// 	space = new Alias(this, element);
-			// 	break;
 			case "struct":
 				space = new Structure(this, element, external);
+				break;
+			case "class":
+				space = new Class(this, element, external);
 				break;
 			default:
 				throw new Error(`Unexpected file scope namespace type "${element.type}"`);
@@ -315,6 +316,11 @@ class File {
 		let area = helper.CodeSection(this.data, refStart, refEnd);
 		console.error(`\n${this.relPath}:\n ${msg}\n${area.replace(/\t/g, '  ')}`);
 		this.project.markError();
+	}
+	warn (msg, refStart, refEnd) {
+		// let area = BNF.Message.HighlightArea(this.data, refStart, refEnd);
+		let area = helper.CodeSection(this.data, refStart, refEnd);
+		console.warn(`\n${this.relPath}:\n ${msg}\n${area.replace(/\t/g, '  ')}`);
 	}
 
 

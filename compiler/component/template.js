@@ -1,4 +1,4 @@
-const LLVM = require("../middle/llvm");
+const LLVM = require("../middle/llvm.js");
 
 class Template {
 	constructor(ctx, ast) {
