@@ -58,7 +58,7 @@ if (index != -1) {
 }
 
 if (config.execute + config.verifyOnly + config.compileOnly > 1) {
-	console.log("Invalid arguments");
+	console.error("Invalid arguments");
 	process.exit(1);
 }
 
