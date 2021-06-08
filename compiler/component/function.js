@@ -1,5 +1,6 @@
 const LLVM = require('../middle/llvm.js');
 const Function_Instance = require('./function_instance.js');
+const Structure = require('./struct.js');
 
 
 class Function {
@@ -8,6 +9,9 @@ class Function {
 		this.ctx = ctx;
 
 		this.ref = ast.ref.start;
+
+		this.represent = this.name + "." + (this.ctx instanceof Structure ?
+			this.ctx.represent.slice(1) : this.ctx.represent);
 
 		this.instances = [];
 		this.register(ast, external, abstract);

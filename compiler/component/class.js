@@ -12,7 +12,7 @@ class Class extends Structure {
 	parse () {
 		this.name = this.ast.tokens[0].tokens;
 		this.represent = "%class." + (
-			this.external ? this.name : `${this.name}.${this.ctx.getFileID().toString(36)}`
+			this.external ? this.name : `${this.name}.${this.ctx.represent}`
 		);
 	}
 
@@ -95,7 +95,8 @@ class Class extends Structure {
 		}
 
 		// Ensure this class has a clone operation if any child does
-		if (!this.getCloner()) {
+		let cloner = this.getCloner();
+		if (!cloner) {
 			let found = false;
 			let ref = null;
 			for (let child of this.terms) {
@@ -111,6 +112,13 @@ class Class extends Structure {
 				this.getFile().throw(
 					`Error: This class contains no clone function, however at least one of it's attributes do`,
 					this.ref, ref
+				);
+			}
+		} else {
+			if (!cloner.returnType.match(new TypeRef(0, this, false))) {
+				this.getFile().throw(
+					`Error: Cloning functions must return a "${this.name}" value`,
+					this.ref, cloner.ref
 				);
 			}
 		}

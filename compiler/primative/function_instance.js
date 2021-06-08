@@ -17,7 +17,7 @@ class Function_Instance {
 		this.id = funcIDGen.next();
 
 		this.name = name;
-		this.represent = `${this.name}.${this.ctx.getFile().getID().toString(36)}.${this.id.toString(36)}`;
+		this.represent = `${this.name}.${this.id.toString(36)}.${this.ctx.getFile().getID().toString(36)}`;
 
 
 		this.ir = new LLVM.Procedure (

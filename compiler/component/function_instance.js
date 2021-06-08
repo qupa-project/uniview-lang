@@ -29,7 +29,7 @@ class Function_Instance {
 		this.id = funcIDGen.next();
 
 		this.name = ast.tokens[0].tokens[1].tokens;
-		this.represent = external ? `${this.name}` : `${this.name}.${this.ctx.getFileID().toString(36)}.${this.id.toString(36)}`;
+		this.represent = external ? `${this.name}` : `${this.ctx.represent}.${this.id.toString(36)}`;
 
 
 		this.ir = new LLVM.Fragment();

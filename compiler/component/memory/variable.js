@@ -315,7 +315,10 @@ class Variable extends Value {
 			return out;
 		}
 
-		if (this.type.type.typeSystem == "normal") {
+		if (
+			this.type.type.typeSystem == "normal" ||
+			!this.type.type.cloneInstance
+		) {
 			return {
 				preamble: new LLVM.Fragment(),
 				instruction: this.store,
@@ -701,7 +704,7 @@ class Variable extends Value {
 			) {
 				return {
 					error: true,
-					msg: `${this.name} is still defined. All classes must be consumed`,
+					msg: `Variable "${this.name}" is still defined. All classes must be consumed`,
 					ref: ref
 				};
 			}

@@ -25,6 +25,8 @@ class File {
 
 		this.data = "";
 
+		this.represent = this.id.toString(36);
+
 		this.names = {};
 
 		let prim = this.project.getPrimative();
@@ -134,11 +136,14 @@ class File {
 			!this.names[space.name].merge ||
 			!this.names[space.name].merge(space)
 		) {
-			console.error("Multiple definitions of same namespace");
-			console.error("  name :", space.name);
-			console.error("   1st :", this.names[space.name].ref.toString());
-			console.error("   2nd :", space.ref.toString());
-			this.project.markError();
+
+			this.throw(
+				`Multiple definitions of namespace "${space.name}"`,
+				this.names[space.name].ref.index < space.ref.index ? // first
+					this.names[space.name].ref : space.ref,
+				this.names[space.name].ref.index > space.ref.index ? // second
+					this.names[space.name].ref : space.ref
+			);
 			return false;
 		}
 	}
