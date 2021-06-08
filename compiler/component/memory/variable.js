@@ -2,7 +2,6 @@ const LLVM = require('../../middle/llvm.js');
 const Structure = require('../struct.js');
 const TypeRef = require('../typeRef.js');
 
-const Constant = require('./constant.js');
 const Value = require('./value.js');
 
 const Probability = require('./probability.js');
@@ -675,7 +674,16 @@ class Variable extends Value {
 
 			frag.merge(res.preamble);
 		} else {                       // Run destruct behaviour
-
+			if (
+				this.type.type.meta == "CLASS" &&
+				!(this.store == null && this.probability == null)
+			) {
+				return {
+					error: true,
+					msg: `${this.name} is still defined. All classes must be consumed`,
+					ref: ref
+				};
+			}
 		}
 
 		return frag;

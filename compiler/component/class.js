@@ -6,6 +6,7 @@ class Class extends Structure {
 	constructor (ctx, ast, external = false) {
 		super(ctx, ast, external);
 		this.names = {};
+		this.meta = "CLASS";
 	}
 
 	parse () {

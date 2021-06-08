@@ -1,12 +1,12 @@
-const Primative = require('../primative/main.js');
-
-const { Generator_ID } = require('./generate.js');
-const LLVM = require('./../middle/llvm.js');
-const File = require('./file.js');
-
 const { dirname, resolve } = require('path');
 const fs = require('fs');
 const path = require('path');
+
+const { Generator_ID } = require('./generate.js');
+const LLVM = require('./../middle/llvm.js');
+const Primative = require('../primative/main.js');
+
+const File = require('./file.js');
 
 const base = new LLVM.Raw(`attributes #1 = { nounwind "unsafe-fp-math"="false" "use-soft-float"="false" }
 declare void @llvm.memmove.p0i8.p0i8.i64 (i8*, i8*, i64, i1)
