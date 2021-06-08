@@ -423,6 +423,14 @@ class Execution extends ExecutionFlow {
 		if (ast.tokens.length == 0){
 			inner = new LLVM.Type("void", false);
 			returnType = new TypeRef(0, Primative.types.void);
+
+			// Clean up the scope
+			let clean = this.scope.cleanup(ast.ref);
+			if (clean.error) {
+				this.getFile().throw(clean.msg, clean.ref.start, clean.ref.end);
+				return null;
+			}
+			frag.append(clean);
 		} else {
 			let res = this.compile_expr(ast.tokens[0], this.returnType, true);
 			if (res === null) {
@@ -430,6 +438,15 @@ class Execution extends ExecutionFlow {
 			}
 			returnType = res.type;
 			frag.merge(res.preamble);
+
+			// Clean up the scope
+			let clean = this.scope.cleanup(ast.ref);
+			if (res.error) {
+				this.getFile().throw(clean.msg, clean.ref.start, clean.ref.end);
+				return null;
+			}
+			frag.append(clean);
+
 			if (returnType.type.typeSystem == "linear") {
 
 				let size = returnType.type.sizeof(ast.ref);
@@ -492,14 +509,6 @@ class Execution extends ExecutionFlow {
 				ast.ref.start, ast.ref.end
 			);
 		}
-
-		// Clean up the scope
-		let res = this.scope.cleanup(ast.ref);
-		if (res.error) {
-			this.getFile().throw(res.msg, res.ref.start, res.ref.end);
-			return null;
-		}
-		frag.append(res);
 
 		frag.append(new LLVM.Return(inner, ast.ref.start));
 		this.returned = true;
@@ -570,6 +579,16 @@ class Execution extends ExecutionFlow {
 
 		if (!failed && this.returned == false && !this.isChild) {
 			if (this.returnType.type == Primative.types.void) {
+				// Auto generate return and cleanup for void functions
+
+				// Clean up the scope
+				let res = this.scope.cleanup(ast.ref);
+				if (res.error) {
+					this.getFile().throw(res.msg, res.ref.start, res.ref.end);
+				} else {
+					fragment.append(res);
+				}
+
 				fragment.append(new LLVM.Return(
 					new LLVM.Type("void", 0),
 					ast.ref
