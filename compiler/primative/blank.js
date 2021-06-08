@@ -2,10 +2,6 @@ const Function_Instance = require('./function_instance.js');
 const Template = require('../component/template.js');
 const LLVM = require('../middle/llvm.js');
 
-const types = require('./types.js');
-const TypeRef = require('../component/typeRef.js');
-const Structure = require('../component/struct.js');
-
 class Template_Primative_Blank extends Template {
 	constructor (ctx) {
 		super(ctx, null);
