@@ -72,6 +72,49 @@ class Class extends Structure {
 			this.names[name].link();
 		}
 
+
+		// Ensure this class has a destructor if any child does
+		if (!this.getDestructor()) {
+			let found = false;
+			let ref = null;
+			for (let child of this.terms) {
+				let type = child.typeRef.type;
+				if (type instanceof Class && type.getDestructor()) {
+					found = true;
+					ref = child.declared;
+					break;
+				}
+			}
+
+			if (found) {
+				this.getFile().throw(
+					`Error: This class contains no destrutor function, however it's attributes do`,
+					this.ref, ref
+				);
+			}
+		}
+
+		// Ensure this class has a clone operation if any child does
+		if (!this.getCloner()) {
+			let found = false;
+			let ref = null;
+			for (let child of this.terms) {
+				let type = child.typeRef.type;
+				if (type instanceof Class && type.getCloner()) {
+					found = true;
+					ref = child.declared;
+					break;
+				}
+			}
+
+			if (found) {
+				this.getFile().throw(
+					`Error: This class contains no destrutor function, however at least one of it's attributes do`,
+					this.ref, ref
+				);
+			}
+		}
+
 		this.linked = true;
 	}
 
@@ -86,6 +129,17 @@ class Class extends Structure {
 		}
 
 		return null;
+	}
+
+	getDestructor () {
+		if (!this.names['Delete']) {
+			return false;
+		}
+
+		return this.names['Delete'].getFunction([], [new TypeRef(0, this, false)], null);
+	}
+	getCloner () {
+		return false;
 	}
 
 
@@ -109,5 +163,7 @@ class Class extends Structure {
 	}
 }
 
+
+const TypeRef = require('./typeRef.js');
 
 module.exports = Class;

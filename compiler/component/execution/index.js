@@ -166,8 +166,8 @@ class Execution extends ExecutionFlow {
 			return null;
 		}
 
-		if (target.type.type.meta !== "CLASS") {
-			let destructor = target.type.type.getFunction([['.', "Delete"]], [target.type], null);
+		if (target.type.type.meta == "CLASS") {
+			let destructor = target.type.type.getDestructor();
 			if (destructor) {
 				if (this.ctx == destructor) {
 					this.getFile().throw(

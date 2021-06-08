@@ -4,6 +4,9 @@
 
 ## Added
 - [x] ``--compileOnly`` flag which compiles to a binary, but does not execute the result
+- [x] Primitive class implementation
+- [x] Delete instruction to consume values
+- [x] Class destructors
 
 ## Changes
 - [x] The ``uvc`` command now executes the result by default.

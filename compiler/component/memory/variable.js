@@ -714,6 +714,7 @@ class Variable extends Value {
 		this.isDecomposed = false;
 		this.probability = null;
 		this.store = null;
+		this.lastUninit = ref.start;
 		return new LLVM.Fragment();
 	}
 }
