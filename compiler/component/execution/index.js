@@ -569,10 +569,18 @@ class Execution extends ExecutionFlow {
 		}
 
 		if (!failed && this.returned == false && !this.isChild) {
-			this.getFile().throw(
-				`Function does not return`,
-				ast.ref.start, ast.ref.end
-			);
+			console.log();
+			if (this.returnType.type == Primative.types.void) {
+				fragment.append(new LLVM.Return(
+					new LLVM.Type("void", 0),
+					ast.ref
+				));
+			} else {
+				this.getFile().throw(
+					`Function does not return`,
+					ast.ref.start, ast.ref.end
+				);
+			}
 		}
 
 		return fragment;

@@ -10,6 +10,7 @@
 
 ## Changes
 - [x] The ``uvc`` command now executes the result by default.
+- [x] No longer need a return statement for void functions
 
 ## Tweaks
 - [x] Tweaked the automated testing to reflect the new argument changes
