@@ -49,7 +49,7 @@ class String {
 
 
 	fn Say(this: @String) {
-		print($this.data);
+		println($this.data);
 	}
 
 
