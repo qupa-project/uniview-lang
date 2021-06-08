@@ -1,5 +1,13 @@
 # Change Log
 
+## Umcomming
+
+## Added
+- [x] ``--compileOnly`` flag which compiles to a binary, but does not execute the result
+
+## Changes
+- [x] The ``uvc`` command now executes the result by default.
+
 ## Version 0.0.2
 
 ### Added
