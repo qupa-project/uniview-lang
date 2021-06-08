@@ -1,4 +1,5 @@
 const TypeDef = require('../component/typedef.js');
+const Type = require('../middle/type.js');
 
 let types = {
 	void: new TypeDef(null, {
@@ -66,11 +67,28 @@ let types = {
 		}
 	}, true),
 
-	string: new TypeDef(null, {
+	cstring: new TypeDef(null, {
 		tokens: [
 			{
 				type   : "name",
 				tokens : "i8"
+			},
+			{
+				type   : "integer",
+				tokens : "1"
+			}
+		],
+		ref: {
+			start: null,
+			end: null
+		}
+	}, true),
+
+	unsafe_blob: new TypeDef(null, {
+		tokens: [
+			{
+				type   : "name",
+				tokens : "i8*"
 			},
 			{
 				type   : "integer",
@@ -143,8 +161,10 @@ for (let key in types) {
 	types[key].primative = true;
 	types[key].typeSystem = 'normal';
 }
-types.string.typeSystem = "linear";
-types.string.primative = true;
+types.cstring.typeSystem = "linear";
+types.cstring.primative = true;
+types.unsafe_blob.typeSystem = "normal";
+types.unsafe_blob.primative = true;
 
 
 module.exports = types;

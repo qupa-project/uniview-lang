@@ -1,0 +1,37 @@
+include llvm "./string.ll";
+import "memory.uv" as Memory;
+
+import "print.uv";
+
+external assume {
+	struct String {
+		data: unsafe_blob;
+		size: u64;
+	}
+
+	fn "qupa.cstring.length" (str: cstring): u64 as length;
+	fn "qupa.string.fromcstring" (str: cstring): String as StringFrom;
+
+	fn "qupa.string.append" (target: @String, val: String) as Append;
+}
+
+
+fn print(str: String) {
+	print(str.data);
+	return;
+}
+fn println(str: String) {
+	println(str.data);
+	return;
+}
+
+// fn StringFrom(str: cstring): String {
+// 	let out = Blank#[String]();
+
+// 	out.size = length(str);
+// 	out.data = Memory.Alloc(out.size);
+
+// 	// Memory.Move($out.data, str, out.size, false);
+
+// 	return out;
+// }

@@ -47,6 +47,9 @@ extern "C" {
 	void str_print(char* val) {
 		std::cout << val;
 	}
+	void blob_print(char* val) {
+		std::cout << val;
+	}
 
 	void i32_println(int val) {
 		std::cout << val << std::endl;
@@ -68,6 +71,9 @@ extern "C" {
 		}
 	}
 	void str_println(char* val) {
+		std::cout << val << std::endl;
+	}
+	void blob_println(char* val) {
 		std::cout << val << std::endl;
 	}
 }
