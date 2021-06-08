@@ -569,7 +569,6 @@ class Execution extends ExecutionFlow {
 		}
 
 		if (!failed && this.returned == false && !this.isChild) {
-			console.log();
 			if (this.returnType.type == Primative.types.void) {
 				fragment.append(new LLVM.Return(
 					new LLVM.Type("void", 0),

@@ -246,6 +246,14 @@ class Variable extends Value {
 
 
 	lendValue (ref) {
+		if (!(this.type.type instanceof Structure)) {
+			return {
+				error: true,
+				msg: `Error: Unable to lend non-linear types`,
+				ref: ref
+			};
+		}
+
 		// Resolve to composed state
 		let out = this.resolve(ref, false);
 		if (out.error) {
@@ -309,19 +317,20 @@ class Variable extends Value {
 	}
 
 	cloneValue (ref) {
-		if (!(this.type.type instanceof Structure)) {
-			return {
-				error: true,
-				msg: `Error: Unable to lend non-linear types`,
-				ref: ref
-			};
-		}
-
-		// Resolve to composed state
+		// Resolve to composed/probability state
 		let out = this.resolve(ref, false);
 		if (out.error) {
 			return out;
 		}
+
+		if (this.type.type.typeSystem == "normal") {
+			return {
+				preamble: new LLVM.Fragment(),
+				instruction: this.store,
+				type: this.type.duplicate()
+			};
+		}
+
 		this.store = out.register;
 		let preamble = out.preamble;
 

@@ -109,7 +109,7 @@ class Class extends Structure {
 
 			if (found) {
 				this.getFile().throw(
-					`Error: This class contains no destrutor function, however at least one of it's attributes do`,
+					`Error: This class contains no clone function, however at least one of it's attributes do`,
 					this.ref, ref
 				);
 			}
@@ -139,7 +139,47 @@ class Class extends Structure {
 		return this.names['Delete'].getFunction([], [new TypeRef(0, this, false)], null);
 	}
 	getCloner () {
-		return false;
+		if (!this.names['Clone']) {
+			return false;
+		}
+
+		return this.names['Clone'].getFunction([], [new TypeRef(0, this, true)], null);
+	}
+
+	cloneInstance (argument, ref) {
+		let cloner = this.getCloner();
+		if (cloner) {
+			let preamble = new LLVM.Fragment();
+			let irType = new TypeRef(0, this, false);
+			let id = new LLVM.ID();
+
+			preamble.append(new LLVM.Set(
+				new LLVM.Name(id),
+				new LLVM.Alloc(irType.toLLVM(ref, true))
+			));
+
+			let instruction = new LLVM.Argument (
+				irType.toLLVM(ref, false, true),
+				new LLVM.Name(id.reference())
+			);
+
+			// Call the clone opperation
+			preamble.append(new LLVM.Call(
+				new LLVM.Type("void", 0),
+				new LLVM.Name(cloner.represent, true, ref),
+				[
+					instruction,
+					argument
+				], ref
+			));
+
+			return {
+				preamble,
+				instruction
+			};
+		} else {
+			return super.cloneInstance(argument, ref);
+		}
 	}
 
 
