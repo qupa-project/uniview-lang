@@ -75,7 +75,7 @@ let types = {
 			},
 			{
 				type   : "integer",
-				tokens : "1"
+				tokens : "8"
 			}
 		],
 		ref: {
@@ -92,7 +92,7 @@ let types = {
 			},
 			{
 				type   : "integer",
-				tokens : "1"
+				tokens : "8"
 			}
 		],
 		ref: {
@@ -153,7 +153,7 @@ types.double.cat = "float";
 types.double.signed = true;
 
 types.int   = types.i64;
-types.uint   = types.u64;
+types.uint  = types.u64;
 
 
 // Update primative types correct type system
@@ -161,8 +161,10 @@ for (let key in types) {
 	types[key].primative = true;
 	types[key].typeSystem = 'normal';
 }
+types.cstring.name = "cstring";
 types.cstring.typeSystem = "linear";
 types.cstring.primative = true;
+types.unsafe_blob.name = "unsafe_blob";
 types.unsafe_blob.typeSystem = "normal";
 types.unsafe_blob.primative = true;
 
