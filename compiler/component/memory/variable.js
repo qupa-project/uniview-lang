@@ -246,14 +246,6 @@ class Variable extends Value {
 
 
 	lendValue (ref) {
-		if (!(this.type.type instanceof Structure)) {
-			return {
-				error: true,
-				msg: `Error: Unable to lend non-linear types`,
-				ref: ref
-			};
-		}
-
 		// Resolve to composed state
 		let out = this.resolve(ref, false);
 		if (out.error) {
