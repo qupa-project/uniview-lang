@@ -186,6 +186,7 @@ class Structure extends TypeDef {
 			return false;
 		}
 
+		// Get attribute type
 		let typeNode = node.tokens[0];
 		let typeRef = this.ctx.getType(Flattern.DataTypeList(typeNode));
 		if (typeRef === null) {
@@ -196,9 +197,22 @@ class Structure extends TypeDef {
 			);
 			return false;
 		}
+
+		// Check a structure is not including a class attribute
+		if (this.meta != "CLASS" && typeRef.type.meta == "CLASS") {
+			this.ctx.getFile().throw(
+				`Error: Structures cannot include classes as attributes`,
+				this.ref,
+				node.ref.end
+			);
+			return false;
+		}
+
+		// Check child attribute is linked for valid size
 		if (!typeRef.type.linked) {
 			type.link([this, ...stack]);
 		}
+
 		let term = new Struct_Term(
 			name,
 			new TypeRef(typeNode.tokens[0], typeRef.type),
