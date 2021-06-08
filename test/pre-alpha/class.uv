@@ -1,0 +1,42 @@
+import "print.uv";
+
+class Cat {
+	id: int;
+
+	fn New(id: int): Cat {
+		let out = Blank#[Cat]();
+		out.id = id;
+		return out;
+	}
+
+	fn Say(this: Cat) {
+		print(this.id);
+		println(": meow");
+	}
+
+	fn Say(this: @Cat) {
+		print(this.id);
+		println(": meow");
+	}
+
+	fn Clone(src: @Cat): Cat {
+		let out = Blank#[Cat]();
+		println("Cloning cat");
+		out.id = src.id + 1;
+
+		return out;
+	}
+
+	fn Delete(this: Cat) {
+		println ("Deleting cat...");
+		delete this.id;
+	}
+}
+
+fn main(): int {
+	let c = Cat.New(2);
+	Cat.Say(@c);
+	Cat.Say($c);
+	Cat.Delete(c);
+	return 0;
+}
