@@ -99,7 +99,7 @@ program ::= w* ( stmt_top w* )*
 #=============================
 #  Structure
 #=============================
-	struct  ::= "struct" w+ name w+ "{" w* struct_body w* "}" w* ";"?
+	struct  ::= "struct" w+ name w* "{" w* struct_body w* "}" w* ";"?
 		struct_body ::= ( w* struct_stmt )*
 		struct_stmt ::= comment | struct_attribute
 			struct_attribute ::= name w* ":" w* data_type w* ";"
@@ -112,10 +112,10 @@ program ::= w* ( stmt_top w* )*
 #=============================
 #  Class
 #=============================
-	class ::= "class" w+ name w* flags? w* class_inherit? w* "{" class_body "}" w* ";"?
+	class ::= "class" w+ name w+ class_inherit? w* "{" class_body "}" w* ";"?
 		class_inherit ::= "extends" w+ variable
 		class_body ::= ( w* class_stmt )* w*
-		class_stmt ::= comment | template | class_access | function | declare | function_outline
+		class_stmt ::= comment | function | struct_attribute
 		class_access ::= "public:" | "private:" | "protected:" | "static:"
 
 
