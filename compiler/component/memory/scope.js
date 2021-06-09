@@ -102,15 +102,9 @@ class Scope {
 	 */
 	register_Var (type, name, ref) {
 		if (this.variables[name]) {
-			if (this.variables[name].isClone && !Scope.raisedVariables) {
-				// When scoped variables are added
-				// Ensure that any changes to the original are flushed before
-				//   redeclaring
-			}
-
 			this.getFile().throw(
 				`Duplicate declaration of name ${name} in scope`,
-				this.variables[name].declared, ref
+				this.variables[name].ref, ref
 			);
 		}
 
