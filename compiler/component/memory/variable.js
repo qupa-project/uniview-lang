@@ -714,6 +714,14 @@ class Variable extends Value {
 	}
 
 	delete (ref) {
+		if (this.isUndefined()) {
+			return {
+				error: true,
+				msg: "Cannot delete an already undefined value",
+				ref: ref
+			};
+		}
+
 		this.elements = new Map();
 		this.isDecomposed = false;
 		this.probability = null;
