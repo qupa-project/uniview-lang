@@ -42,6 +42,13 @@ class TypeDef {
 		return null;
 	}
 
+	getDestructor() {
+		return false;
+	}
+	getCloner() {
+		return false;
+	}
+
 
 	parse () {
 		this.name = this.ast.tokens[0].tokens;
