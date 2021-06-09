@@ -81,7 +81,7 @@ function Compile(filename, id) {
 
 
 let tests = fs.readFileSync('./test/pre-alpha/_manifest_', 'utf8')
-	.replaceAll("\r\n", "\n")
+	.replace(/\r\n/g, "\n")
 	.split('\n')
 	.map( x => {
 		return path.resolve("./test/pre-alpha", x);
