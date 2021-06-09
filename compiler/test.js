@@ -80,16 +80,12 @@ function Compile(filename, id) {
 
 
 
-let tests = [
-	"cast.uv",
-	"compare.uv",
-	"library-behaviour.uv",
-	"math.uv",
-	"struct.uv",
-	"time.uv"
-].map( x => {
-	return path.resolve("./test/pre-alpha", x);
-});
+let tests = fs.readFileSync('./test/pre-alpha/_manifest_', 'utf8')
+	.replaceAll("\r\n", "\n")
+	.split('\n')
+	.map( x => {
+		return path.resolve("./test/pre-alpha", x);
+	});
 total = tests.length;
 
 
