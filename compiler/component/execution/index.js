@@ -10,7 +10,6 @@ const Primative = {
 };
 
 const ExecutionFlow = require('./flow.js');
-const Structure = require('../struct.js');
 const Variable = require('../memory/variable.js');
 
 class Execution extends ExecutionFlow {
@@ -423,14 +422,6 @@ class Execution extends ExecutionFlow {
 		if (ast.tokens.length == 0){
 			inner = new LLVM.Type("void", false);
 			returnType = new TypeRef(0, Primative.types.void);
-
-			// Clean up the scope
-			let clean = this.scope.cleanup(ast.ref);
-			if (clean.error) {
-				this.getFile().throw(clean.msg, clean.ref.start, clean.ref.end);
-				return null;
-			}
-			frag.append(clean);
 		} else {
 			let res = this.compile_expr(ast.tokens[0], this.returnType, true);
 			if (res === null) {
@@ -438,14 +429,6 @@ class Execution extends ExecutionFlow {
 			}
 			returnType = res.type;
 			frag.merge(res.preamble);
-
-			// Clean up the scope
-			let clean = this.scope.cleanup(ast.ref);
-			if (res.error) {
-				this.getFile().throw(clean.msg, clean.ref.start, clean.ref.end);
-				return null;
-			}
-			frag.append(clean);
 
 			if (returnType.type.typeSystem == "linear") {
 
@@ -503,12 +486,22 @@ class Execution extends ExecutionFlow {
 			}
 		}
 
+		// Check the return type is correct
 		if (!this.returnType.match(returnType)) {
 			this.getFile().throw(
 				`Return type miss-match, expected ${this.returnType.toString()} but got ${returnType.toString()}`,
 				ast.ref.start, ast.ref.end
 			);
 		}
+
+
+		// Clean up the scope
+		let clean = this.scope.cleanup(ast.ref);
+		if (clean.error) {
+			this.getFile().throw(clean.msg, clean.ref.start, clean.ref.end);
+			return null;
+		}
+		frag.append(clean);
 
 		frag.append(new LLVM.Return(inner, ast.ref.start));
 		this.returned = true;
