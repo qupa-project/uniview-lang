@@ -175,7 +175,7 @@ class File {
 		}
 	}
 
-	getType (typeList, template = []) {
+	getType (typeList, template = [], stack = []) {
 		let res = null;
 		// File access must be direct
 		if (typeList[0][0] == "." || Number.isInteger(typeList[0][0])) {
@@ -192,6 +192,12 @@ class File {
 			return null;
 		}
 
+		// Circular loop
+		if (stack.includes(this)) {
+			return null;
+		}
+		stack.push(this);
+
 		// If the name isn't defined in this file
 		// Check other files
 		if (this.names["*"] instanceof Import) {
@@ -201,7 +207,7 @@ class File {
 		return null;
 	}
 
-	getFunction (access, signature, template) {
+	getFunction (access, signature, template, stack = []) {
 		if (access.length < 1) {
 			return null;
 		}
@@ -223,10 +229,16 @@ class File {
 			}
 		}
 
+		// Circular loop
+		if (stack.includes(this)) {
+			return null;
+		}
+		stack.push(this);
+
 		// If the name isn't defined in this file in a regular name space
 		//   Check namespace imports
 		if (this.names["*"] instanceof Import) {
-			return this.names["*"].getFunction(access, signature, template);
+			return this.names["*"].getFunction(access, signature, template, stack);
 		}
 
 		return null;
