@@ -14,4 +14,6 @@ external assume {
 	fn "str_println" (val: cstring) as println;
 	fn "blob_print"   (val: unsafe_blob) as print;
 	fn "blob_println" (val: unsafe_blob) as println;
+
+	fn puts (val : unsafe_blob);
 }
