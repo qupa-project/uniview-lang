@@ -10,6 +10,10 @@ external assume {
 	fn "f32_println" (val: float) as println;
 	fn "f64_print"   (val: double) as print;
 	fn "f64_println" (val: double) as println;
-	fn "str_print"   (val: string) as print;
-	fn "str_println" (val: string) as println;
+	fn "str_print"   (val: cstring) as print;
+	fn "str_println" (val: cstring) as println;
+	fn "blob_print"   (val: unsafe_blob) as print;
+	fn "blob_println" (val: unsafe_blob) as println;
+
+	fn puts (val : unsafe_blob);
 }

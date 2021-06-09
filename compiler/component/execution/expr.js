@@ -46,7 +46,7 @@ class ExecutionExpr extends ExecutionBase {
 				let bytes = ast.tokens[0].tokens[1].length + 1;
 				let str = ast.tokens[0].tokens[1].replace(/\"/g, "\\22").replace(/\n/g, '\\0A') + "\\00";
 
-				type = new TypeRef(0, Primative.types.string);
+				type = new TypeRef(0, Primative.types.cstring);
 
 				let ir_t1 = new LLVM.Type(`[ ${bytes} x i8 ]`, 0, ast.ref);
 				let ir_t2 = type.toLLVM();
@@ -515,7 +515,7 @@ class ExecutionExpr extends ExecutionBase {
 
 		let target = this.getVar(ast, false);
 		if (target.error) {
-			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
+			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
 			return null;
 		}
 		preamble.merge(target.preamble);

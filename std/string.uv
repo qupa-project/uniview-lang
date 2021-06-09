@@ -1,0 +1,135 @@
+include llvm "./string.ll";
+import "memory.uv" as Memory;
+
+import "print.uv";
+
+external assume {
+	fn "qupa.cstring.size" (str: cstring): u64 as sizeof;
+}
+
+class String {
+	data: unsafe_blob;
+	size: u64;
+
+	fn New(str: cstring): String {
+		let out = Blank#[String]();
+		out.size = sizeof($str);
+
+		out.data = Memory.Alloc(out.size);
+
+		let other = bitcast#[unsafe_blob](str);
+		Memory.Move($out.data, $other, out.size, false);
+
+		return out;
+	}
+
+	fn Append(this: @String, other: String) {
+		let nx_len = this.size + other.size - cast#[u64](1);
+		this.data = Memory.Realloc(this.data, nx_len);
+
+		let insert = Memory.Offset($this.data, cast#[i64](this.size) -1 );
+		Memory.Move(insert, $other.data, other.size, false);
+
+		this.size = nx_len;
+		String.Delete(other);
+	}
+
+
+	fn Slice(this: @String, begin: u64): String {
+		return String.Slice(@this, begin, this.size);
+	}
+
+	fn Slice(this: @String, begin: u64, end: u64): String {
+		if (begin > this.size) {
+			begin = this.size;
+		}
+		if (end > this.size - cast#[u64](1)) {
+			end = this.size - cast#[u64](1);
+		}
+
+		// Create a space for the new data
+		let sub = Blank#[String]();
+		let length = end - begin;
+		sub.size = length + cast#[u64](1);
+		sub.data = Memory.Alloc(sub.size);
+
+		// Move the taken slice to the new string
+		let sect_start = Memory.Offset($this.data, cast#[i64](begin));
+		Memory.Move($sub.data, $sect_start, length, false);
+
+		// Fix the hole in the current string
+		let sect_end = Memory.Offset($this.data, cast#[i64](end));
+		Memory.Move($sect_start, $sect_end, this.size-end, false);
+
+		// Resize the string
+		this.size = this.size - length;
+		this.data = Memory.Realloc(this.data, this.size);
+
+		// Add the null terminator
+		let terminator = Memory.Offset($sub.data, cast#[i64](sub.size) -1);
+		Memory.Set(terminator, cast#[i8](0), cast#[u64](1), false);
+
+		return sub;
+	}
+
+	fn Slice(this: String, begin: u64): String {
+		let end = this.size;
+		return String.Slice(this, begin, end);
+	}
+
+	fn Slice(this: String, begin: u64, end: u64): String {
+		if (begin > this.size) {
+			begin = this.size;
+		}
+		if (end > this.size - cast#[u64](1)) {
+			end = this.size - cast#[u64](1);
+		}
+
+		// Create a space for the new data
+		let sub = Blank#[String]();
+		let length = end - begin;
+		sub.size = length + cast#[u64](1);
+		sub.data = Memory.Alloc(sub.size);
+
+		// Move the taken slice to the new string
+		let sect_start = Memory.Offset($this.data, cast#[i64](begin));
+		Memory.Copy($sub.data, $sect_start, length, false);
+
+		// Add the null terminator
+		let terminator = Memory.Offset($sub.data, cast#[i64](sub.size) -1);
+		Memory.Set(terminator, cast#[i8](0), cast#[u64](1), false);
+
+		String.Delete(this);
+		return sub;
+	}
+
+
+	fn Length(this: @String): u64 {
+		return this.size - cast#[u64](1);
+	}
+
+
+	fn Clone(this: @String): String {
+		// Initiliase the data structure
+		let out = Blank#[String]();
+		out.data = Memory.Alloc(this.size);
+		out.size = this.size;
+
+		// Copy the blob data to the new allocation
+		Memory.Copy($out.data, $this.data, this.size, false);
+
+		return out;
+	}
+
+
+	fn Delete(this: String) {
+		Memory.Free(this.data);
+		delete this.data;
+		delete this.size;
+	}
+}
+
+
+fn puts(str: @String) {
+	puts(str.data);
+}

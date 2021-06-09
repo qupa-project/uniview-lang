@@ -25,6 +25,10 @@ extern "C" {
 	// 	return tm_snapshot;
 	// }
 
+	char* Offset(char* ptr, long amount) {
+		return ptr + amount;
+	}
+
 	void i32_print(int val) {
 		std::cout << val;
 	}
@@ -45,6 +49,9 @@ extern "C" {
 		}
 	}
 	void str_print(char* val) {
+		std::cout << val;
+	}
+	void blob_print(char* val) {
 		std::cout << val;
 	}
 
@@ -68,6 +75,9 @@ extern "C" {
 		}
 	}
 	void str_println(char* val) {
+		std::cout << val << std::endl;
+	}
+	void blob_println(char* val) {
 		std::cout << val << std::endl;
 	}
 }

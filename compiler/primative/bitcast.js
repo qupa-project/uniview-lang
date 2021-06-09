@@ -2,7 +2,7 @@ const Function_Instance = require('./function_instance.js');
 const Template = require('../component/template.js');
 const LLVM = require('../middle/llvm.js');
 
-class Template_Primative_Blank extends Template {
+class Template_Primative_Bitcast extends Template {
 	constructor (ctx) {
 		super(ctx, null);
 	}
@@ -16,23 +16,21 @@ class Template_Primative_Blank extends Template {
 			return false;
 		}
 
-		if (signature.length != 0) {
+		if (signature.length != 1) {
 			return false;
 		}
 
-		if (!(template[0].type.typeSystem == "linear")) {
+		if (signature[0].type.size != template[0].type.size) {
 			return false;
 		}
 
 		let type = template[0];
 
-		let func = new Function_Instance(this, "Blank", type, signature);
+		let func = new Function_Instance(this, "Bitcast", type, signature);
 		func.generate = (regs, ir_args) => {
 			return {
 				preamble: new LLVM.Fragment(),
-				instruction: new LLVM.Alloc(
-					type.toLLVM()
-				),
+				instruction: new LLVM.Bitcast(func.returnType.toLLVM(), ir_args[0]),
 				type: type.duplicate()
 			};
 		};
@@ -46,4 +44,4 @@ class Template_Primative_Blank extends Template {
 	}
 }
 
-module.exports = Template_Primative_Blank;
+module.exports = Template_Primative_Bitcast;

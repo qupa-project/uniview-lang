@@ -8,9 +8,7 @@ const Primative = require('../primative/main.js');
 
 const File = require('./file.js');
 
-const base = new LLVM.Raw(`attributes #1 = { nounwind "unsafe-fp-math"="false" "use-soft-float"="false" }
-declare void @llvm.memmove.p0i8.p0i8.i64 (i8*, i8*, i64, i1)
-declare void @llvm.memcpy.p0i8.p0i8.i64 (i8*, i8*, i64, i1)`);
+const base = new LLVM.Raw(`attributes #1 = { nounwind "unsafe-fp-math"="false" "use-soft-float"="false" }`);
 
 class Project {
 	constructor(rootPath, config = {}) {
@@ -28,6 +26,8 @@ class Project {
 		this.error = false;
 
 		this.includes = [];
+
+		this.import (path.resolve(__dirname, "../../std/uniview.uv"), false);
 	}
 
 	import (path, entry = false, relation = this.rootPath) {
