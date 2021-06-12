@@ -14,7 +14,7 @@ class Template_Primative_Size_Of extends Template {
 
 	findMatch(inputType) {
 		for (let child of this.children) {
-			if (child.type == inputType) {
+			if (child.type.match(inputType)) {
 				return child.function;
 			}
 		}
