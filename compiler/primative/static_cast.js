@@ -14,7 +14,7 @@ class Template_Primative_Static_Cast extends Template {
 
 	findMatch(inputType, outputType) {
 		for (let child of this.children) {
-			if (child.input == inputType && child.output == outputType) {
+			if (child.input.match(inputType) && child.output.match(outputType)) {
 				return child.function;
 			}
 		}
