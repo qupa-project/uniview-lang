@@ -9,9 +9,8 @@
 		"node": ">=14"
 	},
 	"dependencies": {
-		"bnf-parser": "^2.2.1"
+		"bnf-parser": "^2.2.5"
 	},
-	"devDependencies": {},
 	"scripts": {
 		"setup": "npm install && npm run build",
 		"start": "node compiler/compile.js",
