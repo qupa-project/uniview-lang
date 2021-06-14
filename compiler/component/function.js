@@ -60,20 +60,26 @@ class Function {
 	}
 
 	merge (other){
-		for (let instance of this.instances) {
-			if (instance.match(other.instances[0])) {
-				return false;
-			}
-		}
-
 		this.instances = this.instances.concat( other.instances );
-
 		return true;
 	}
 
 	link () {
 		for (let instance of this.instances) {
 			instance.link();
+		}
+
+		// Check name collision
+		for (let i=0; i<this.instances.length; i++) {
+			for (let j=i+1; j<this.instances.length; j++) {
+				if (this.instances[i].matchSignature(this.instances[j].signature) == true) {
+					this.getFile().throw(
+						`Warn: Multiple definitions of function "${this.name}" (${this.instances[i].signature.map(x => x.toString()).join(", ")})`,
+						this.instances[i].ref,
+						this.instances[j].ref
+					);
+				}
+			}
 		}
 
 		return;

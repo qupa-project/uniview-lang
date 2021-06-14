@@ -19,8 +19,8 @@ class TypeRef {
 		return this.type.name || "constant";
 	}
 
-	getTerm (ast, reg) {
-		return this.type.getTerm(ast, reg);
+	getTerm (ast, reg, ref) {
+		return this.type.getTerm(ast, reg, ref);
 	}
 
 	getElement (ast, target) {

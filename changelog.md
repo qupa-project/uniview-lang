@@ -21,6 +21,8 @@
 
 ## Tweaks
 - [x] Tweaked the automated testing to reflect the new argument changes
+- [x] Fixed ability to override function in file
+- [x] Fixed allowing multiple definitions of structure term
 
 ## Version 0.0.2
 

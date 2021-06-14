@@ -34,7 +34,7 @@ class Structure extends TypeDef {
 
 	/**
 	 *
-	 * @param {String} name
+	 * @param {BNF_Node|Number} name
 	 * @returns {Object}
 	 */
 	getTerm (name) {
@@ -60,6 +60,16 @@ class Structure extends TypeDef {
 			index: i,
 			type: type
 		};
+	}
+
+	indexOfTerm (name) {
+		for (let i=0; i<this.terms.length; i++) {
+			if (this.terms[i].name == name) {
+				return i;
+			}
+		}
+
+		return -1;
 	}
 
 	getTermCount () {
@@ -165,7 +175,7 @@ class Structure extends TypeDef {
 					break;
 				case "struct_attribute":
 					if (this.linkTerm(node, stack) == false) {
-						return;
+						return false;
 					}
 					break;
 				default:
@@ -177,10 +187,11 @@ class Structure extends TypeDef {
 
 	linkTerm (node, stack = []) {
 		let name = node.tokens[1].tokens;
-		if (this.getTerm(name) != null) {
+		let index = this.indexOfTerm(name);
+		if (index != -1) {
 			this.ctx.getFile().throw(
-				`Error: Multiple use of term ${name} in struct`,
-				this.terms[name].declared,
+				`Error: Multiple use of term "${name}" in struct`,
+				this.terms[index].declared,
 				node.ref.end
 			);
 			return false;
