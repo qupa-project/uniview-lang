@@ -48,16 +48,10 @@ class ExecutionFlow extends ExecutionExpr {
 		/*===================================
 			Prepare condition bodies
 		===================================*/
-		let branch_true = this.compile_branch(ast.tokens[0].tokens[1], ast.tokens[0].tokens[1].ref);
-
-		let hasElse = ast.tokens[2] !== null;
+		let branch_true = this.compile_branch(ast.tokens[0].tokens[1], ast.tokens[0].ref);
 		let branch_false = this.compile_branch(
-			hasElse ?
-				ast.tokens[2].tokens[0] :
-				null,
-			hasElse ?
-				ast.tokens[2].tokens[0].ref :
-				ast.tokens[0].tokens[1].ref,
+			ast.tokens[1].tokens[0],
+			ast.tokens[1].ref
 		);
 
 
