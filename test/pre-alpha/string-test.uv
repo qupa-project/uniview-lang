@@ -2,8 +2,8 @@ import "print.uv";
 import "string.uv";
 
 fn main(): int {
-	let a = String.New("Hello");
-	let b = String.New(" World");
+	let a = String("Hello");
+	let b = String(" World");
 	String.Append(@a, $b);
 	puts(@a);
 	String.Append(@a, b);

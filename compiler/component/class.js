@@ -127,11 +127,15 @@ class Class extends Structure {
 	}
 
 	getFunction (access, signature, template) {
-		if (access.length != 1) {
+		let name;
+		if (access.length == 0) {
+			name = "New";
+		} else if (access.length != 1) {
 			return null;
+		} else {
+			name = access[0][1];
 		}
 
-		let name = access[0][1];
 		if (this.names[name]) {
 			return this.names[name].getFunction([], signature, template);
 		}
