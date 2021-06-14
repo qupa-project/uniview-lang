@@ -5,6 +5,8 @@ fn test(a: int, b: int) {
 		println("Greater");
 	} elif (a < b) {
 		println("Lesser");
+	} elif (a > b) {
+		println("Logic error, should have already been caught");
 	} else {
 		println("Equal");
 	}
