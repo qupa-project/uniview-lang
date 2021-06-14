@@ -212,9 +212,10 @@ class Variable extends Value {
 				};
 			}
 
+			let out;
 			if (!this.elements.has(gep.index)) {
 				let read = struct.accessGEPByIndex(gep.index, this.store);
-				let elm = new Variable(
+				out = new Variable(
 					read.type,
 					`${this.name}.${accessor}`,
 					ref.start
@@ -223,15 +224,17 @@ class Variable extends Value {
 				let act = new LLVM.Latent(read.preamble, ref);
 				preamble.append(act);
 
-				elm.probability = new Probability(
+				out.probability = new Probability(
 					act,
 					read.instruction,
 				"0", ref);
-				this.elements.set(gep.index, elm);
+				this.elements.set(gep.index, out);
+			} else {
+				out = this.elements.get(gep.index);
 			}
 
 			return {
-				variable: this.elements.get(gep.index),
+				variable: out,
 				preamble: preamble
 			};
 		} else {
