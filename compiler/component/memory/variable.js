@@ -188,14 +188,16 @@ class Variable extends Value {
 		}
 		preamble.merge(res.preamble);
 
+		if (accessor.tokens != undefined) {
+			throw new Error("Invalid variable accessor");
+		}
+
 		// Automatically decompoase the value if needed
 		if (!this.isDecomposed) {
 			let res = this.decompose(ref);
-			/* jshint ignore:start*/
-			if (res?.error) {
+			if (res.error) {
 				return res;
 			}
-			/* jshint ignore:end*/
 			preamble.merge(res);
 		}
 
@@ -203,21 +205,19 @@ class Variable extends Value {
 		if (this.type.type.typeSystem == "linear") {
 			let gep = struct.getTerm(accessor);
 			if (gep === null) {
-				/* jshint ignore:start*/
 				return {
 					error: true,
-					msg: `Unable to access element "${accessor?.tokens || accessor}"`,
-					ref: accessor.ref
+					msg: `Unable to access element "${accessor}"`,
+					ref: ref
 				};
-				/* jshint ignore:end*/
 			}
 
 			if (!this.elements.has(gep.index)) {
 				let read = struct.accessGEPByIndex(gep.index, this.store);
 				let elm = new Variable(
 					read.type,
-					`${this.name}.${accessor.tokens}`,
-					ref
+					`${this.name}.${accessor}`,
+					ref.start
 				);
 
 				let act = new LLVM.Latent(read.preamble, ref);
@@ -468,7 +468,8 @@ class Variable extends Value {
 		if (needsDecomposition) {
 			let res = this.decompose(ref);
 			if (res.error) {
-				error = res.error;
+				error = res;
+				error.msg += "469";
 			} else {
 				preamble.merge(res);
 			}
@@ -477,8 +478,10 @@ class Variable extends Value {
 		let instr;
 		if (!error) {
 			instr = this.resolve(ref, true);
+
 			if (instr.error) {
-				error = instr.error;
+				error = instr;
+				error.msg += "483";
 			} else {
 				preamble.merge(instr.preamble);
 			}
@@ -486,7 +489,7 @@ class Variable extends Value {
 
 		if (error) {
 			activator = new LLVM.Latent(new LLVM.Failure(
-				instr.msg, instr.ref
+				error.msg, error.ref
 			), ref);
 		} else if (instr.register instanceof LLVM.GEP) {
 			throw new Error("Bad code path, GEP should have been removed within this.resolve()");
@@ -579,23 +582,19 @@ class Variable extends Value {
 			let links = [];
 			for (let opt of variables) {
 				let res = opt.decompose(ref);
-				/* jshint ignore:start*/
-				if (res?.error) {
+				if (res.error) {
 					links.push(new LLVM.Latent(new LLVM.Failure(
 						res.msg,
 						res.ref
 					), ref));
 				}
-				/* jshint ignore:end*/
 			}
 
 			for (let name of names) {
 				let target = this.access(name, ref);
-				/* jshint ignore:start*/
-				if (target?.error) {
+				if (!target || target.error) {
 					throw "Unexpected Error";
 				}
-				/* jshint ignore:end*/
 				frag.append(target.preamble);
 				target = target.variable;
 

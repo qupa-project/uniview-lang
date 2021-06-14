@@ -118,14 +118,12 @@ class ExecutionBase {
 		let access = ast.tokens[2];
 		while (access.length > 0) {
 			res.hasUpdated = res.hasUpdated || !read;
-			res = res.access(access[0][1], access[0][1].ref);
+			res = res.access(access[0][1].tokens, access[0][1].ref);
 			if (res.error) {
 				return res;
 			}
 			preamble.merge(res.preamble);
 			res = res.variable;
-
-			access.splice(0, 1);
 		}
 
 		return {

@@ -28,7 +28,7 @@ class Execution extends ExecutionFlow {
 		//   after any reads that might have taken place in the expresion
 		let access = this.getVar(ast.tokens[0], false);
 		if (access.error) {
-			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
+			this.getFile().throw( access.msg, access.ref.start, access.ref.start);
 			return null;
 		}
 		frag.merge(access.preamble);
@@ -376,12 +376,10 @@ class Execution extends ExecutionFlow {
 
 		let res = target.decompose(ast.ref);
 
-		/* jshint ignore:start*/
-		if (res?.error) {
+		if (res.error) {
 			this.getFile().throw( res.msg, res.ref.start, res.ref.end);
 			return null;
 		}
-		/* jshint ignore:end*/
 
 		frag.append(res);
 		return frag;

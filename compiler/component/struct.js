@@ -45,7 +45,7 @@ class Structure extends TypeDef {
 			i = name;
 		} else{
 			for (; i<this.terms.length && !found; i++) {
-				if (this.terms[i].name == name.tokens) {
+				if (this.terms[i].name == name) {
 					found = true;
 					break;
 				}
