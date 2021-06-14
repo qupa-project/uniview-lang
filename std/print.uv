@@ -16,4 +16,5 @@ external assume {
 	fn "blob_println" (val: unsafe_blob) as println;
 
 	fn puts (val : unsafe_blob);
+	fn putchar (val: i8);
 }
