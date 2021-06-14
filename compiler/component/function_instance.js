@@ -107,11 +107,9 @@ class Function_Instance {
 		other.link();
 
 		// Match the signatures
-		return this.matchSignature(other);
+		return this.matchSignature(other.signature);
 	}
 	matchSignature (sig) {
-		this.link();
-
 		if (this.signature.length != sig.length) {
 			return false;
 		}

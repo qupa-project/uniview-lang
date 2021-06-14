@@ -201,7 +201,7 @@ class Variable extends Value {
 
 		let struct = this.type.type;
 		if (this.type.type.typeSystem == "linear") {
-			let gep = struct.getTerm(accessor, this, ref);
+			let gep = struct.getTerm(accessor);
 			if (gep === null) {
 				/* jshint ignore:start*/
 				return {
