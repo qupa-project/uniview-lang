@@ -11,6 +11,7 @@
 - [x] String class
 - [x] No longer need a return statement on a void function
 - [x] Bitwise cast (for core development only)
+- [x] Elif statement
 
 ## Changes
 - [x] The ``uvc`` command now executes the result by default.

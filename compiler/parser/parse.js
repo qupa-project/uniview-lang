@@ -718,13 +718,46 @@ function Simplify_Call_Arg(node) {
 
 
 function Simplify_If (node) {
-	let out = [
-		Simplify_If_Stmt(node.tokens[0][0]),
-		node.tokens[1].map(x => Simplify_If_Stmt(x)),
-		node.tokens[3].length > 0 ? Simplify_If_Else(node.tokens[3][0]) : null
-	];
+	let head = Simplify_If_Stmt(node.tokens[0][0]);
+	let elif = node.tokens[1].map(x => Simplify_If_Stmt(x.tokens[1][0]));
+	let other =
+		node.tokens[3][0] ?
+			Simplify_If_Else(node.tokens[3][0]) :
+			new BNF_SyntaxNode ("else_stmt", [
+				new BNF_SyntaxNode ("function_body", [], 0, head.ref.start, head.ref.end, head.ref.reached)
+			], 0, head.ref.start, head.ref.end, head.ref.reached);
 
-	node.tokens = out;
+
+	// Merge elifs into new else statement
+	while (elif.length > 0) {
+		let last = elif.splice(elif.length-1, 1)[0];
+
+		let s = last.ref.start;
+		let e = other.ref.end;
+		let r = null;
+
+		other = new BNF_SyntaxNode(
+			"else_stmt",
+			[new BNF_SyntaxNode(
+				"function_body",
+				[new BNF_SyntaxNode(
+					"if",
+					[last, other],
+					0,
+					s, e, r
+				)],
+				0,
+				s, e, r
+			)],
+			0,
+			s, e, r
+		);
+	}
+
+	node.tokens = [
+		head,
+		other
+	];
 	node.reached = null;
 	return node;
 }
