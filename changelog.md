@@ -13,6 +13,7 @@
 - [x] Bitwise cast (for core development only)
 - [x] Elif statement
 - [x] Fixed inverted signedness issues on integer comparison
+- [x] Escaped string characters
 
 ## Changes
 - [x] The ``uvc`` command now executes the result by default.

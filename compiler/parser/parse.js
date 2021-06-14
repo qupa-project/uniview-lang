@@ -111,6 +111,7 @@ function Simplify_Library_Expose (node) {
 
 
 function Simplify_String (node) {
+	// Merge the segments together
 	let data = "";
 	for (let seg of node.tokens[0].tokens[1]) {
 		if (typeof(seg.tokens) == "string") {
@@ -120,9 +121,40 @@ function Simplify_String (node) {
 		}
 	}
 
+	// Filter wild cards
+	let out = "";
+	for (let i=0; i<data.length; i++) {
+		let char = data[i];
+
+		if (char == "\\") {
+			i++;
+			char = data[i];
+
+			switch (char) {
+				case "n":
+					char = "\n";
+					break;
+				case "t":
+					char = "\t";
+					break;
+				case "B":
+					char = String.fromCharCode(7); // bell
+					break;
+				case "v":
+					char = String.fromCharCode(11); // vertical tab
+					break;
+				case "r":
+					char = String.fromCharCode(13); // carriage return
+					break;
+			}
+		}
+
+		out += char;
+	}
+
 	node.tokens = [
 		node.tokens[0].tokens[0][0].tokens[0],
-		data
+		out
 	];
 	node.reached = null;
 	return node;
