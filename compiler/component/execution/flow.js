@@ -91,36 +91,42 @@ class ExecutionFlow extends ExecutionExpr {
 			);
 			this.entryPoint = endpoint_id;
 
+			// Define the branch sets
+			let totalSet = [ branch_true, branch_false ];
+			let continousSet = totalSet.filter( x => x.env.returned == false );
+
+
+			// Clean up any local variables
+			for (const branch of continousSet) {
+				let res = branch.env.cleanup(branch.ref);
+				if (res.error) {
+					this.getFile().throw(res.msg, res.ref.start, res.ref.end);
+					return null;
+				}
+				branch.frag.append(res);
+			}
 
 
 			// Synchronise possible states into current
 			let merger = this.sync(
-				[ branch_true.env, branch_false.env ],
+				continousSet.map( x => x.env ),
 				endpoint_id,
 				ast.ref
 			);
 
 			// Merge branches
-			for (const [i, branch] of [branch_true, branch_false].entries()) {
+			for (const [i, branch] of continousSet.entries()) {
 
 				// Merge synchronisation preamble for each branch
-				branch.frag.append(merger.preambles[i]);
+				branch.frag.merge(merger.preambles[i]);
 
-				// If the branch didn't return
-				if (!branch.env.returned) {
-					// Clean up any local variables
-					let res = branch.env.cleanup(branch.ref);
-					if (res.error) {
-						this.getFile().throw(res.msg, res.ref.start, res.ref.end);
-						return null;
-					}
-					branch.frag.append(res);
+				// Jump to endpoint
+				branch.frag.append(new LLVM.Branch_Unco(endpoint));
+			}
 
-					// Jump to endpoint
-					branch.frag.append(new LLVM.Branch_Unco(endpoint));
-				}
 
-				// Append the body of this branch to the main body
+			// Append the body of branches
+			for (const branch of totalSet) {
 				frag.merge(branch.frag);
 			}
 
@@ -134,7 +140,6 @@ class ExecutionFlow extends ExecutionExpr {
 			// Append the synchronisation finalisation
 			frag.append(merger.frag);
 		}
-
 
 		return frag;
 	}

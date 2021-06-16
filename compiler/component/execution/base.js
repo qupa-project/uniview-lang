@@ -221,7 +221,7 @@ class ExecutionBase {
 
 	sync (branches, segment, ref){
 		return this.scope.sync(
-			branches.map(x => [x.entryPoint, x.scope]),
+			branches,
 			segment,
 			ref
 		);

@@ -351,6 +351,13 @@ class Execution extends ExecutionFlow {
 				);
 
 				return null;
+			} else {
+				let id = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(id, false, ast.ref),
+					out.instruction,
+					ast.ref
+				));
 			}
 		}
 
@@ -493,6 +500,7 @@ class Execution extends ExecutionFlow {
 
 
 		// Clean up the scope
+		this.scope.reclaim(ast.ref);
 		let clean = this.scope.cleanup(ast.ref);
 		if (clean.error) {
 			this.getFile().throw(clean.msg, clean.ref.start, clean.ref.end);

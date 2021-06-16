@@ -522,7 +522,7 @@ class Variable extends Value {
 		// Prepare each scope for merging
 		let needsDecomposition = compStatus.hasDecomposed;
 		let opts = variables.map((v, i) => v.createProbability(
-			scopes[i][0].reference(),
+			scopes[i].entryPoint.reference(),
 			needsDecomposition,
 			ref
 		));

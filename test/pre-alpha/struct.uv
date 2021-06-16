@@ -10,6 +10,16 @@ fn check(target: @Person, id: int, age: int, finger: int): int {
 	if (target.age != age) {
 		return 1;
 	}
+	if (target.finger.id != finger) {
+		return 1;
+	}
+
+	return 0;
+}
+
+
+// Check temporary aliasing of structures compile
+fn compilerCheck(target: @Person, id: int, age: int, finger: int): int {
 	let f = target.finger;
 	if (f.id != finger) {
 		return 1;
