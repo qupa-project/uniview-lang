@@ -15,14 +15,17 @@
 - [x] Fixed inverted signedness issues on integer comparison
 - [x] Escaped string characters
 
+## Fixes
+- [x] Fixed a bunch of edge case errors will resolving values at compile time
+- [x] Fixed ability to override function in file
+- [x] Fixed allowing multiple definitions of structure term
+
 ## Changes
 - [x] The ``uvc`` command now executes the result by default.
 - [x] No longer need a return statement for void functions
 
 ## Tweaks
 - [x] Tweaked the automated testing to reflect the new argument changes
-- [x] Fixed ability to override function in file
-- [x] Fixed allowing multiple definitions of structure term
 
 ## Version 0.0.2
 
