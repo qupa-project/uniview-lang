@@ -656,10 +656,6 @@ class Variable extends Value {
 	 */
 	resolveProbability (ref) {
 		if (this.probability) {
-			if (this.store == null) {
-				return null;
-			}
-
 			let status = this.probability.resolve(ref);
 			if (status !== null && status.error) {
 				return status;
