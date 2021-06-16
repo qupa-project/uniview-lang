@@ -18,18 +18,6 @@ fn check(target: @Person, id: int, age: int, finger: int): int {
 }
 
 
-// Check temporary aliasing of structures compile
-fn compilerCheck(target: @Person, id: int, age: int, finger: int): int {
-	let f = target.finger;
-	if (f.id != finger) {
-		return 1;
-	}
-	target.finger = f;
-
-	return 0;
-}
-
-
 struct FingerPrint {
 	id: int;
 }
