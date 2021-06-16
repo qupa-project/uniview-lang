@@ -28,7 +28,7 @@ class Execution extends ExecutionFlow {
 		//   after any reads that might have taken place in the expresion
 		let access = this.getVar(ast.tokens[0], false);
 		if (access.error) {
-			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
+			this.getFile().throw( access.msg, access.ref.start, access.ref.start);
 			return null;
 		}
 		frag.merge(access.preamble);
@@ -351,6 +351,13 @@ class Execution extends ExecutionFlow {
 				);
 
 				return null;
+			} else {
+				let id = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(id, false, ast.ref),
+					out.instruction,
+					ast.ref
+				));
 			}
 		}
 
@@ -376,12 +383,10 @@ class Execution extends ExecutionFlow {
 
 		let res = target.decompose(ast.ref);
 
-		/* jshint ignore:start*/
-		if (res?.error) {
+		if (res.error) {
 			this.getFile().throw( res.msg, res.ref.start, res.ref.end);
 			return null;
 		}
-		/* jshint ignore:end*/
 
 		frag.append(res);
 		return frag;
@@ -495,6 +500,7 @@ class Execution extends ExecutionFlow {
 
 
 		// Clean up the scope
+		this.scope.reclaim(ast.ref);
 		let clean = this.scope.cleanup(ast.ref);
 		if (clean.error) {
 			this.getFile().throw(clean.msg, clean.ref.start, clean.ref.end);

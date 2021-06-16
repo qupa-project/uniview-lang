@@ -115,17 +115,15 @@ class ExecutionBase {
 			return res;
 		}
 
-		let access = ast.tokens[2];
-		while (access.length > 0) {
+		let accesses = ast.tokens[2];
+		for (let access of accesses) {
 			res.hasUpdated = res.hasUpdated || !read;
-			res = res.access(access[0][1], access[0][1].ref);
+			res = res.access(access[1].tokens, access[1].ref);
 			if (res.error) {
 				return res;
 			}
 			preamble.merge(res.preamble);
 			res = res.variable;
-
-			access.splice(0, 1);
 		}
 
 		return {
@@ -223,7 +221,7 @@ class ExecutionBase {
 
 	sync (branches, segment, ref){
 		return this.scope.sync(
-			branches.map(x => [x.entryPoint, x.scope]),
+			branches,
 			segment,
 			ref
 		);

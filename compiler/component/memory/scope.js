@@ -179,6 +179,13 @@ class Scope {
 
 
 
+	cascadeUpdates () {
+		for (let name in this.variables) {
+			this.variables[name].cascadeUpdates();
+		}
+	}
+
+
 
 
 	/**
@@ -217,42 +224,77 @@ class Scope {
 
 	/**
 	 * PreSync must be ran in each scope first
-	 * @param {Scope} scopes
+	 * @param {Branch} branches
 	 */
-	sync (scopes, segment, ref) {
-		let preambles = scopes.map(x => new LLVM.Fragment());
+	sync (branches, segment, ref) {
+		let preambles = branches.map(x => new LLVM.Fragment());
 		let frag = new LLVM.Fragment();
 
-		for (let name in this.variables) {
+		// Ensure any parents are marked as updated
+		//   if their children were
+		for (let branch of branches) {
+			branch.scope.cascadeUpdates();
+		}
 
-			// Ignore locally defined variables
-			let applicable = scopes.filter(tuple => tuple[1].variables[name].isClone);
-
-			if (
-				applicable
-					.map(tuple => tuple[1].variables[name].hasUpdated)
-					.includes(true)
-			) { // ignore non-updated values
-				let res = this.variables[name].createResolutionPoint(
-					applicable.map(tuple => tuple[1].variables[name]),
-					applicable,
-					segment,
-					ref
-				);
-
-				let j=0;
-				for (let i=0; i<preambles.length; i++) {
-					if (scopes[i][1].variables[name].isClone) {
-						preambles[i].append(res.preambles[j]);
-						j++;
-					}
+		// If there is only one valid state
+		if (branches.length == 1) {
+			for (let name in this.variables) {
+				// Reclaim any value that isn't a clone of a clone due to resting
+				branches[0].scope.variables[name].isClone = this.variables[name].isClone;
+				this.variables[name] = branches[0].scope.variables[name];
+			}
+		} else {
+			for (let name in this.variables) {
+				// If the value is undefined in all states
+				//   Resolve the result to be undefined with no errors
+				if (!branches.map( x => x.scope.variables[name].isUndefined()).includes(false)) {
+					this.variables[name].makeUndefined();
+					continue;
 				}
 
-				frag.append(res.frag);
+				// This value was not updated
+				//   Thus is can be skipped
+				if (!branches.map( x => x.scope.variables[name].hasUpdated).includes(true)) {
+					continue;
+				}
+
+				let applicable = branches.filter(tuple =>
+					tuple.scope.variables[name].isClone // Ignore locally defined variables
+				);
+
+				if (applicable.length > 1) {
+					let res = this.variables[name].createResolutionPoint(
+						applicable.map(tuple => tuple.scope.variables[name]),
+						applicable.map(tuple => tuple),
+						segment,
+						ref
+					);
+
+					let j=0;
+					for (let i=0; i<preambles.length; i++) {
+						if (applicable.includes(branches[i])) {
+							preambles[i].append(res.preambles[j]);
+							j++;
+						}
+					}
+
+					frag.append(res.frag);
+				}
 			}
 		}
 
 		return {frag, preambles};
+	}
+
+	/**
+	 * Claims all values as owned by this scope
+	 * Used for when this scope finishes a function
+	 * @param {*} ref
+	 */
+	reclaim() {
+		for (let name in this.variables) {
+			this.variables[name].isClone = false;
+		}
 	}
 }
 
