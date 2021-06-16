@@ -74,6 +74,12 @@ class Variable extends Value {
 			};
 		}
 
+		// Resolve probability
+		let res = this.resolveProbability(ref);
+		if (res !== null) {
+			return res;
+		}
+
 		// Automatically compose value
 		let preamble = new LLVM.Fragment();
 		if (!ignoreComposition && this.isDecomposed) {
@@ -82,12 +88,6 @@ class Variable extends Value {
 				return res;
 			}
 			preamble.merge(res);
-		}
-
-		// Resolve probability
-		let res = this.resolveProbability(ref);
-		if (res !== null) {
-			return res;
 		}
 
 		if (this.store === null) {
@@ -467,27 +467,25 @@ class Variable extends Value {
 		let error     = null;
 		let reg       = new LLVM.Constant("null");
 
-
-		// Decompose if required
-		if (needsDecomposition) {
-			let res = this.decompose(ref);
-			if (res.error) {
-				error = res;
-				error.msg += "469";
-			} else {
-				preamble.merge(res);
-			}
-		}
-
+		// Resolve any probabilities
 		let instr;
 		if (!error) {
 			instr = this.resolve(ref, true);
 
 			if (instr.error) {
 				error = instr;
-				error.msg += "483";
 			} else {
 				preamble.merge(instr.preamble);
+			}
+		}
+
+		// Decompose if required
+		if (!error && needsDecomposition) {
+			let res = this.decompose(ref);
+			if (res.error) {
+				error = res;
+			} else {
+				preamble.merge(res);
 			}
 		}
 
@@ -522,13 +520,12 @@ class Variable extends Value {
 
 
 		// Prepare each scope for merging
-		let needsDecomposition = compStatus.hasDecomposed && compStatus.hasComposed;
-		let opts =
-			variables.map((v, i) => v.createProbability(
-				scopes[i][0].reference(),
-				needsDecomposition,
-				ref
-			));
+		let needsDecomposition = compStatus.hasDecomposed;
+		let opts = variables.map((v, i) => v.createProbability(
+			scopes[i][0].reference(),
+			needsDecomposition,
+			ref
+		));
 		opts.map((x, i) => preambles[i].merge(x.preamble));  // Append preambles to correct scopes
 		opts = opts.map(x => x.probability);                 // Extract the probabilities
 
@@ -597,7 +594,11 @@ class Variable extends Value {
 			for (let name of names) {
 				let target = this.access(name, ref);
 				if (!target || target.error) {
-					throw "Unexpected Error";
+					console.error("Internal Error: Unhandled behaviour");
+					console.error(`From: Variable "${this.name}"`);
+					console.error(`  ${target.ref.start.toString()} -> ${target.ref.end.toString()}`);
+					console.error(`${target.msg}`);
+					process.exit(1);
 				}
 				frag.append(target.preamble);
 				target = target.variable;
