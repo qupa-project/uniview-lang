@@ -232,6 +232,13 @@ class Scope {
 			}
 		} else {
 			for (let name in this.variables) {
+				// If the value is undefined in all states
+				//   Resolve the result to be undefined with no errors
+				if (!branches.map( x => x.scope.variables[name].isUndefined()).includes(false)) {
+					this.variables[name].makeUndefined();
+					continue;
+				}
+
 				let applicable = branches.filter(tuple =>
 					tuple.scope.variables[name].isClone // Ignore locally defined variables
 				);

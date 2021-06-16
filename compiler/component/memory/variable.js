@@ -139,12 +139,17 @@ class Variable extends Value {
 				};
 			}
 
-			this.store = null;
+			this.makeUndefined();
 			this.lastUninit = ref.start;
 		}
 
 		out.type = this.type;
 		return out;
+	}
+
+	makeUndefined() {
+		this.store = null;
+		this.probability = null;
 	}
 
 	/**
@@ -651,6 +656,10 @@ class Variable extends Value {
 	 */
 	resolveProbability (ref) {
 		if (this.probability) {
+			if (this.store == null) {
+				return null;
+			}
+
 			let status = this.probability.resolve(ref);
 			if (status !== null && status.error) {
 				return status;
@@ -703,6 +712,11 @@ class Variable extends Value {
 
 			frag.merge(res.preamble);
 		} else {                       // Run destruct behaviour
+			let res = this.resolveProbability(ref, true);
+			if (res !== null) {
+				return res;
+			}
+
 			if (
 				this.type.type.meta == "CLASS" &&
 				!this.isUndefined(ref)
