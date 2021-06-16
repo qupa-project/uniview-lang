@@ -444,6 +444,7 @@ class Variable extends Value {
 			));
 		}
 
+		this.elements.clear();
 		this.isDecomposed = false;
 		return frag;
 	}
@@ -655,7 +656,7 @@ class Variable extends Value {
 			}
 
 			this.store = this.probability.register;
-			this.probablity = null;
+			this.probability = null;
 		}
 
 		return null;
