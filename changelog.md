@@ -19,7 +19,7 @@
 - [x] Bug with nested structure access
 - [x] Composition of stats where value is undefined in all
 - [x] Consumption of single continuous state (when one branch of an if returns)
-- [x] Fixed not detecting deconstruction of values within if-statments
+- [x] Fixed not detecting deconstruction of values within if-statements
 - [x] Ability to override function in file
 - [x] Allowing multiple definitions of structure term
 
