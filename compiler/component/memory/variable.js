@@ -697,6 +697,7 @@ class Variable extends Value {
 		} else if (this.type.lent) {   // Borrowed types need to be recomposed
 			let res = this.resolve(ref, false);
 			if (res.error) {
+				res.msg = "All lent values must be fully resolvable\n  " + res.msg;
 				return res;
 			}
 
