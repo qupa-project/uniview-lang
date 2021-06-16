@@ -14,6 +14,7 @@
 - [x] Elif statement
 - [x] Fixed inverted signedness issues on integer comparison
 - [x] Escaped string characters
+- [x] Constant Function Arguments
 
 ## Fixes
 - [x] Bug with nested structure access
