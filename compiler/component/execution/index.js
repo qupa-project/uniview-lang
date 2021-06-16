@@ -10,7 +10,6 @@ const Primative = {
 };
 
 const ExecutionFlow = require('./flow.js');
-const Structure = require('../struct.js');
 const Variable = require('../memory/variable.js');
 
 class Execution extends ExecutionFlow {
@@ -29,12 +28,11 @@ class Execution extends ExecutionFlow {
 		//   after any reads that might have taken place in the expresion
 		let access = this.getVar(ast.tokens[0], false);
 		if (access.error) {
-			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
+			this.getFile().throw( access.msg, access.ref.start, access.ref.start);
 			return null;
 		}
 		frag.merge(access.preamble);
 		access = access.variable;
-
 
 		// Resolve the expression
 		let expr = this.compile_expr(ast.tokens[1], access.type, true);
@@ -49,6 +47,16 @@ class Execution extends ExecutionFlow {
 				`Error: Assignment type mis-match` +
 				` cannot assign ${targetType.toString()}` +
 				` to ${expr.type.toString()}`,
+				ast.ref.start, ast.ref.end
+			);
+			return null;
+		}
+
+		if (!access.isUndefined() && access.type.type.getDestructor()) {
+			this.getFile().throw(
+				`Error: Unsafe value drop\n` +
+				`  The previous value of ${access.name} was not destructed or consumed - but has now been lost\n` +
+				`  Suggest adding ${access.type.type.name}.Delete(${access.name}) before the current line`,
 				ast.ref.start, ast.ref.end
 			);
 			return null;
@@ -71,12 +79,6 @@ class Execution extends ExecutionFlow {
 		if (!(typeRef instanceof TypeRef)) {
 			this.getFile().throw(`Error: Invalid type name "${Flattern.DataTypeStr(ast.tokens[0])}"`, ast.ref.start, ast.ref.end);
 			return null;
-		}
-		typeRef.localLife = ast.tokens[0];
-
-		// Complex types are handled by address, not value
-		if (typeRef.type.typeSystem == "linear" || typeRef.type instanceof Array) {
-			typeRef.pointer++;
 		}
 
 		this.scope.register_Var(
@@ -137,6 +139,51 @@ class Execution extends ExecutionFlow {
 
 
 		frag.merge(expr.epilog);
+		return frag;
+	}
+
+
+	compile_delete (ast) {
+		let frag = new LLVM.Fragment();
+
+		let target = this.getVar(ast.tokens[0], true);
+		if (target.error) {
+			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
+			return null;
+		}
+		frag.merge(target.preamble);
+		target = target.variable;
+
+		if (target.type.lent) {
+			this.getFile().throw(
+				`Cannot delete lent values`,
+				ast.ref.start, ast.ref.end
+			);
+			return null;
+		}
+
+		let res = target.delete(ast.ref);
+		if (res.error) {
+			this.getFile().throw(res.msg, res.ref.start, res.ref.end);
+			return null;
+		}
+
+		let destructor = target.type.type.getDestructor();
+		if (destructor) {
+			if (this.ctx == destructor) {
+				this.getFile().throw(
+					`Error: Dangerous destructor, does not properly destruct all child values`,
+					ast.ref.start, ast.ref.end
+				);
+			} else {
+				this.getFile().warn(
+					`Warn: This class type has a destructor, recommend calling ${target.type.type.name}.Delete(${target.name})`,
+					ast.ref.start, ast.ref.end
+				);
+			}
+		}
+
+		frag.merge(res);
 		return frag;
 	}
 
@@ -280,16 +327,24 @@ class Execution extends ExecutionFlow {
 		if (out === null) {
 			return null;
 		}
-
 		frag.merge(out.preamble);
 
-		// Put the value into a temporary variable to destruct the non-used value=
-		if (out.type.type.represent == "void") {
+		// Ensure value destruction is preserved
+		let type = out.type.type;
+		if (type.represent == "void") {
 			frag.append(out.instruction);
 		} else {
-			let target;
-			if (out.type.type.typeSystem == "linear") {
-				target = out.instruction;
+			let destructor = type.getDestructor();
+			if (destructor) {
+				this.getFile().throw(
+					`Error: Unhandled return value.\n` +
+					`  The return type has a destructor which is not executed for the unhandled value\n` +
+					`  Suggest putting the statement in a ${type.name}.Delete() function`,
+					ast.ref.start,
+					ast.ref.end
+				);
+
+				return null;
 			} else {
 				let id = new LLVM.ID();
 				frag.append(new LLVM.Set(
@@ -297,16 +352,7 @@ class Execution extends ExecutionFlow {
 					out.instruction,
 					ast.ref
 				));
-				target = new LLVM.Argument(
-					out.type.toLLVM(ast.ref),
-					new LLVM.Name(id.reference(), false, ast.ref),
-					ast.ref
-				);
 			}
-
-			let temp = new Variable(out.type, "return", ast.ref);
-			temp.markUpdated(target);
-			frag.merge(temp.cleanup(ast.ref));
 		}
 
 		// merge any epilog of the call
@@ -331,12 +377,10 @@ class Execution extends ExecutionFlow {
 
 		let res = target.decompose(ast.ref);
 
-		/* jshint ignore:start*/
-		if (res?.error) {
+		if (res.error) {
 			this.getFile().throw( res.msg, res.ref.start, res.ref.end);
 			return null;
 		}
-		/* jshint ignore:end*/
 
 		frag.append(res);
 		return frag;
@@ -383,6 +427,7 @@ class Execution extends ExecutionFlow {
 			}
 			returnType = res.type;
 			frag.merge(res.preamble);
+
 			if (returnType.type.typeSystem == "linear") {
 
 				let size = returnType.type.sizeof(ast.ref);
@@ -439,6 +484,7 @@ class Execution extends ExecutionFlow {
 			}
 		}
 
+		// Check the return type is correct
 		if (!this.returnType.match(returnType)) {
 			this.getFile().throw(
 				`Return type miss-match, expected ${this.returnType.toString()} but got ${returnType.toString()}`,
@@ -446,13 +492,15 @@ class Execution extends ExecutionFlow {
 			);
 		}
 
+
 		// Clean up the scope
-		let res = this.scope.cleanup(ast.ref);
-		if (res.error) {
-			this.getFile().throw(res.msg, res.ref.start, res.ref.end);
+		this.scope.reclaim(ast.ref);
+		let clean = this.scope.cleanup(ast.ref);
+		if (clean.error) {
+			this.getFile().throw(clean.msg, clean.ref.start, clean.ref.end);
 			return null;
 		}
-		frag.append(res);
+		frag.append(clean);
 
 		frag.append(new LLVM.Return(inner, ast.ref.start));
 		this.returned = true;
@@ -503,6 +551,9 @@ class Execution extends ExecutionFlow {
 				case "decompose":
 					inner = this.compile_decompose(token);
 					break;
+				case "delete":
+					inner = this.compile_delete(token);
+					break;
 				default:
 					this.getFile().throw(
 						`Unexpected statment ${token.type}`,
@@ -519,10 +570,27 @@ class Execution extends ExecutionFlow {
 		}
 
 		if (!failed && this.returned == false && !this.isChild) {
-			this.getFile().throw(
-				`Function does not return`,
-				ast.ref.start, ast.ref.end
-			);
+			if (this.returnType.type == Primative.types.void) {
+				// Auto generate return and cleanup for void functions
+
+				// Clean up the scope
+				let res = this.scope.cleanup(ast.ref);
+				if (res.error) {
+					this.getFile().throw(res.msg, res.ref.start, res.ref.end);
+				} else {
+					fragment.append(res);
+				}
+
+				fragment.append(new LLVM.Return(
+					new LLVM.Type("void", 0),
+					ast.ref
+				));
+			} else {
+				this.getFile().throw(
+					`Function does not return`,
+					ast.ref.start, ast.ref.end
+				);
+			}
 		}
 
 		return fragment;

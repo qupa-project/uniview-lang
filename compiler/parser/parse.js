@@ -111,6 +111,7 @@ function Simplify_Library_Expose (node) {
 
 
 function Simplify_String (node) {
+	// Merge the segments together
 	let data = "";
 	for (let seg of node.tokens[0].tokens[1]) {
 		if (typeof(seg.tokens) == "string") {
@@ -120,9 +121,40 @@ function Simplify_String (node) {
 		}
 	}
 
+	// Filter wild cards
+	let out = "";
+	for (let i=0; i<data.length; i++) {
+		let char = data[i];
+
+		if (char == "\\") {
+			i++;
+			char = data[i];
+
+			switch (char) {
+				case "n":
+					char = "\n";
+					break;
+				case "t":
+					char = "\t";
+					break;
+				case "B":
+					char = String.fromCharCode(7); // bell
+					break;
+				case "v":
+					char = String.fromCharCode(11); // vertical tab
+					break;
+				case "r":
+					char = String.fromCharCode(13); // carriage return
+					break;
+			}
+		}
+
+		out += char;
+	}
+
 	node.tokens = [
 		node.tokens[0].tokens[0][0].tokens[0],
-		data
+		out
 	];
 	node.reached = null;
 	return node;
@@ -131,7 +163,36 @@ function Simplify_String (node) {
 
 
 function Simplify_Class (node) {
-	// TODO
+	let out = [
+		Simplify_Name(node.tokens[2][0]),
+		Simplify_Class_Body(node.tokens[7][0])
+	];
+	node.tokens  = out;
+	node.reached = null;
+	return node;
+}
+function Simplify_Class_Body (node) {
+	node.tokens = node.tokens[0]
+		.filter ( x => x.tokens[0].type != "comment")
+		.map( x => Simplify_Class_Stmt(x.tokens[1][0]).tokens[0] );
+	node.reached = null;
+	return node;
+}
+function Simplify_Class_Stmt (node) {
+	switch (node.tokens[0].type) {
+		case "comment":
+			break;
+		case "struct_attribute":
+			node.tokens = [ Simplify_Struct_Attribute(node.tokens[0]) ];
+			break;
+		case "function":
+			node.tokens = [ Simplify_Function(node.tokens[0]) ];
+			break;
+		default:
+			throw new Error(`Unexpected class statement "${node.tokens[0].type}"`);
+	}
+
+	node.reached = null;
 	return node;
 }
 
@@ -252,7 +313,9 @@ function Simplify_Struct (node) {
 	return node;
 }
 function Simplify_Struct_Body (node) {
-	node.tokens = node.tokens[0].map( x => Simplify_Struct_Stmt(x.tokens[1][0]).tokens[0] );
+	node.tokens = node.tokens[0]
+		.filter ( x => x.tokens[0].type != "comment")
+		.map( x => Simplify_Struct_Stmt(x.tokens[1][0]).tokens[0] );
 	node.reached = null;
 	return node;
 }
@@ -599,6 +662,9 @@ function Simplify_Function_Stmt (node) {
 		case "declare_assign":
 			inner = Simplify_Declare_Assign(node.tokens[0]);
 			break;
+		case "delete":
+			inner = Simplify_Delete(node.tokens[0]);
+			break;
 		case "assign":
 			inner = Simplify_Assign(node.tokens[0]);
 			break;
@@ -617,7 +683,6 @@ function Simplify_Function_Stmt (node) {
 		case "composition":
 			inner = Simplify_Composition(node.tokens[0]);
 			break;
-		case "asm":
 		default:
 			throw new TypeError(`Unexpected function statement ${node.tokens[0].type}`);
 	}
@@ -635,7 +700,7 @@ function Simplify_Func_Args_List (node) {
 	let ittr = node.tokens[0].concat(node.tokens[2].map(x => x.tokens[2][0]));
 
 	node.tokens = ittr.map((arg) => [
-		arg.tokens[4].length > 0,             // borrowed?
+		arg.tokens[4][0] ? arg.tokens[4][0].tokens : null,             // borrowed?
 		Simplify_Data_Type(arg.tokens[6][0]), // type
 		Simplify_Name(arg.tokens[0][0])       // name
 	]);
@@ -685,13 +750,46 @@ function Simplify_Call_Arg(node) {
 
 
 function Simplify_If (node) {
-	let out = [
-		Simplify_If_Stmt(node.tokens[0][0]),
-		node.tokens[1].map(x => Simplify_If_Stmt(x)),
-		node.tokens[3].length > 0 ? Simplify_If_Else(node.tokens[3][0]) : null
-	];
+	let head = Simplify_If_Stmt(node.tokens[0][0]);
+	let elif = node.tokens[1].map(x => Simplify_If_Stmt(x.tokens[1][0]));
+	let other =
+		node.tokens[3][0] ?
+			Simplify_If_Else(node.tokens[3][0]) :
+			new BNF_SyntaxNode ("else_stmt", [
+				new BNF_SyntaxNode ("function_body", [], 0, head.ref.start, head.ref.end, head.ref.reached)
+			], 0, head.ref.start, head.ref.end, head.ref.reached);
 
-	node.tokens = out;
+
+	// Merge elifs into new else statement
+	while (elif.length > 0) {
+		let last = elif.splice(elif.length-1, 1)[0];
+
+		let s = last.ref.start;
+		let e = other.ref.end;
+		let r = null;
+
+		other = new BNF_SyntaxNode(
+			"else_stmt",
+			[new BNF_SyntaxNode(
+				"function_body",
+				[new BNF_SyntaxNode(
+					"if",
+					[last, other],
+					0,
+					s, e, r
+				)],
+				0,
+				s, e, r
+			)],
+			0,
+			s, e, r
+		);
+	}
+
+	node.tokens = [
+		head,
+		other
+	];
 	node.reached = null;
 	return node;
 }
@@ -772,6 +870,15 @@ function Simplify_Assign  (node) {
 		Simplify_Expr     (node.tokens[4][0])  // value
 	];
 	node.reached = null;
+	return node;
+}
+
+function Simplify_Delete (node) {
+	node.tokens = [
+		Simplify_Variable(node.tokens[2][0])
+	];
+	node.reached = null;
+
 	return node;
 }
 

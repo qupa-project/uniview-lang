@@ -1,6 +1,6 @@
 const LLVM = require('./../middle/llvm.js');
-const TypeDef = require('./typedef.js');
 const Flattern = require('../parser/flattern.js');
+const TypeDef = require('./typedef.js');
 const TypeRef = require('./typeRef.js');
 
 const Primative = {
@@ -34,7 +34,7 @@ class Structure extends TypeDef {
 
 	/**
 	 *
-	 * @param {String} name
+	 * @param {BNF_Node|Number} name
 	 * @returns {Object}
 	 */
 	getTerm (name) {
@@ -45,7 +45,7 @@ class Structure extends TypeDef {
 			i = name;
 		} else{
 			for (; i<this.terms.length && !found; i++) {
-				if (this.terms[i].name == name.tokens) {
+				if (this.terms[i].name == name) {
 					found = true;
 					break;
 				}
@@ -60,6 +60,16 @@ class Structure extends TypeDef {
 			index: i,
 			type: type
 		};
+	}
+
+	indexOfTerm (name) {
+		for (let i=0; i<this.terms.length; i++) {
+			if (this.terms[i].name == name) {
+				return i;
+			}
+		}
+
+		return -1;
 	}
 
 	getTermCount () {
@@ -134,7 +144,7 @@ class Structure extends TypeDef {
 		return {
 			preamble: preamble,
 			instruction: val,
-			type: type
+			type: type.duplicate()
 		};
 	}
 
@@ -158,45 +168,70 @@ class Structure extends TypeDef {
 			return;
 		}
 
-		let termNames = [];
-		this.linked = true;
 		this.size = 0;
 		for (let node of this.ast.tokens[1].tokens) {
-			if ( node.type == "comment" ) {
-				continue;
+			switch (node.type) {
+				case "comment":
+					break;
+				case "struct_attribute":
+					if (this.linkTerm(node, stack) == false) {
+						return false;
+					}
+					break;
+				default:
+					throw new Error(`Unexpected attribute ${node.type}`);
 			}
-
-			let name = node.tokens[1].tokens;
-			if (termNames.indexOf(name) != -1) {
-				this.ctx.getFile().throw(
-					`Error: Multiple use of term ${name} in struct`,
-					this.terms[name].declared,
-					node.ref.end
-				);
-				return;
-			}
-
-			let typeNode = node.tokens[0];
-			let typeRef = this.ctx.getType(Flattern.DataTypeList(typeNode));
-			if (typeRef === null) {
-				this.ctx.getFile().throw(
-					`Error: Unknown type ${Flattern.DataTypeStr(typeNode)}`,
-					typeNode.ref.start,
-					typeNode.ref.end
-				);
-				return;
-			}
-			if (!typeRef.type.linked) {
-				type.link([this, ...stack]);
-			}
-			let term = new Struct_Term(
-				name,
-				new TypeRef(typeNode.tokens[0], typeRef.type),
-				node.ref.start
-			);
-			this.terms.push(term);
-			this.size += term.size;
 		}
+		this.linked = true;
+	}
+
+	linkTerm (node, stack = []) {
+		let name = node.tokens[1].tokens;
+		let index = this.indexOfTerm(name);
+		if (index != -1) {
+			this.ctx.getFile().throw(
+				`Error: Multiple use of term "${name}" in struct`,
+				this.terms[index].declared,
+				node.ref.end
+			);
+			return false;
+		}
+
+		// Get attribute type
+		let typeNode = node.tokens[0];
+		let typeRef = this.ctx.getType(Flattern.DataTypeList(typeNode));
+		if (typeRef === null) {
+			this.ctx.getFile().throw(
+				`Error: Unknown type ${Flattern.DataTypeStr(typeNode)}`,
+				typeNode.ref.start,
+				typeNode.ref.end
+			);
+			return false;
+		}
+
+		// Check a structure is not including a class attribute
+		if (this.meta != "CLASS" && typeRef.type.meta == "CLASS") {
+			this.ctx.getFile().throw(
+				`Error: Structures cannot include classes as attributes`,
+				this.ref,
+				node.ref.end
+			);
+			return false;
+		}
+
+		// Check child attribute is linked for valid size
+		if (!typeRef.type.linked) {
+			type.link([this, ...stack]);
+		}
+
+		let term = new Struct_Term(
+			name,
+			new TypeRef(0, typeRef.type),
+			node.ref.start
+		);
+		this.terms.push(term);
+		this.size += term.size;
+		return true;
 	}
 
 	compile () {

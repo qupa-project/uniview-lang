@@ -1,0 +1,46 @@
+external assume {
+	fn fopen_s (fd: @File, path: cstring, access: cstring);
+	fn fgetc (fd: unsafe_blob): i8;
+	fn fclose (fd: unsafe_blob): int;
+	fn feof(fd: unsafe_blob): int;
+	fn fflush(fd: unsafe_blob);
+	fn fsetpos(fd: unsafe_blob, pos: int);
+	fn ftell(fd: unsafe_blob): int;
+}
+
+
+class File {
+	ptr: unsafe_blob;
+
+	fn New(path: cstring, access: cstring): File {
+		let this = Blank#[File]();
+		fopen_s(@this, path, access);
+
+		return this;
+	}
+
+	fn GetChar(this: @File): i8 {
+		return fgetc(this.ptr);
+	}
+
+	fn IsEOF(this: #File): bool {
+		return feof(this.ptr) == 1;
+	}
+
+	fn SetPos(this: @File, pos: int) {
+		fsetpos(this.ptr, pos);
+	}
+
+	fn GetPos(this: #File): int {
+		return ftell(this.ptr);
+	}
+
+	fn Flush(this: @File) {
+		fflush(this.ptr);
+	}
+
+	fn Delete(this: File) {
+		fclose(this.ptr);
+		delete this.ptr;
+	}
+}

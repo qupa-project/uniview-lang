@@ -1,0 +1,7 @@
+/*======================================
+	Default inclusions required for
+	 the language to function properly
+=======================================*/
+
+
+import "memory.uv";

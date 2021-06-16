@@ -62,9 +62,6 @@ fn abs(val: i32): i32 {
 fn abs(val: i64): i64 {
 	return abs(val, false);
 }
-fn abs(val: i8): i8 {
-	return abs(val, false);
-}
 
 fn abs(val: double): double {
 	let zero = cast#[double](0.0);

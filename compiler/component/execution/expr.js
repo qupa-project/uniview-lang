@@ -46,7 +46,7 @@ class ExecutionExpr extends ExecutionBase {
 				let bytes = ast.tokens[0].tokens[1].length + 1;
 				let str = ast.tokens[0].tokens[1].replace(/\"/g, "\\22").replace(/\n/g, '\\0A') + "\\00";
 
-				type = new TypeRef(0, Primative.types.string);
+				type = new TypeRef(0, Primative.types.cstring);
 
 				let ir_t1 = new LLVM.Type(`[ ${bytes} x i8 ]`, 0, ast.ref);
 				let ir_t2 = type.toLLVM();
@@ -351,7 +351,7 @@ class ExecutionExpr extends ExecutionBase {
 		// Get the arrithmetic mode
 		let mode = null;
 		if (opperands[0].type.type.cat == "int") {
-			mode = opperands[0].type.type.signed ? 0 : 1;
+			mode = opperands[0].type.type.signed ? 1 : 0;
 		} else if (opperands[0].type.type.cat == "float") {
 			mode = 2;
 		} else if (opperands[0].type.type.represent == "i1") {
@@ -515,7 +515,7 @@ class ExecutionExpr extends ExecutionBase {
 
 		let target = this.getVar(ast, false);
 		if (target.error) {
-			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
+			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
 			return null;
 		}
 		preamble.merge(target.preamble);
@@ -542,7 +542,7 @@ class ExecutionExpr extends ExecutionBase {
 
 		let target = this.getVar(ast, false);
 		if (target.error) {
-			this.getFile().throw( access.msg, access.ref.start, access.ref.end );
+			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
 			return null;
 		}
 		preamble.merge(target.preamble);

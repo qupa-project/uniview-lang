@@ -7,6 +7,7 @@ const LLVM = require('./../middle/llvm.js');
 const Function = require('./function.js');
 const TypeDef  = require('./typedef.js');
 const Structure = require('./struct.js');
+const Class = require('./class.js');
 const TypeRef = require('./typeRef.js');
 const Import  = require('./import.js');
 
@@ -23,6 +24,8 @@ class File {
 		this.id = id;
 
 		this.data = "";
+
+		this.represent = this.id.toString(36);
 
 		this.names = {};
 
@@ -117,11 +120,11 @@ class File {
 			case "import":
 				space = new Import(this, element);
 				break;
-			// case "alias":
-			// 	space = new Alias(this, element);
-			// 	break;
 			case "struct":
 				space = new Structure(this, element, external);
+				break;
+			case "class":
+				space = new Class(this, element, external);
 				break;
 			default:
 				throw new Error(`Unexpected file scope namespace type "${element.type}"`);
@@ -133,11 +136,14 @@ class File {
 			!this.names[space.name].merge ||
 			!this.names[space.name].merge(space)
 		) {
-			console.error("Multiple definitions of same namespace");
-			console.error("  name :", space.name);
-			console.error("   1st :", this.names[space.name].ref.toString());
-			console.error("   2nd :", space.ref.toString());
-			this.project.markError();
+
+			this.throw(
+				`Multiple definitions of namespace "${space.name}"`,
+				this.names[space.name].ref.index < space.ref.index ? // first
+					this.names[space.name].ref : space.ref,
+				this.names[space.name].ref.index > space.ref.index ? // second
+					this.names[space.name].ref : space.ref
+			);
 			return false;
 		}
 	}
@@ -169,7 +175,7 @@ class File {
 		}
 	}
 
-	getType (typeList, template = []) {
+	getType (typeList, template = [], stack = []) {
 		let res = null;
 		// File access must be direct
 		if (typeList[0][0] == "." || Number.isInteger(typeList[0][0])) {
@@ -186,6 +192,12 @@ class File {
 			return null;
 		}
 
+		// Circular loop
+		if (stack.includes(this)) {
+			return null;
+		}
+		stack.push(this);
+
 		// If the name isn't defined in this file
 		// Check other files
 		if (this.names["*"] instanceof Import) {
@@ -195,7 +207,7 @@ class File {
 		return null;
 	}
 
-	getFunction (access, signature, template) {
+	getFunction (access, signature, template, stack = []) {
 		if (access.length < 1) {
 			return null;
 		}
@@ -217,10 +229,16 @@ class File {
 			}
 		}
 
+		// Circular loop
+		if (stack.includes(this)) {
+			return null;
+		}
+		stack.push(this);
+
 		// If the name isn't defined in this file in a regular name space
 		//   Check namespace imports
 		if (this.names["*"] instanceof Import) {
-			return this.names["*"].getFunction(access, signature, template);
+			return this.names["*"].getFunction(access, signature, template, stack);
 		}
 
 		return null;
@@ -315,6 +333,11 @@ class File {
 		let area = helper.CodeSection(this.data, refStart, refEnd);
 		console.error(`\n${this.relPath}:\n ${msg}\n${area.replace(/\t/g, '  ')}`);
 		this.project.markError();
+	}
+	warn (msg, refStart, refEnd) {
+		// let area = BNF.Message.HighlightArea(this.data, refStart, refEnd);
+		let area = helper.CodeSection(this.data, refStart, refEnd);
+		console.warn(`\n${this.relPath}:\n ${msg}\n${area.replace(/\t/g, '  ')}`);
 	}
 
 

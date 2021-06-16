@@ -2,7 +2,6 @@ const LLVM = require('../../middle/llvm.js');
 const Structure = require('../struct.js');
 const TypeRef = require('../typeRef.js');
 
-const Constant = require('./constant.js');
 const Value = require('./value.js');
 
 const Probability = require('./probability.js');
@@ -41,6 +40,41 @@ class Variable extends Value {
 		return this.possiblity !== null;
 	}
 
+	isUndefined () {
+		if (this.isDecomposed) {
+			// Not all terms have GEPs let alone undefined
+			if (this.elements.size < this.type.type.terms.length) {
+				return false;
+			}
+
+			// Check all children are undefined
+			for (let elm of this.elements) {
+				if (elm[1].isUndefined() == false) {
+					return false;
+				}
+			}
+
+			return true;
+		} else {
+			return this.store == null && this.probability == null;
+		}
+	}
+
+	cascadeUpdates () {
+		if (this.hasUpdated) {
+			return;
+		}
+
+		for (let elm of this.elements) {
+			elm[1].cascadeUpdates();
+
+			if (elm[1].hasUpdated) {
+				this.hasUpdated = true;
+				return;
+			}
+		}
+	}
+
 
 	/**
 	 * Resolves the possible states of the variable into a single LLVM argument
@@ -55,6 +89,12 @@ class Variable extends Value {
 			};
 		}
 
+		// Resolve probability
+		let res = this.resolveProbability(ref);
+		if (res !== null) {
+			return res;
+		}
+
 		// Automatically compose value
 		let preamble = new LLVM.Fragment();
 		if (!ignoreComposition && this.isDecomposed) {
@@ -63,12 +103,6 @@ class Variable extends Value {
 				return res;
 			}
 			preamble.merge(res);
-		}
-
-		// Resolve probability
-		let res = this.resolveProbability(ref);
-		if (res !== null) {
-			return res;
 		}
 
 		if (this.store === null) {
@@ -118,14 +152,28 @@ class Variable extends Value {
 					msg: "Cannot give ownership of a borrowed value to a child function",
 					ref
 				};
+			} else if (this.type.constant) {
+				return {
+					error: true,
+					msg: `Cannot consume a constant value\n  Recommend cloning $${this.name}`,
+					ref
+				};
 			}
 
-			this.store = null;
+			this.makeUndefined(ref);
 			this.lastUninit = ref.start;
 		}
 
 		out.type = this.type;
 		return out;
+	}
+
+	makeUndefined(ref) {
+		this.elements.clear();
+		this.isDecomposed = false;
+		this.probability = null;
+		this.store = null;
+		this.lastUninit = ref.start;
 	}
 
 	/**
@@ -136,19 +184,26 @@ class Variable extends Value {
 	 * @returns {Error?}
 	 */
 	markUpdated (register, force = false, ref) {
-		if (!force && this.type.lent) {
-			return {
-				error: true,
-				msg: "Cannot overwite a lent value",
-				ref
-			};
+		if (!force) {
+			if (this.type.lent) {
+				return {
+					error: true,
+					msg: "Cannot overwite a lent value",
+					ref
+				};
+			} else if (this.type.constant) {
+				return {
+					error: true,
+					msg: "Cannot overwite a constant value",
+					ref
+				};
+			}
 		}
 
-		this.store = register;
-		this.probability = null;
-		this.lastUninit = null;
-		this.hasUpdated = true;
 		this.isDecomposed = false;
+		this.probability = null;
+		this.hasUpdated = true;
+		this.store = register;
 
 		return true;
 	}
@@ -169,50 +224,54 @@ class Variable extends Value {
 		}
 		preamble.merge(res.preamble);
 
+		if (accessor.tokens != undefined) {
+			throw new Error("Invalid variable accessor");
+		}
+
 		// Automatically decompoase the value if needed
 		if (!this.isDecomposed) {
 			let res = this.decompose(ref);
-			/* jshint ignore:start*/
-			if (res?.error) {
+			if (res.error) {
 				return res;
 			}
-			/* jshint ignore:end*/
 			preamble.merge(res);
 		}
 
 		let struct = this.type.type;
 		if (this.type.type.typeSystem == "linear") {
-			let gep = struct.getTerm(accessor, this, ref);
+			let gep = struct.getTerm(accessor);
 			if (gep === null) {
-				/* jshint ignore:start*/
 				return {
 					error: true,
-					msg: `Unable to access element "${accessor?.tokens || accessor}"`,
-					ref: accessor.ref
+					msg: `Unable to access element "${accessor}"`,
+					ref: ref
 				};
-				/* jshint ignore:end*/
 			}
 
+			let out;
 			if (!this.elements.has(gep.index)) {
 				let read = struct.accessGEPByIndex(gep.index, this.store);
-				let elm = new Variable(
+				read.type.constant = read.type.constant || this.type.constant;
+				out = new Variable(
 					read.type,
-					`${this.name}.${accessor.tokens}`,
-					ref
+					`${this.name}.${accessor}`,
+					ref.start
 				);
 
 				let act = new LLVM.Latent(read.preamble, ref);
 				preamble.append(act);
 
-				elm.probability = new Probability(
+				out.probability = new Probability(
 					act,
 					read.instruction,
 				"0", ref);
-				this.elements.set(gep.index, elm);
+				this.elements.set(gep.index, out);
+			} else {
+				out = this.elements.get(gep.index);
 			}
 
 			return {
-				variable: this.elements.get(gep.index),
+				variable: out,
 				preamble: preamble
 			};
 		} else {
@@ -290,19 +349,23 @@ class Variable extends Value {
 	}
 
 	cloneValue (ref) {
-		if (!(this.type.type instanceof Structure)) {
-			return {
-				error: true,
-				msg: `Error: Unable to lend non-linear types`,
-				ref: ref
-			};
-		}
-
-		// Resolve to composed state
+		// Resolve to composed/probability state
 		let out = this.resolve(ref, false);
 		if (out.error) {
 			return out;
 		}
+
+		if (
+			this.type.type.typeSystem == "normal" ||
+			!this.type.type.cloneInstance
+		) {
+			return {
+				preamble: new LLVM.Fragment(),
+				instruction: this.store,
+				type: this.type.duplicate()
+			};
+		}
+
 		this.store = out.register;
 		let preamble = out.preamble;
 
@@ -418,6 +481,7 @@ class Variable extends Value {
 			));
 		}
 
+		this.elements.clear();
 		this.isDecomposed = false;
 		return frag;
 	}
@@ -440,30 +504,31 @@ class Variable extends Value {
 		let error     = null;
 		let reg       = new LLVM.Constant("null");
 
-
-		// Decompose if required
-		if (needsDecomposition) {
-			let res = this.decompose(ref);
-			if (res.error) {
-				error = res.error;
-			} else {
-				preamble.merge(res);
-			}
-		}
-
+		// Resolve any probabilities
 		let instr;
 		if (!error) {
 			instr = this.resolve(ref, true);
+
 			if (instr.error) {
-				error = instr.error;
+				error = instr;
 			} else {
 				preamble.merge(instr.preamble);
 			}
 		}
 
+		// Decompose if required
+		if (!error && needsDecomposition) {
+			let res = this.decompose(ref);
+			if (res.error) {
+				error = res;
+			} else {
+				preamble.merge(res);
+			}
+		}
+
 		if (error) {
 			activator = new LLVM.Latent(new LLVM.Failure(
-				instr.msg, instr.ref
+				error.msg, error.ref
 			), ref);
 		} else if (instr.register instanceof LLVM.GEP) {
 			throw new Error("Bad code path, GEP should have been removed within this.resolve()");
@@ -492,13 +557,12 @@ class Variable extends Value {
 
 
 		// Prepare each scope for merging
-		let needsDecomposition = compStatus.hasDecomposed && compStatus.hasComposed;
-		let opts =
-			variables.map((v, i) => v.createProbability(
-				scopes[i][0].reference(),
-				needsDecomposition,
-				ref
-			));
+		let needsDecomposition = compStatus.hasDecomposed;
+		let opts = variables.map((v, i) => v.createProbability(
+			scopes[i].entryPoint.reference(),
+			needsDecomposition,
+			ref
+		));
 		opts.map((x, i) => preambles[i].merge(x.preamble));  // Append preambles to correct scopes
 		opts = opts.map(x => x.probability);                 // Extract the probabilities
 
@@ -556,23 +620,23 @@ class Variable extends Value {
 			let links = [];
 			for (let opt of variables) {
 				let res = opt.decompose(ref);
-				/* jshint ignore:start*/
-				if (res?.error) {
+				if (res.error) {
 					links.push(new LLVM.Latent(new LLVM.Failure(
 						res.msg,
 						res.ref
 					), ref));
 				}
-				/* jshint ignore:end*/
 			}
 
 			for (let name of names) {
 				let target = this.access(name, ref);
-				/* jshint ignore:start*/
-				if (target?.error) {
-					throw "Unexpected Error";
+				if (!target || target.error) {
+					console.error("Internal Error: Unhandled behaviour");
+					console.error(`From: Variable "${this.name}"`);
+					console.error(`  ${target.ref.start.toString()} -> ${target.ref.end.toString()}`);
+					console.error(`${target.msg}`);
+					process.exit(1);
 				}
-				/* jshint ignore:end*/
 				frag.append(target.preamble);
 				target = target.variable;
 
@@ -630,7 +694,7 @@ class Variable extends Value {
 			}
 
 			this.store = this.probability.register;
-			this.probablity = null;
+			this.probability = null;
 		}
 
 		return null;
@@ -665,20 +729,54 @@ class Variable extends Value {
 	cleanup(ref) {
 		let frag = new LLVM.Fragment();
 
-		if (this.isClone) {            // Do nothing as this variable is a clone
+		if (this.isClone || this.type.constant) {  // Do nothing as this variable is a clone/constant
 			return frag;
 		} else if (this.type.lent) {   // Borrowed types need to be recomposed
 			let res = this.resolve(ref, false);
 			if (res.error) {
+				res.msg = "All lent values must be fully resolvable\n  " + res.msg;
 				return res;
 			}
 
 			frag.merge(res.preamble);
 		} else {                       // Run destruct behaviour
+			let res = this.resolveProbability(ref, true);
+			if (res !== null) {
+				return res;
+			}
 
+			if (
+				this.type.type.meta == "CLASS" &&
+				!this.isUndefined(ref)
+			) {
+				return {
+					error: true,
+					msg: `Variable "${this.name}" is still defined. All classes must be consumed`,
+					ref: ref
+				};
+			}
 		}
 
 		return frag;
+	}
+
+	delete (ref) {
+		if (this.isUndefined()) {
+			return {
+				error: true,
+				msg: "Cannot delete an already undefined value",
+				ref: ref
+			};
+		} else if (this.type.constant) {
+			return {
+				error: true,
+				msg: "Cannot delete a constant value",
+				ref: ref
+			};
+		}
+
+		this.makeUndefined(ref);
+		return new LLVM.Fragment();
 	}
 }
 

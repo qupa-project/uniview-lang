@@ -31,6 +31,24 @@ class TypeDef {
 		return null;
 	}
 
+	getFile() {
+		return this.ctx.getFile();
+	}
+	getFileID() {
+		return this.ctx.getFileID();
+	}
+
+	getFunction () {
+		return null;
+	}
+
+	getDestructor() {
+		return false;
+	}
+	getCloner() {
+		return false;
+	}
+
 
 	parse () {
 		this.name = this.ast.tokens[0].tokens;

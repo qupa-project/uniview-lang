@@ -1,4 +1,4 @@
-const Flattern = require("../parser/flattern");
+const Flattern = require("../parser/flattern.js");
 const LLVM = {
 	Type: require('./../middle/type.js')
 };
@@ -9,18 +9,19 @@ class TypeRef {
 	 * @param {Number} pointerLvl
 	 * @param {Type} type
 	 */
-	constructor (pointerLvl, type, lent = false) {
+	constructor (pointerLvl, type, lent = false, constant = false) {
 		this.pointer = pointerLvl;
 		this.type = type;
 		this.lent = lent;
+		this.constant = constant;
 	}
 
 	getName () {
-		return this.type.name || constant;
+		return this.type.name || "constant";
 	}
 
-	getTerm (ast, reg) {
-		return this.type.getTerm(ast, reg);
+	getTerm (ast, reg, ref) {
+		return this.type.getTerm(ast, reg, ref);
 	}
 
 	getElement (ast, target) {
@@ -55,7 +56,7 @@ class TypeRef {
 	 * Creates a clone of this reference
 	 */
 	duplicate () {
-		return new TypeRef(this.pointer, this.type, this.lent);
+		return new TypeRef(this.pointer, this.type, this.lent, this.constant);
 	}
 
 

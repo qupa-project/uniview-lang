@@ -1,5 +1,37 @@
 # Change Log
 
+## Version 0.1.0
+
+## Added
+- [x] ``--compileOnly`` flag which compiles to a binary, but does not execute the result
+- [x] Primitive class implementation
+- [x] Delete instruction to consume values
+- [x] Class destructors
+- [x] Class clone operations
+- [x] String class
+- [x] No longer need a return statement on a void function
+- [x] Bitwise cast (for core development only)
+- [x] Elif statement
+- [x] Fixed inverted signedness issues on integer comparison
+- [x] Escaped string characters
+- [x] Constant Function Arguments
+
+## Fixes
+- [x] Bug with nested structure access
+- [x] Composition of stats where value is undefined in all
+- [x] Consumption of single continuous state (when one branch of an if returns)
+- [x] Fixed not detecting deconstruction of values within if-statements
+- [x] Ability to override function in file
+- [x] Allowing multiple definitions of structure term
+
+## Changes
+- [x] The ``uvc`` command now executes the result by default.
+- [x] No longer need a return statement for void functions
+
+## Tweaks
+- [x] Tweaked the automated testing to reflect the new argument changes
+- [x] Compiler skips merging changes between a branch if the value has not been updated in either branch
+
 ## Version 0.0.2
 
 ### Added

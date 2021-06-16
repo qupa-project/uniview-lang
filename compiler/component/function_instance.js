@@ -29,7 +29,7 @@ class Function_Instance {
 		this.id = funcIDGen.next();
 
 		this.name = ast.tokens[0].tokens[1].tokens;
-		this.represent = external ? `${this.name}` : `${this.name}.${this.ctx.getFileID().toString(36)}.${this.id.toString(36)}`;
+		this.represent = external ? `${this.name}` : `${this.ctx.represent}.${this.id.toString(36)}`;
 
 
 		this.ir = new LLVM.Fragment();
@@ -68,8 +68,10 @@ class Function_Instance {
 		// Flaten signature types AST into a single array
 		let types = [ head.tokens[0] ];
 		let borrows = [ false ];
+		let consts = [ false ];
 		if (args.length > 0) {
-			borrows = borrows.concat(args.map(x => x[0]));
+			borrows = borrows.concat(args.map(x => x[0] == "@"));
+			consts = consts.concat(args.map(x => x[0] == "#"));
 			types = types.concat(args.map((x) => x[1]));
 		}
 
@@ -83,8 +85,9 @@ class Function_Instance {
 		for (let [i, type] of types.entries()){
 			let search = exec.resolveType(type);
 			if (search instanceof TypeRef) {
-				search.pointer = type.tokens[0]; // Copy the pointer level across
-				search.lent = borrows[i];
+				search.pointer  = type.tokens[0]; // Copy the pointer level across
+				search.lent     = borrows[i];
+				search.constant = consts[i];
 
 				this.signature.push(search);
 			} else {
@@ -107,11 +110,9 @@ class Function_Instance {
 		other.link();
 
 		// Match the signatures
-		return this.matchSignature(other);
+		return this.matchSignature(other.signature);
 	}
 	matchSignature (sig) {
-		this.link();
-
 		if (this.signature.length != sig.length) {
 			return false;
 		}

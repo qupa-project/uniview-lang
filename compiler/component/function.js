@@ -1,7 +1,6 @@
-const { Generator_ID } = require('./generate.js');
-
-const Function_Instance = require('./function_instance.js');
 const LLVM = require('../middle/llvm.js');
+const Function_Instance = require('./function_instance.js');
+const Structure = require('./struct.js');
 
 
 class Function {
@@ -10,6 +9,9 @@ class Function {
 		this.ctx = ctx;
 
 		this.ref = ast.ref.start;
+
+		this.represent = this.name + "." + (this.ctx instanceof Structure ?
+			this.ctx.represent.slice(1) : this.ctx.represent);
 
 		this.instances = [];
 		this.register(ast, external, abstract);
@@ -58,20 +60,26 @@ class Function {
 	}
 
 	merge (other){
-		for (let instance of this.instances) {
-			if (instance.match(other.instances[0])) {
-				return false;
-			}
-		}
-
 		this.instances = this.instances.concat( other.instances );
-
 		return true;
 	}
 
 	link () {
 		for (let instance of this.instances) {
 			instance.link();
+		}
+
+		// Check name collision
+		for (let i=0; i<this.instances.length; i++) {
+			for (let j=i+1; j<this.instances.length; j++) {
+				if (this.instances[i].matchSignature(this.instances[j].signature) == true) {
+					this.getFile().throw(
+						`Warn: Multiple definitions of function "${this.name}" (${this.instances[i].signature.map(x => x.toString()).join(", ")})`,
+						this.instances[i].ref,
+						this.instances[j].ref
+					);
+				}
+			}
 		}
 
 		return;

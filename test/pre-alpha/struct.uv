@@ -10,11 +10,9 @@ fn check(target: @Person, id: int, age: int, finger: int): int {
 	if (target.age != age) {
 		return 1;
 	}
-	let f = target.finger;
-	if (f.id != finger) {
+	if (target.finger.id != finger) {
 		return 1;
 	}
-	target.finger = f;
 
 	return 0;
 }

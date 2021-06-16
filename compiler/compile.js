@@ -8,7 +8,7 @@ const os = require('os');
 const fs = require('fs');
 const { exec, spawn, spawnSync } = require('child_process');
 
-const version = "Uniview Compiler v0.0.2";
+const version = "Uniview Compiler v0.1.0 Alpha";
 const root = path.resolve("./");
 
 
@@ -26,9 +26,10 @@ if (process.argv.includes("--version")) {
 let config = {
 	output: "out",
 	source: false,
-	execute: false,
+	execute: true,
+	compileOnly: false,
+	verifyOnly: false,
 	optimisation: "0",
-	verifyOnly: false
 };
 let index = process.argv.indexOf('-o');
 if (index != -1 && index > 2) {
@@ -39,6 +40,11 @@ if (process.argv.includes('--execute')) {
 }
 if (process.argv.includes('--verifyOnly')) {
 	config.verifyOnly = true;
+	config.execute = false;
+}
+if (process.argv.includes('--compileOnly')) {
+	config.compileOnly = true;
+	config.execute = false;
 }
 index = process.argv.indexOf('-s');
 if (index != -1) {
@@ -51,6 +57,10 @@ if (index != -1) {
 	);
 }
 
+if (config.execute + config.verifyOnly + config.compileOnly > 1) {
+	console.error("Invalid arguments");
+	process.exit(1);
+}
 
 
 
@@ -104,6 +114,7 @@ if (config.execute && config.source !== false) {
 if (config.source != "llvm") {
 	let args = project.includes
 		.concat([
+			["-Wno-override-module"],
 			["--language=ir", `${config.output}.ll`],
 			[`-O${config.optimisation}`]
 		])

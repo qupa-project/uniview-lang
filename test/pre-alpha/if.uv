@@ -1,0 +1,35 @@
+import "print.uv";
+
+fn test(a: int, b: int) {
+	if (a > b) {
+		println("Greater");
+	} elif (a < b) {
+		println("Lesser");
+	} elif (a > b) {
+		println("Logic error, should have already been caught");
+	} else {
+		println("Equal");
+	}
+
+	return;
+}
+
+
+struct Test {}
+fn UnifiedUndefined() {
+	let t = Blank#[Test]();
+
+	if (true) {
+		delete t;
+	} else {
+		delete t;
+	}
+}
+
+fn main(): int {
+	test(1, 3);
+	test(2, 2);
+	test(3, 1);
+
+	return 0;
+}

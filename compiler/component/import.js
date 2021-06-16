@@ -53,9 +53,9 @@ class Import {
 		}
 	}
 
-	getType (variable, template) {
+	getType (variable, template, stack) {
 		for (let extern of this.files) {
-			let opt = extern.file.getType(variable, template);
+			let opt = extern.file.getType(variable, template, stack);
 			if (opt) {
 				return opt;
 			}
@@ -64,9 +64,9 @@ class Import {
 		return null;
 	}
 
-	getFunction (access, signature, template) {
+	getFunction (access, signature, template, stack) {
 		for (let lib of this.files) {
-			let opt = lib.file.getFunction(access, signature, template);
+			let opt = lib.file.getFunction(access, signature, template, stack);
 			if (opt) {
 				return opt;
 			}
