@@ -8,7 +8,7 @@ const os = require('os');
 const fs = require('fs');
 const { exec, spawn, spawnSync } = require('child_process');
 
-const version = "Uniview Compiler v0.0.3 Alpha";
+const version = "Uniview Compiler v0.1.0 Alpha";
 const root = path.resolve("./");
 
 

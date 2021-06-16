@@ -1,6 +1,6 @@
 # Change Log
 
-## Upcomming
+## Version 0.1.0
 
 ## Added
 - [x] ``--compileOnly`` flag which compiles to a binary, but does not execute the result
