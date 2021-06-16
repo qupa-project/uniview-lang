@@ -23,7 +23,7 @@ class File {
 		return fgetc(this.ptr);
 	}
 
-	fn IsEOF(this: @File): bool {
+	fn IsEOF(this: #File): bool {
 		return feof(this.ptr) == 1;
 	}
 
@@ -31,7 +31,7 @@ class File {
 		fsetpos(this.ptr, pos);
 	}
 
-	fn GetPos(this: @File): int {
+	fn GetPos(this: #File): int {
 		return ftell(this.ptr);
 	}
 

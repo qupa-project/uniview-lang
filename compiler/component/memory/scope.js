@@ -71,15 +71,17 @@ class Scope {
 			));
 
 			// Assigning name space to argument value
-			let chg = this.variables[arg.name].markUpdated(new LLVM.Argument(
-				this.variables[arg.name].type.toLLVM(),
-				new LLVM.Name(id.reference(), false)
-			),
-			true,
-			{
-				start: arg.ref,
-				end: arg.ref
-			});
+			let chg = this.variables[arg.name].markUpdated(
+				new LLVM.Argument(
+					this.variables[arg.name].type.toLLVM(),
+					new LLVM.Name(id.reference(), false)
+				),
+				true,
+				{
+					start: arg.ref,
+					end: arg.ref
+				}
+			);
 			if (chg.error) {
 				this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
 				return null;
@@ -248,7 +250,7 @@ class Scope {
 				// If the value is undefined in all states
 				//   Resolve the result to be undefined with no errors
 				if (!branches.map( x => x.scope.variables[name].isUndefined()).includes(false)) {
-					this.variables[name].makeUndefined();
+					this.variables[name].makeUndefined(ref);
 					continue;
 				}
 

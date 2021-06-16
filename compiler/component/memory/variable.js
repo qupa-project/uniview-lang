@@ -152,9 +152,15 @@ class Variable extends Value {
 					msg: "Cannot give ownership of a borrowed value to a child function",
 					ref
 				};
+			} else if (this.type.constant) {
+				return {
+					error: true,
+					msg: `Cannot consume a constant value\n  Recommend cloning $${this.name}`,
+					ref
+				};
 			}
 
-			this.makeUndefined();
+			this.makeUndefined(ref);
 			this.lastUninit = ref.start;
 		}
 
@@ -162,9 +168,12 @@ class Variable extends Value {
 		return out;
 	}
 
-	makeUndefined() {
-		this.store = null;
+	makeUndefined(ref) {
+		this.elements.clear();
+		this.isDecomposed = false;
 		this.probability = null;
+		this.store = null;
+		this.lastUninit = ref.start;
 	}
 
 	/**
@@ -175,19 +184,26 @@ class Variable extends Value {
 	 * @returns {Error?}
 	 */
 	markUpdated (register, force = false, ref) {
-		if (!force && this.type.lent) {
-			return {
-				error: true,
-				msg: "Cannot overwite a lent value",
-				ref
-			};
+		if (!force) {
+			if (this.type.lent) {
+				return {
+					error: true,
+					msg: "Cannot overwite a lent value",
+					ref
+				};
+			} else if (this.type.constant) {
+				return {
+					error: true,
+					msg: "Cannot overwite a constant value",
+					ref
+				};
+			}
 		}
 
-		this.store = register;
-		this.probability = null;
-		this.lastUninit = null;
-		this.hasUpdated = true;
 		this.isDecomposed = false;
+		this.probability = null;
+		this.hasUpdated = true;
+		this.store = register;
 
 		return true;
 	}
@@ -235,6 +251,7 @@ class Variable extends Value {
 			let out;
 			if (!this.elements.has(gep.index)) {
 				let read = struct.accessGEPByIndex(gep.index, this.store);
+				read.type.constant = read.type.constant || this.type.constant;
 				out = new Variable(
 					read.type,
 					`${this.name}.${accessor}`,
@@ -712,7 +729,7 @@ class Variable extends Value {
 	cleanup(ref) {
 		let frag = new LLVM.Fragment();
 
-		if (this.isClone) {            // Do nothing as this variable is a clone
+		if (this.isClone || this.type.constant) {  // Do nothing as this variable is a clone/constant
 			return frag;
 		} else if (this.type.lent) {   // Borrowed types need to be recomposed
 			let res = this.resolve(ref, false);
@@ -750,13 +767,15 @@ class Variable extends Value {
 				msg: "Cannot delete an already undefined value",
 				ref: ref
 			};
+		} else if (this.type.constant) {
+			return {
+				error: true,
+				msg: "Cannot delete a constant value",
+				ref: ref
+			};
 		}
 
-		this.elements = new Map();
-		this.isDecomposed = false;
-		this.probability = null;
-		this.store = null;
-		this.lastUninit = ref.start;
+		this.makeUndefined(ref);
 		return new LLVM.Fragment();
 	}
 }

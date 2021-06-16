@@ -68,8 +68,10 @@ class Function_Instance {
 		// Flaten signature types AST into a single array
 		let types = [ head.tokens[0] ];
 		let borrows = [ false ];
+		let consts = [ false ];
 		if (args.length > 0) {
-			borrows = borrows.concat(args.map(x => x[0]));
+			borrows = borrows.concat(args.map(x => x[0] == "@"));
+			consts = consts.concat(args.map(x => x[0] == "#"));
 			types = types.concat(args.map((x) => x[1]));
 		}
 
@@ -83,8 +85,9 @@ class Function_Instance {
 		for (let [i, type] of types.entries()){
 			let search = exec.resolveType(type);
 			if (search instanceof TypeRef) {
-				search.pointer = type.tokens[0]; // Copy the pointer level across
-				search.lent = borrows[i];
+				search.pointer  = type.tokens[0]; // Copy the pointer level across
+				search.lent     = borrows[i];
+				search.constant = consts[i];
 
 				this.signature.push(search);
 			} else {

@@ -176,15 +176,6 @@ class ExecutionBase {
 			template
 		);
 
-		if (type === null) {
-			return null;
-		}
-
-		// Linear types are handled by address, not value
-		if (type.type.typeSystem == "linear") {
-			type.pointer++;
-		}
-
 		return type;
 	}
 

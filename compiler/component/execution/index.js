@@ -80,12 +80,6 @@ class Execution extends ExecutionFlow {
 			this.getFile().throw(`Error: Invalid type name "${Flattern.DataTypeStr(ast.tokens[0])}"`, ast.ref.start, ast.ref.end);
 			return null;
 		}
-		typeRef.localLife = ast.tokens[0];
-
-		// Complex types are handled by address, not value
-		if (typeRef.type.typeSystem == "linear" || typeRef.type instanceof Array) {
-			typeRef.pointer++;
-		}
 
 		this.scope.register_Var(
 			typeRef,

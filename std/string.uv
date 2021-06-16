@@ -104,7 +104,7 @@ class String {
 	}
 
 
-	fn Length(this: @String): u64 {
+	fn Length(this: #String): u64 {
 		return this.size - cast#[u64](1);
 	}
 
@@ -130,6 +130,6 @@ class String {
 }
 
 
-fn puts(str: @String) {
+fn puts(str: #String) {
 	puts(str.data);
 }

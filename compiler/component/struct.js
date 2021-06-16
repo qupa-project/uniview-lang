@@ -144,7 +144,7 @@ class Structure extends TypeDef {
 		return {
 			preamble: preamble,
 			instruction: val,
-			type: type
+			type: type.duplicate()
 		};
 	}
 
@@ -226,12 +226,11 @@ class Structure extends TypeDef {
 
 		let term = new Struct_Term(
 			name,
-			new TypeRef(typeNode.tokens[0], typeRef.type),
+			new TypeRef(0, typeRef.type),
 			node.ref.start
 		);
 		this.terms.push(term);
 		this.size += term.size;
-
 		return true;
 	}
 
