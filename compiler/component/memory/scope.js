@@ -179,6 +179,13 @@ class Scope {
 
 
 
+	cascadeUpdates () {
+		for (let name in this.variables) {
+			this.variables[name].cascadeUpdates();
+		}
+	}
+
+
 
 
 	/**
@@ -223,6 +230,12 @@ class Scope {
 		let preambles = branches.map(x => new LLVM.Fragment());
 		let frag = new LLVM.Fragment();
 
+		// Ensure any parents are marked as updated
+		//   if their children were
+		for (let branch of branches) {
+			branch.scope.cascadeUpdates();
+		}
+
 		// If there is only one valid state
 		if (branches.length == 1) {
 			for (let name in this.variables) {
@@ -236,6 +249,12 @@ class Scope {
 				//   Resolve the result to be undefined with no errors
 				if (!branches.map( x => x.scope.variables[name].isUndefined()).includes(false)) {
 					this.variables[name].makeUndefined();
+					continue;
+				}
+
+				// This value was not updated
+				//   Thus is can be skipped
+				if (!branches.map( x => x.scope.variables[name].hasUpdated).includes(true)) {
 					continue;
 				}
 

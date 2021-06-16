@@ -16,9 +16,12 @@
 - [x] Escaped string characters
 
 ## Fixes
-- [x] Fixed a bunch of edge case errors will resolving values at compile time
-- [x] Fixed ability to override function in file
-- [x] Fixed allowing multiple definitions of structure term
+- [x] Bug with nested structure access
+- [x] Composition of stats where value is undefined in all
+- [x] Consumption of single continuous state (when one branch of an if returns)
+- [x] Fixed not detecting deconstruction of values within if-statments
+- [x] Ability to override function in file
+- [x] Allowing multiple definitions of structure term
 
 ## Changes
 - [x] The ``uvc`` command now executes the result by default.
@@ -26,6 +29,7 @@
 
 ## Tweaks
 - [x] Tweaked the automated testing to reflect the new argument changes
+- [x] Compiler skips merging changes between a branch if the value has not been updated in either branch
 
 ## Version 0.0.2
 

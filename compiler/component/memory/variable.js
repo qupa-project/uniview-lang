@@ -60,6 +60,21 @@ class Variable extends Value {
 		}
 	}
 
+	cascadeUpdates () {
+		if (this.hasUpdated) {
+			return;
+		}
+
+		for (let elm of this.elements) {
+			elm[1].cascadeUpdates();
+
+			if (elm[1].hasUpdated) {
+				this.hasUpdated = true;
+				return;
+			}
+		}
+	}
+
 
 	/**
 	 * Resolves the possible states of the variable into a single LLVM argument
