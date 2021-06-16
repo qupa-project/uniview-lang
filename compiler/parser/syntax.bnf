@@ -83,7 +83,7 @@ program ::= w* ( stmt_top w* )*
 		func_head ::= "fn" w+ name w* func_arguments w* ( ":" w* data_type )?
 			func_arguments ::= "(" w* func_arg_list? ")"
 				func_arg_list ::= func_arg w* ( "," w* func_arg w* )*
-				func_arg      ::= name w* ":" w* "@"? w* data_type
+				func_arg      ::= name w* ":" w* ( "@" | "#" )? w* data_type
 		function_body ::= "{" w* ( func_stmt w* )* "}"
 			func_stmt ::= comment | if | return | composition | declare | delete | assign | declare_assign | call_procedure
 

@@ -700,7 +700,7 @@ function Simplify_Func_Args_List (node) {
 	let ittr = node.tokens[0].concat(node.tokens[2].map(x => x.tokens[2][0]));
 
 	node.tokens = ittr.map((arg) => [
-		arg.tokens[4].length > 0,             // borrowed?
+		arg.tokens[4][0] ? arg.tokens[4][0].tokens : null,             // borrowed?
 		Simplify_Data_Type(arg.tokens[6][0]), // type
 		Simplify_Name(arg.tokens[0][0])       // name
 	]);
