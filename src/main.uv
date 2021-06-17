@@ -39,11 +39,11 @@ class ReferenceRange {
 		return out;
 	}
 
-	fn Length(this: @ReferenceRange): int {
+	fn Length(this: #ReferenceRange): int {
 		return this.end.index - this.start.index;
 	}
 
-	fn IsFailure(this: @ReferenceRange): bool {
+	fn IsFailure(this: #ReferenceRange): bool {
 		return ReferenceRange.Length(@this) < 1;
 	}
 }
@@ -81,7 +81,7 @@ fn main(): int {
 
 	let start = Reference();
 	let res = MatchName(@file, start);
-	let len = ReferenceRange.Length(@res);
+	let len = ReferenceRange.Length(res);
 	if (len < 1) {
 		println("Failed");
 	} else {
@@ -91,6 +91,5 @@ fn main(): int {
 	}
 
 	File.Delete(file);
-	delete res;
 	return 0;
 }
