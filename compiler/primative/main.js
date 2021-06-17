@@ -5,6 +5,7 @@ const Function = require('./../component/function.js');
 
 const Array_Template = require('./array.js');
 const Blank = require('./blank.js');
+const Either = require('./either.js');
 const Static_Cast = require('./static_cast.js');
 const Bitcast = require('./bitcast.js');
 const SizeOf = require('./sizeof.js');
@@ -28,6 +29,7 @@ function Generate (ctx) {
 	file.names.bitcast = new Bitcast(file);
 	file.names.sizeof = new SizeOf(file);
 	file.names.Blank = new Blank(file);
+	file.names.Either = new Either(file);
 
 	// file.names.Array = new Array_Template(file);
 

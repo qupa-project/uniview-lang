@@ -477,6 +477,9 @@ function Simplify_Constant (node) {
 		case "boolean":
 			node.tokens = [ Simplify_Boolean(node.tokens[0]) ];
 			break;
+		case "void":
+			node.tokens = [ Simplify_Void(node.tokens[0]) ];
+			break;
 		case "integer":
 			node.tokens = [ Simplify_Integer(node.tokens[0]) ];
 			break;
@@ -530,6 +533,10 @@ function Simplify_Float (node) {
 	return node;
 }
 function Simplify_Boolean (node) {
+	node.reached = null;
+	return node;
+}
+function Simplify_Void (node) {
 	node.reached = null;
 	return node;
 }

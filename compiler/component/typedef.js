@@ -31,6 +31,10 @@ class TypeDef {
 		return null;
 	}
 
+	getSize () {
+		return this.size;
+	}
+
 	getFile() {
 		return this.ctx.getFile();
 	}
@@ -79,7 +83,7 @@ class TypeDef {
 			preamble: new LLVM.Fragment(),
 			instruction: new LLVM.Argument(
 				new LLVM.Type("i64"),
-				new LLVM.Constant(this.size),
+				new LLVM.Constant(this.getSize()),
 				ref
 			)
 		};

@@ -13,10 +13,18 @@ class Struct_Term {
 		this.name = name;
 		this.typeRef = typeRef;
 		this.declared = ref;
-		this.size = typeRef.type.size;
+		this.size = -1;
 		this.typeSystem = "linear";
 
 		this.ir = new LLVM.Fragment();
+	}
+
+	getSize () {
+		if (this.size == -1) {
+			this.size = typeRef.type.getSize();
+		}
+
+		return this.size;
 	}
 
 	toLLVM() {
@@ -30,6 +38,7 @@ class Structure extends TypeDef {
 		super(ctx, ast, external);
 		this.terms = [];
 		this.linked = false;
+		this.size = -1;
 	}
 
 	/**
@@ -168,7 +177,6 @@ class Structure extends TypeDef {
 			return;
 		}
 
-		this.size = 0;
 		for (let node of this.ast.tokens[1].tokens) {
 			switch (node.type) {
 				case "comment":
@@ -182,7 +190,9 @@ class Structure extends TypeDef {
 					throw new Error(`Unexpected attribute ${node.type}`);
 			}
 		}
+
 		this.linked = true;
+		this.getSize();
 	}
 
 	linkTerm (node, stack = []) {
@@ -230,7 +240,6 @@ class Structure extends TypeDef {
 			node.ref.start
 		);
 		this.terms.push(term);
-		this.size += term.size;
 		return true;
 	}
 
