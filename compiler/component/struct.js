@@ -219,6 +219,15 @@ class Structure extends TypeDef {
 			return false;
 		}
 
+		if (typeRef.type == Primative.types.void) {
+			this.ctx.getFile().throw(
+				`Error: Structures cannot include void type as an attribute`,
+				typeNode.ref.start,
+				typeNode.ref.end
+			);
+			return false;
+		}
+
 		// Check a structure is not including a class attribute
 		if (this.meta != "CLASS" && typeRef.type.meta == "CLASS") {
 			this.ctx.getFile().throw(
