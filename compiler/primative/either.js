@@ -1,5 +1,7 @@
 const LLVM = require('./../middle/llvm.js');
 
+const Function_Instance = require('./function_instance.js');
+
 const Template = require('../component/template.js');
 const TypeRef = require('../component/typeRef.js');
 const TypeDef = require('../component/typedef.js');
@@ -21,7 +23,16 @@ class Either extends Template {
 		return null;
 	}
 
-	getFunction () {
+	getFile() {
+		return this.ctx.getFile();
+	}
+
+	getFunction (access, signature, template) {
+		let child = this.findMatch(template);
+		if (child) {
+			return child.type.getFunction(access, signature, template);
+		}
+
 		return false;
 	}
 
@@ -77,6 +88,139 @@ class Either_Instance {
 	}
 	getCloner() {
 		return false;
+	}
+
+	getFile() {
+		return this.ctx.getFile();
+	}
+
+	getFunction (access, signature, template) {
+		console.log(98);
+
+		if (access.length != 0 || signature.length != 1) {
+			console.log(99, 'bad sig');
+			return false;
+		}
+
+		let found = false;
+		let i=0;
+		for (; i<this.signature.length && !found; i++) {
+			if (this.signature[i].match(signature[0])) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			return false;
+		}
+
+		let func = new Function_Instance(
+			this,
+			"Either.New",
+			new TypeRef(0, this, false, false)
+		);
+
+		func.generate = (regs, ir_args) => {
+			let frag = new LLVM.Fragment();
+
+			let type = new LLVM.Type(this.represent, 0);
+			let val = new LLVM.ID();
+			frag.append(new LLVM.Set(
+				new LLVM.Name(val, false),
+				new LLVM.Alloc(type)
+			));
+
+			let state = new LLVM.ID();
+			frag.append(new LLVM.Set(
+				new LLVM.Name(state),
+				new LLVM.GEP(
+					type,
+					new LLVM.Argument(
+						new LLVM.Type(this.represent, 1),
+						new LLVM.Name(val.reference(), false)
+					),
+					[
+						new LLVM.Argument(
+							new LLVM.Type("i32", 0),
+							new LLVM.Constant("0")
+						),
+						new LLVM.Argument(
+							new LLVM.Type("i32", 0),
+							new LLVM.Constant("1")
+						)
+					]
+				)
+			));
+			frag.append(new LLVM.Store(
+				new LLVM.Argument(
+					new LLVM.Type("i8", 1),
+					new LLVM.Name(state.reference())
+				),
+				new LLVM.Argument(
+					new LLVM.Type("i8", 0),
+					new LLVM.Constant(i.toString())
+				)
+			));
+
+
+			if (ir_args[0].type.term != "void") {
+				let data = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(data),
+					new LLVM.GEP(
+						type,
+						new LLVM.Argument(
+							new LLVM.Type(this.represent, 1),
+							new LLVM.Name(val.reference(), false)
+						),
+						[
+							new LLVM.Argument(
+								new LLVM.Type("i32", 0),
+								new LLVM.Constant("0")
+							),
+							new LLVM.Argument(
+								new LLVM.Type("i32", 0),
+								new LLVM.Constant("0")
+							)
+						]
+					)
+				));
+
+				let nx_type = new LLVM.Type(ir_args[0].type.term, 1);
+				let store = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(store, false),
+					new LLVM.Bitcast(
+						nx_type,
+						new LLVM.Argument(
+							new LLVM.Type(`<${this.getSize()} x i8>`, 1),
+							new LLVM.Name(data.reference())
+						)
+					)
+				));
+
+				frag.append(new LLVM.Store(
+					new LLVM.Argument(
+						nx_type,
+						new LLVM.Name(store.reference())
+					),
+					ir_args[0]
+				));
+			}
+
+			return {
+				preamble: frag,
+				instruction: new LLVM.Argument(
+					new LLVM.Type(this.represent, 1),
+					new LLVM.Name(val.reference(), false)
+				),
+				type: new TypeRef(0, this, false, false)
+			};
+		};
+		func.compile();
+
+
+		return func;
 	}
 
 	match (signature) {
