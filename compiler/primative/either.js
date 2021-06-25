@@ -95,10 +95,7 @@ class Either_Instance {
 	}
 
 	getFunction (access, signature, template) {
-		console.log(98);
-
 		if (access.length != 0 || signature.length != 1) {
-			console.log(99, 'bad sig');
 			return false;
 		}
 
