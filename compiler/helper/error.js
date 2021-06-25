@@ -11,39 +11,37 @@ function CodeSection (string, refStart, refEnd) {
 
 	string = string.split('\n')
 		.slice(refStart.line-1, refEnd.line)
-		.map( (val, i) => ` ${FixStringLength((i+offset).toString(), digits)} | ${val}` );
+		.map((val, i) => [(i+offset).toString(), val]);
+
+	let indent = Math.min(...string.map(elm => elm[1].search(/[^ ]/g)));
+	let maxLen = Math.max(...string.map(elm => elm[1].length));
 
 	if (string.length > 5) {
 		string = [
-			...string.slice(0, 2),
-			` ${FixStringLength("*", digits)} | `,
-			...string.slice(-2)
+			...string
+				.slice(0, 2)
+				.map(elm => ` ${FixStringLength(elm[0], digits)} │ ${elm[1].slice(indent)}`),
+			` ${FixStringLength("*", digits)} │${"·".repeat(maxLen-indent+1)}`,
+			...string
+				.slice(-2)
+				.map(elm => ` ${FixStringLength(elm[0], digits)} │ ${elm[1].slice(indent)}`)
 		];
+	} else {
+		string = string.map(elm => ` ${FixStringLength(elm[0], digits)} │ ${elm[1].slice(indent)}`);
 	}
 
 	if (refStart.line == refEnd.line) {
 		string.push(
-			` ${FixStringLength("*", digits)} | ` +
-			" ".repeat(refStart.col) +
+			` ${FixStringLength("*", digits)} │ ` +
+			" ".repeat(refStart.col-indent) +
 			"^".repeat(refEnd.col-refStart.col)
 		);
 	}
 
-	// let highlightA = " ".repeat(digits+2) + "|" +
-	// 	" ".repeat(refStart.col) +
-	// 	"^".repeat(string[0].length);
-
-	// let highlightB = " ".repeat(digits+2) + "|" +
-	// "^".repeat(refEnd.col);
-
-	// return [
-	// 	string[0],
-	// 	highlightA,
-	// 	...string.slice(1),
-	// 	highlightB
-	// ].join("\n");
-
-	return string.join('\n') + `\n${refStart.toString()} -> ${refEnd.toString()}`;
+	return '─'.repeat(digits+2) + "┬" + "─".repeat(maxLen-indent+2) + "\n" +
+		string.join('\n') + "\n" +
+		'─'.repeat(digits+2) + "┴" + "─".repeat(maxLen-indent+2) +
+		`\n  ${refStart.toString()} -> ${refEnd.toString()}`;
 }
 
 module.exports = {
