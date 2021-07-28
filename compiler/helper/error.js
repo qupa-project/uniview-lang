@@ -13,7 +13,10 @@ function CodeSection (string, refStart, refEnd) {
 		.slice(refStart.line-1, refEnd.line)
 		.map((val, i) => [(i+offset).toString(), val]);
 
-	let indent = Math.min(...string.map(elm => elm[1].search(/[^ ]/g)));
+	let indent = Math.min(
+		...string.map(elm => elm[1].search(/[^ ]/g)),
+		refStart.col
+	);
 	let maxLen = Math.max(...string.map(elm => elm[1].length));
 
 	if (string.length > 5) {
