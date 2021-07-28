@@ -29,7 +29,7 @@ class Class extends Structure {
 			return;
 		}
 
-		this.size = 0;
+		this.size = -1;
 		for (let node of this.ast.tokens[1].tokens) {
 			switch (node.type) {
 				case "comment":

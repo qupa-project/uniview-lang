@@ -21,7 +21,7 @@ class Struct_Term {
 
 	getSize () {
 		if (this.size == -1) {
-			this.size = typeRef.type.getSize();
+			this.size = this.typeRef.type.getSize();
 		}
 
 		return this.size;
@@ -192,7 +192,6 @@ class Structure extends TypeDef {
 		}
 
 		this.linked = true;
-		this.getSize();
 	}
 
 	linkTerm (node, stack = []) {
@@ -333,6 +332,19 @@ class Structure extends TypeDef {
 			preamble,
 			instruction
 		};
+	}
+
+
+	getSize () {
+		if (this.size == -1) {
+			this.size = this.terms
+				.map(x => x.getSize())
+				.reduce((tally, curr) => tally+curr, 0);
+
+			console.log(344, this.name, this.size);
+		}
+
+		return this.size;
 	}
 }
 

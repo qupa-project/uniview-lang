@@ -79,6 +79,8 @@ class TypeDef {
 	* @returns
 	*/
 	sizeof (ref) {
+		console.log(82, this.name, this.getSize());
+
 		return {
 			preamble: new LLVM.Fragment(),
 			instruction: new LLVM.Argument(
