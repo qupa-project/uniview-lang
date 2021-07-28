@@ -28,7 +28,7 @@ class Either extends Template {
 	}
 
 	getFunction (access, signature, template) {
-		let child = this.findMatch(template);
+		let child = this.getType([], template);
 		if (child) {
 			return child.type.getFunction(access, signature, template);
 		}
@@ -75,7 +75,7 @@ class Either_Instance {
 	constructor (ctx, signature, id) {
 		this.ctx = ctx;
 		this.signature = signature;
-		this.name = "Either";
+		this.name = `Either#[${signature.map(x => x.type.name).join(", ")}]`;
 		this.represent = `%Either.${id}`;
 		this.typeSystem = "linear";
 		this.size = -1;
@@ -190,7 +190,7 @@ class Either_Instance {
 					new LLVM.Bitcast(
 						nx_type,
 						new LLVM.Argument(
-							new LLVM.Type(`<${this.getSize()} x i8>`, 1),
+							new LLVM.Type(`<${this.getSize()-1} x i8>`, 1),
 							new LLVM.Name(data.reference())
 						)
 					)
@@ -252,7 +252,7 @@ class Either_Instance {
 		return new LLVM.Struct(
 			new LLVM.Name(this.represent, false, ref),
 			[
-				new LLVM.Type(`<${this.getSize()} x i8>`, 0),
+				new LLVM.Type(`<${this.getSize()-1} x i8>`, 0),
 				new LLVM.Type("i8", 0)
 			],
 			ref

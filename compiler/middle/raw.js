@@ -7,8 +7,12 @@ class Raw {
 		this.text = text;
 	}
 
-	flattern() {
-		return this.text;
+	assign_ID () {
+		return;
+	}
+
+	flattern(indent) {
+		return " ".repeat(indent) + this.text;
 	}
 }
 

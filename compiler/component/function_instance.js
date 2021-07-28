@@ -201,7 +201,11 @@ class Function_Instance {
 				scope,
 				entry_id.reference()
 			);
-			frag.merge(exec.compile(this.ast.tokens[1]));
+			let inner = exec.compile(this.ast.tokens[1]);
+			if (inner === null) {
+				return null;
+			}
+			frag.merge(inner);
 		}
 
 		let gen = new Generator_ID(0);

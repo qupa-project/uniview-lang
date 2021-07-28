@@ -77,7 +77,11 @@ class Execution extends ExecutionFlow {
 
 		let typeRef = this.resolveType(ast.tokens[0]);
 		if (!(typeRef instanceof TypeRef)) {
-			this.getFile().throw(`Error: Invalid type name "${Flattern.DataTypeStr(ast.tokens[0])}"`, ast.ref.start, ast.ref.end);
+			this.getFile().throw(
+				`Error: Invalid type name "${Flattern.DataTypeStr(ast.tokens[0])}"`,
+				ast.ref.start,
+				ast.ref.end
+			);
 			return null;
 		}
 
@@ -545,6 +549,9 @@ class Execution extends ExecutionFlow {
 				case "if":
 					inner = this.compile_if(token);
 					break;
+				case "when":
+					inner = this.compile_when(token);
+					break;
 				case "compose":
 					inner = this.compile_compose(token);
 					break;
@@ -569,7 +576,9 @@ class Execution extends ExecutionFlow {
 			}
 		}
 
-		if (!failed && this.returned == false && !this.isChild) {
+		if (failed) {
+			return null;
+		} else if (this.returned == false && !this.isChild) {
 			if (this.returnType.type == Primative.types.void) {
 				// Auto generate return and cleanup for void functions
 
@@ -585,11 +594,15 @@ class Execution extends ExecutionFlow {
 					new LLVM.Type("void", 0),
 					ast.ref
 				));
+
+				return fragment;
 			} else {
 				this.getFile().throw(
 					`Function does not return`,
 					ast.ref.start, ast.ref.end
 				);
+
+				return null;
 			}
 		}
 
