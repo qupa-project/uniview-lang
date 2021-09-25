@@ -288,12 +288,6 @@ class File {
 			case "llvm":
 				type = "--language=ir";
 				break;
-			case "cpp":
-				type = "--language=c++";
-				break;
-			case "c":
-				type = "--language=c";
-				break;
 			default:
 				this.throw(
 					`Error: Cannot include file, unable to handle include type ${type}`,
