@@ -114,7 +114,6 @@ if (config.source == "llvm") {
 ------------------------------------------*/
 console.info("Compiling...");
 
-// llvm\bin\llvm-link runtime\runtime.ll out.ll | llvm\bin\opt -enable-coroutines -O0 | clang -x ir -
 
 let platSP = os.platform() == "win32" ? path.resolve(__dirname, '../tools/') + "\\" : "";
 let exec_out = "./" + config.output;
