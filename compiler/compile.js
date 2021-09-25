@@ -24,7 +24,7 @@ if (process.argv.includes("--version")) {
 }
 
 let config = {
-	output: "out",
+	output: path.basename(process.argv[2], path.extname(process.argv[2])) || "out",
 	source: false,
 	execute: true,
 	compileOnly: false,
@@ -55,6 +55,11 @@ if (index != -1) {
 	config.optimisation = String(
 		Math.min(3, Number(process.argv[index+1]) || 0)
 	);
+}
+
+if (config.execute && config.source !== false) {
+	console.warn("Warn: Compilation flaged as executing result, but result is configured to output a non-executable");
+	config.execute = false;
 }
 
 if (config.execute + config.verifyOnly + config.compileOnly > 1) {
@@ -97,50 +102,39 @@ if (config.verifyOnly) {
 	process.exit(0);
 }
 
-fs.writeFileSync(`${config.output}.ll`, asm.flattern(), 'utf8');
 
-
+if (config.source == "llvm") {
+	fs.writeFileSync(`${config.output}.ll`, asm.flattern(), 'utf8');
+	process.exit(0);
+}
 
 
 /*------------------------------------------
 	Compilation in Clang
 ------------------------------------------*/
 console.info("Compiling...");
-if (config.execute && config.source !== false) {
-	console.warn("Warn: Compilation flaged as executing result, but result is configured to output a non-executable");
-	config.execute = false;
+
+// llvm\bin\llvm-link runtime\runtime.ll out.ll | llvm\bin\opt -enable-coroutines -O0 | clang -x ir -
+
+let platSP = os.platform() == "win32" ? path.resolve(__dirname, '../tools/') + "\\" : "";
+let exec_out = "./" + config.output;
+if (config.source == "asm") {
+	exec_out += ".s";
+} else if (os.platform() == "win32") {
+	exec_out += ".exe";
+} else if (os.platform() == "darwin") {
+	exec_out += ".app";
+} else {
+	exec_out += ".out";
 }
 
-if (config.source != "llvm") {
-	let args = project.includes
-		.concat([
-			["-Wno-override-module"],
-			["--language=ir", `${config.output}.ll`],
-			[`-O${config.optimisation}`]
-		])
-		.reduce((prev, curr) => prev.concat(curr), []);
+let command =
+	`${platSP}llvm-link - ` + project.includes.map(x => x[1].replace("\"", "\\\"")).join(" ") + // link the llvm IRs
+	` | ${platSP}opt -enable-coroutines -O${config.optimisation}` + // run the coroutine pass
+	` | clang++ -x ir - -o ${exec_out}`;  // compile the executable
 
-	let exec_out = "./" + config.output;
-	if (config.source == "asm") {
-		args.push('-S');
-		exec_out += ".s";
-	} else if (os.platform() == "win32") {
-		exec_out += ".exe";
-	} else if (os.platform() == "darwin") {
-		exec_out += ".app";
-	} else {
-		exec_out += ".out";
-	}
-	args = args.concat(["-o", exec_out]);
-
-	console.info(`\nclang++ ${args.join(" ")}`);
-	let clang = spawnSync('clang++', args, {
-		cwd: project.rootPath
-	});
-
-	if (clang.status === 0){
-		process.stdout.write(clang.output[2]);
-
+let compilation = exec(command, () => {
+	if (compilation.exitCode === 0){
 		if (config.execute) {
 			console.info('\nRunning...');
 			let app = spawn(exec_out);
@@ -161,7 +155,9 @@ if (config.source != "llvm") {
 		}
 	} else {
 		console.error("FAILED TO COMPILE");
-		process.stderr.write(clang.output[2]);
 		process.exit(1);
 	}
-}
+});
+compilation.stdout.pipe(process.stdout);
+compilation.stderr.pipe(process.stderr);
+compilation.stdin.end( asm.flattern() );
