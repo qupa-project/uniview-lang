@@ -107,7 +107,7 @@ async function Test () {
 	await Promise.all(tasks);
 
 	console.info(`\nFailed ${fails} of ${tests.length}`);
-	console.info(` Total Time: ${totalDuration.toFixed(3)}s`);
+	console.info(` Total Compute Time: ${totalDuration.toFixed(3)}s`);
 
 	if (fails > 0) {
 		process.exit(1);

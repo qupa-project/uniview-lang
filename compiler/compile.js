@@ -26,7 +26,7 @@ if (process.argv.includes("--version")) {
 let config = {
 	output: path.basename(process.argv[2], path.extname(process.argv[2])) || "out",
 	source: false,
-	execute: process.argv.includes('--execute'),
+	execute: true,
 	compileOnly: false,
 	verifyOnly: false,
 	manualTooling: os.platform() == "win32" || process.argv.includes('--manualtooling'),
@@ -44,6 +44,9 @@ if (process.argv.includes('--verifyOnly')) {
 if (process.argv.includes('--compileOnly')) {
 	config.compileOnly = true;
 	config.execute = false;
+}
+if (process.argv.includes('--execute')) {
+	config.execute = true;
 }
 index = process.argv.indexOf('-s');
 if (index != -1) {
@@ -102,9 +105,9 @@ if (config.verifyOnly) {
 }
 
 
+// Emmit source
 if (config.source == "llvm") {
 	fs.writeFileSync(`${config.output}.ll`, asm.flattern(), 'utf8');
-	process.exit(0);
 }
 
 
@@ -144,10 +147,11 @@ let compilation = exec(command, () => {
 
 			app.on('close', (code) => {
 				if (code === null) {
-					console.error(app.signalCode);
+					console.error('SEGFAULT', app.signalCode);
 					process.exit(1);
 				}
 
+				console.log(`Exited code ${code}`);
 				process.exit(code);
 			});
 		} else {
