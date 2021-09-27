@@ -1,12 +1,13 @@
 name: Execution
 
-on:
-  push:
-    branches: [ main, dev, staging ]
-  pull_request:
-    branches: [ main, dev, staging ]
-
 jobs:
+  cache:
+    uses: actions/cache@v2
+    with:
+      path: |
+        C:/Program Files/LLVM
+        ./llvm
+      key: llvm-3.5
   build:
 
     runs-on: ubuntu-latest
@@ -17,6 +18,20 @@ jobs:
         node-version: [ 14.x ]
 
     steps:
+    - name: Cache LLVM and Clang
+      id: cache-llvm
+      uses: actions/cache@v2
+      with:
+        path: |
+          C:/Program Files/LLVM
+          ./llvm
+        key: llvm-12.0
+    - name: Install LLVM and Clang
+      uses: KyleMayes/install-llvm-action@v1
+      with:
+        version: "3.5"
+        cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v2
