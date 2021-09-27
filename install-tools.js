@@ -64,15 +64,15 @@ async function InstallTools() {
 		console.info("  Downloading tools from https://github.com/qupa-project/uniview-lang/releases/tag/tools")
 		await Download(
 			'https://github.com/qupa-project/uniview-lang/releases/download/tools/tools.zip',
-			'./tools/tools.zip'
+			'./llvm/tools.zip'
 		);
 
 		console.info("  Unzipping tools...");
-		await Unzip('./tools/tools.zip', './tools/');
+		await Unzip('./llvm/tools.zip', './llvm/');
 
 		console.info("  Installation complete");
 		console.info("  Running cleanup");
-		fs.unlinkSync('./tools/tools.zip');
+		fs.unlinkSync('./llvm/tools.zip');
 	}
 }
 

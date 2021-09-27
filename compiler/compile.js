@@ -26,17 +26,16 @@ if (process.argv.includes("--version")) {
 let config = {
 	output: path.basename(process.argv[2], path.extname(process.argv[2])) || "out",
 	source: false,
-	execute: true,
+	execute: process.argv.includes('--execute'),
 	compileOnly: false,
 	verifyOnly: false,
+	manualTooling: os.platform() == "win32" || process.argv.includes('--manualtooling'),
 	optimisation: "0",
 };
+
 let index = process.argv.indexOf('-o');
 if (index != -1 && index > 2) {
 	config.output = process.argv[index+1] || "out";
-}
-if (process.argv.includes('--execute')) {
-	config.execute = true;
 }
 if (process.argv.includes('--verifyOnly')) {
 	config.verifyOnly = true;
@@ -114,8 +113,10 @@ if (config.source == "llvm") {
 ------------------------------------------*/
 console.info("Compiling...");
 
-
-let platSP = os.platform() == "win32" ? path.resolve(__dirname, '../tools/') + "\\" : "";
+let platSP = config.manualTooling ?
+	path.resolve(__dirname, '../llvm/') +
+		(os.platform() == "win32" ? "\\" : "/") :
+	"";
 let exec_out = "./" + config.output;
 if (config.source == "asm") {
 	exec_out += ".s";
