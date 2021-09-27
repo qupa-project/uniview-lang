@@ -1,5 +1,11 @@
 name: Execution
 
+on:
+  push:
+    branches: [ main, dev, staging ]
+  pull_request:
+    branches: [ main, dev, staging ]
+
 jobs:
   cache:
     uses: actions/cache@v2
