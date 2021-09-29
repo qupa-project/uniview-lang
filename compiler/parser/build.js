@@ -1,3 +1,5 @@
+console.info("Building Syntax...");
+
 const BNF = require('bnf-parser');
 const fs = require('fs');
 
