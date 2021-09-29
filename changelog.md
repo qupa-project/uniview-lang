@@ -1,5 +1,13 @@
 # Change Log
 
+## Upcoming
+
+## Additions
+## Fixes
+## Changes
+## Tweaks
+ - [x] Now uses the LLVM tool chain (instead of clang) to generated the platform specific assembly, then clang does the final mile to make the executable binary.
+
 ## Version 0.1.0
 
 ## Added
