@@ -244,7 +244,7 @@ class Either_Instance {
 			max = Math.max(max, this.signature[i].type.size);
 		}
 
-		this.size = max + 1;
+		this.size = max;
 		return this.size;
 	}
 
@@ -264,7 +264,7 @@ class Either_Instance {
 			preamble: new LLVM.Fragment(),
 			instruction: new LLVM.Argument(
 				new LLVM.Type("i64"),
-				new LLVM.Constant(this.getSize()),
+				new LLVM.Constant(this.getSize()+1),
 				ref
 			)
 		};
