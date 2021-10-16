@@ -186,5 +186,5 @@ program ::= w* ( stmt_top w* )*
 #=============================
 #  When statement
 #=============================
-	when ::= "when" w+ variable w* ":" when_opt+
-		when_opt ::= w* ( "default" | data_type ) w* function_body
+	when ::= "when" w+ variable w* "{" when_opt+ "}"
+		when_opt ::= w* ( "default" | data_type ) w* function_body w*

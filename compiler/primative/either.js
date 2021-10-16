@@ -271,5 +271,7 @@ class Either_Instance {
 	}
 }
 
+Either.Either_Instance = Either_Instance;
+
 
 module.exports = Either;

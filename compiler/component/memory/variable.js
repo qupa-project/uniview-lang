@@ -703,6 +703,33 @@ class Variable extends Value {
 
 
 
+	induceType(type, register, ref) {
+		this.type = type;
+		this.type.lent = this.type.lent || type.type.typeSystem == "normal";
+		this.isClone = false;
+
+		let id = new LLVM.ID();
+		let latent = new LLVM.Latent(
+			new LLVM.Set(
+				new LLVM.Name(id, false, ref),
+				new LLVM.Bitcast(
+					type.toLLVM(ref),
+					register
+				)
+			)
+		);
+
+		this.probability = new Probability(
+			latent,
+			new LLVM.Argument(type.toLLVM(), new LLVM.Name(id.reference(), false, ref))
+		);
+
+		return latent;
+	}
+
+
+
+
 
 	clone () {
 		let out = new Variable(this.type, this.name, this.ref);

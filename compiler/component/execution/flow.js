@@ -1,8 +1,11 @@
 const LLVM     = require("../../middle/llvm.js");
 const TypeRef  = require('../typeRef.js');
 
+const Flattern = require("../../parser/flattern.js");
+
 const Primative = {
-	types: require('../../primative/types.js')
+	types: require('../../primative/types.js'),
+	Either: require('../../primative/either.js')
 };
 
 
@@ -152,12 +155,22 @@ class ExecutionFlow extends ExecutionExpr {
 	compile_when (ast) {
 		let frag = new LLVM.Fragment();
 
+		// Prepare the target variable for reading
 		let target = this.compile_loadVariable(ast.tokens[0]);
 		if (target.error) {
 			this.getFile().throw(target.msg, target.ref.start, target.ref.end);
 			return null;
 		}
 		frag.append(target.preamble);
+
+		// Check it is an either instance
+		if (!(target.type.type instanceof Primative.Either.Either_Instance)) {
+			console.log(166, target.type.type);
+			this.getFile().throw(
+				`Invalid 'when' clause, target variable must be a 'Either' instance.\nInstead '${Flattern.VariableStr(ast.tokens[0])}' is of type ${target.type.type.name}`,
+			ast.ref.start, ast.ref.end);
+			return null;
+		}
 
 		let options = target.type.type.signature.map(x => x.type);
 		let seen = [];
@@ -195,10 +208,22 @@ class ExecutionFlow extends ExecutionExpr {
 					return null;
 				}
 
-				let branch = this.compile_branch(select.tokens[1], select.ref);
+
+				let scope = this.scope.clone();
+				let variable = scope.getVar(ast.tokens[0]);
+				let latent = variable.induceType(typeRef, target.instruction);
+				console.log(216, latent.action);
+
+				let branch = this.compile_branch(select.tokens[1], select.ref, scope);
 				if (branch === null) {
 					return null;
 				}
+
+				branch.frag.stmts = [
+					branch.frag.stmts[0],
+					latent,
+					...branch.frag.stmts.slice(1)
+				];
 
 				branches.push([
 					index,
@@ -331,9 +356,9 @@ class ExecutionFlow extends ExecutionExpr {
 	}
 
 
-	compile_branch (ast, ref) {
+	compile_branch (ast, ref, scope = this.scope.clone()) {
 		let id = new LLVM.ID(ref);
-		let env = this.clone();
+		let env = this.clone(scope);
 		env.entryPoint = id;
 
 		let frag = new LLVM.Fragment();

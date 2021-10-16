@@ -615,8 +615,7 @@ class Execution extends ExecutionFlow {
 	 * Deep clone
 	 * @returns {Scope}
 	 */
-	clone () {
-		let scope = this.scope.clone();
+	clone (scope = this.scope.clone()) {
 		let out = new Execution(this, this.returnType, scope);
 		out.isChild = true;
 		return out;

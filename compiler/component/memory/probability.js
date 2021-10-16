@@ -2,6 +2,13 @@ const LLVM = require('./../../middle/llvm.js');
 
 
 class Probability {
+	/**
+	 *
+	 * @param {LLVM.Latent} activator The code path to enable on activation
+	 * @param {LLVM.Argument} register The value to be taken on after activation
+	 * @param {*} segment
+	 * @param {*} ref
+	 */
 	constructor (activator, register, segment, ref) {
 		this.activator = activator;
 		this.register = register;
