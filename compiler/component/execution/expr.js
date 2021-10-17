@@ -197,7 +197,7 @@ class ExecutionExpr extends ExecutionBase {
 		// Check opperands are the same type
 		if (!opperands[0].type.match(opperands[1].type)) {
 			this.getFile().throw(
-				`Error: Cannot perform arithmetic opperation on unequal types`,
+				`Error: Cannot perform arithmetic opperation on unequal types. ${opperands[0].type} != ${opperands[1].type}`,
 				ast.tokens[0].ref.start, ast.tokens[1].ref.end
 			);
 			return null;
@@ -341,7 +341,7 @@ class ExecutionExpr extends ExecutionBase {
 		// Check opperands are the same type
 		if (!opperands[0].type.match(opperands[1].type)) {
 			this.getFile().throw(
-				`Error: Cannot perform comparison opperation on unequal types`,
+				`Error: Cannot perform comparison opperation on unequal types. ${opperands[0].type} != ${opperands[1].type}`,
 				ast.tokens[0].ref.start, ast.tokens[1].ref.end
 			);
 			return null;
@@ -473,14 +473,14 @@ class ExecutionExpr extends ExecutionBase {
 		// Check opperands are of boolean type
 		if (!opperands[0].type.match(type)) {
 			this.getFile().throw(
-				`Error: Cannot perform boolean opperation on non boolean types`,
+				`Error: Cannot perform boolean opperation on non-boolean types`,
 				ast.tokens[0].ref.start, ast.tokens[0].ref.end
 			);
 			return null;
 		}
 		if (!opperands[1].type.match(type)) {
 			this.getFile().throw(
-				`Error: Cannot perform boolean opperation on non boolean types`,
+				`Error: Cannot perform boolean opperation on non-boolean types`,
 				ast.tokens[1].ref.start, ast.tokens[1].ref.end
 			);
 			return null;
