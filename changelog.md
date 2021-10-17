@@ -4,7 +4,7 @@
 
 ## Additions
 ## Fixes
- - [x] Lent normal values are now treated as non-lent values within a function, however the final values are stored back in the original location upon function clenaup
+ - [x] Lent normal values are now treated as non-lent values within a function, however, the final values are stored back in the original location upon function cleanup
 
 ## Changes
 ## Tweaks
