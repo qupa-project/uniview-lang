@@ -1,0 +1,47 @@
+
+fn BoolLending(): int {
+	let a = false;
+	FlipFlop(@a);
+	Flip(@a);
+
+	if (a == true) {
+		return 0;
+	} else {
+		return 1;
+	}
+}
+fn FlipFlop(val: @bool) {
+	val = !val;
+	val = !val;
+}
+fn Flip(val: @bool) {
+	val = !val;
+}
+
+
+fn IntLending(): int {
+	let a = 1;
+	Multiply(@a);
+	if (a != 3) {
+		return 1;
+	}
+
+	Multiply(@a);
+	if (a != 9) {
+		return 1;
+	}
+
+	return 0;
+}
+
+fn Multiply(val: @int) {
+	val = val * 3;
+}
+
+fn main(): int {
+	if (IntLending() == 1) {
+		return 1;
+	}
+
+	return 0;
+}

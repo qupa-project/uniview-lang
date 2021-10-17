@@ -4,6 +4,8 @@
 
 ## Additions
 ## Fixes
+ - [x] Lent normal values are now treated as non-lent values within a function, however, the final values are stored back in the original location upon function cleanup
+
 ## Changes
 ## Tweaks
  - [x] Now uses the LLVM tool chain (instead of clang) to generated the platform specific assembly, then clang does the final mile to make the executable binary.
