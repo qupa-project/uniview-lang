@@ -14,7 +14,9 @@ function CodeSection (string, refStart, refEnd) {
 		.map((val, i) => [(i+offset).toString(), val]);
 
 	let indent = Math.min(
-		...string.map(elm => elm[1].search(/[^ ]/g)),
+		...string
+			.map(elm => elm[1].search(/[^ ]/g))
+			.map(elm => elm == -1 ? refStart.col : elm),
 		refStart.col
 	);
 	let maxLen = Math.max(...string.map(elm => elm[1].length));
