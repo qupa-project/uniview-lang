@@ -340,8 +340,6 @@ class Structure extends TypeDef {
 			this.size = this.terms
 				.map(x => x.getSize())
 				.reduce((tally, curr) => tally+curr, 0);
-
-			console.log(344, this.name, this.size);
 		}
 
 		return this.size;

@@ -165,7 +165,6 @@ class ExecutionFlow extends ExecutionExpr {
 
 		// Check it is an either instance
 		if (!(target.type.type instanceof Primative.Either.Either_Instance)) {
-			console.log(166, target.type.type);
 			this.getFile().throw(
 				`Invalid 'when' clause, target variable must be a 'Either' instance.\nInstead '${Flattern.VariableStr(ast.tokens[0])}' is of type ${target.type.type.name}`,
 			ast.ref.start, ast.ref.end);
@@ -212,7 +211,6 @@ class ExecutionFlow extends ExecutionExpr {
 				let scope = this.scope.clone();
 				let variable = scope.getVar(ast.tokens[0]);
 				let latent = variable.induceType(typeRef, target.instruction);
-				console.log(216, latent.action);
 
 				let branch = this.compile_branch(select.tokens[1], select.ref, scope);
 				if (branch === null) {

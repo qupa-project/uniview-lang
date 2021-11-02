@@ -704,25 +704,51 @@ class Variable extends Value {
 
 
 	induceType(type, register, ref) {
-		this.type = type;
-		this.type.lent = this.type.lent || type.type.typeSystem == "normal";
-		this.isClone = false;
+		if (type.type.size == 0) {
+			this.type = type;
+			this.store = undefined;
+			this.probability = undefined;
+			this.hasUpdated = false;
+			return new LLVM.Latent(new LLVM.Fragment());
+		}
 
 		let id = new LLVM.ID();
-		let latent = new LLVM.Latent(
-			new LLVM.Set(
+		let frag = new LLVM.Fragment();
+
+		if (type.type.typeSystem == "normal" && this.type.typeSystem != "normal") {
+			frag.append(new LLVM.Set(
+				new LLVM.Name(id, false, ref),
+				new LLVM.Bitcast(
+					type.toLLVM(ref, false, true),
+					register
+				)
+			));
+
+			let load = new LLVM.ID();
+			frag.append(new LLVM.Set(
+				new LLVM.Name(load, false),
+				new LLVM.Load(type.toLLVM(), new LLVM.Name(id.reference()))
+			));
+			id = load;
+		} else {
+			frag.append(new LLVM.Set(
 				new LLVM.Name(id, false, ref),
 				new LLVM.Bitcast(
 					type.toLLVM(ref),
 					register
 				)
-			)
+			));
+		}
+
+		let latent = new LLVM.Latent(
+			frag
 		);
 
 		this.probability = new Probability(
 			latent,
 			new LLVM.Argument(type.toLLVM(), new LLVM.Name(id.reference(), false, ref))
 		);
+		this.type = type;
 
 		return latent;
 	}

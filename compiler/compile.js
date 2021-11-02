@@ -151,7 +151,7 @@ let compilation = exec(command, () => {
 					process.exit(1);
 				}
 
-				console.log(`Exited code ${code}`);
+				console.info(`Exited code ${code}`);
 				process.exit(code);
 			});
 		} else {
