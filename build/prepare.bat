@@ -1,2 +1,2 @@
-cmake ../lib/
+cmake ../lib/ -Thost=x64
 cmake ..

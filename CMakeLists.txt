@@ -44,14 +44,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
 #################################################################
-# set(LLVM_LINK_COMPONENTS
-# 	Core
-# 	ExecutionEngine
-# 	Object
-# 	OrcJIT
-# 	Support
-# 	native
-# )
+set(LLVM_LINK_COMPONENTS
+	Core
+	ExecutionEngine
+	Object
+	OrcJIT
+	Support
+	native
+)
 
 
 ADD_LIBRARY( MyStaticLib STATIC structure.c )
