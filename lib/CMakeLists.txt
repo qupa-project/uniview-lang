@@ -23,18 +23,14 @@ endif()
 
 message("Compiler architecture is ${_compiler_arch}")
 
-if(NOT MSVC)
-	if((NOT DEFINED PONY_PIC_FLAG) OR (PONY_PIC_FLAG STREQUAL ""))
-		set(PONY_PIC_FLAG "-fpic")
-	endif()
-endif()
-
 
 
 #################################################################
 #  Add LLVM external LIB
 #################################################################
-set(LLVM_TARGETS_TO_BUILD ${_compiler_arch})
+# find_package(LLVM REQUIRED CONFIG)
+
+# set(LLVM_TARGETS_TO_BUILD ${_compiler_arch})
 
 message("Building targets: ${LLVM_TARGETS_TO_BUILD}")
 
@@ -49,5 +45,7 @@ set(LLVM_INCLUDE_TESTS OFF)
 set(LLVM_TOOL_REMARKS_SHLIB_BUILD OFF)
 set(LLVM_ENABLE_ZLIB OFF)
 set(LLVM_ENABLE_ZLIB:STRING OFF)
+
+set(LLVM_ENABLE_RUNTIMES:STRING ON)
 
 add_subdirectory(llvm/llvm)
