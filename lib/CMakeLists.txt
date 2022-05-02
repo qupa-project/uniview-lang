@@ -30,7 +30,8 @@ message("Compiler architecture is ${_compiler_arch}")
 #################################################################
 # find_package(LLVM REQUIRED CONFIG)
 
-# set(LLVM_TARGETS_TO_BUILD ${_compiler_arch})
+set(LLVM_TARGETS_TO_BUILD "ARM;WebAssembly;X86")
+# set(LLVM_EXPERIMENTAL_TARGETS_TO_BUILD "x86-64")
 
 message("Building targets: ${LLVM_TARGETS_TO_BUILD}")
 
