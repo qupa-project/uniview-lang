@@ -40,10 +40,20 @@ llvm_map_components_to_libnames(
 	Analysis
 	BitWriter
 	Core
+	Demangle
 	ExecutionEngine
 	irReader
+	MCJIT
 	Support
 	Target
+	aarch64asmparser
+	aarch64codegen
+	aarch64desc
+	aarch64info
+	armasmparser
+	armcodegen
+	armdesc
+	arminfo
 	x86asmparser
 	x86codegen
 	x86desc
