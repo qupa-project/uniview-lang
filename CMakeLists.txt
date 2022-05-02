@@ -37,10 +37,17 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 #################################################################
 llvm_map_components_to_libnames(
 	llvm_libs
-	support
-	core
-	irreader
-	ADT
+	Analysis
+	BitWriter
+	Core
+	ExecutionEngine
+	irReader
+	Support
+	Target
+	x86asmparser
+	x86codegen
+	x86desc
+	x86info
 )
 
 
