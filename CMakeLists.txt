@@ -40,31 +40,32 @@ llvm_map_components_to_libnames(
 	Analysis
 	BitWriter
 	Core
-	Demangle
+	# Demangle
 	ExecutionEngine
 	irReader
 	MCJIT
 	Support
 	Target
-	aarch64asmparser
+	# aarch64asmparser
 	aarch64codegen
-	aarch64desc
-	aarch64info
-	armasmparser
+	# aarch64desc
+	# aarch64info
+	# armasmparser
 	armcodegen
-	armdesc
-	arminfo
+	# armdesc
+	# arminfo
 	x86asmparser
 	x86codegen
-	x86desc
-	x86info
+	# x86desc
+	# x86info
 )
 
 
-# ADD_LIBRARY( Uniview-Core STATIC uniview-core.c )
+# ADD_LIBRARY( Uniview-Core STATIC "src/core/main.c" )
 
 SET( APP_EXE uvc-tools )
-add_executable( ${APP_EXE} main.cpp)
+# add_executable( ${APP_EXE} main.cpp)
+add_executable( ${APP_EXE} "src/uvc-tool/main.c")
 
 # TARGET_LINK_LIBRARIES( Uniview-Core ${llvm_libs} )
 # TARGET_LINK_LIBRARIES( ${APP_EXE} Uniview-Core )
