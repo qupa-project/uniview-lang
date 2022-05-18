@@ -9,7 +9,8 @@
 		"node": ">=14"
 	},
 	"dependencies": {
-		"bnf-parser": "^2.2.5"
+		"bnf-parser": "^2.2.5",
+		"node-getopt": "^0.3.2"
 	},
 	"scripts": {
 		"setup": "npm install && npm run build",

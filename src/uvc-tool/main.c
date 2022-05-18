@@ -25,8 +25,6 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 
-	printf("Starting...\n");
-
 	LLVMContextRef ctx = LLVMContextCreate();
 	LLVMModuleRef main_mod = NULL;
 

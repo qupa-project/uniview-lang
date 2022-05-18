@@ -1,67 +1,57 @@
 #!/usr/bin/env node
 "use strict";
 
-const Project = require('./component/project.js');
-
+const { spawn } = require('child_process');
 const path = require('path');
-const os = require('os');
 const fs = require('fs');
-const { exec, spawn, spawnSync } = require('child_process');
+
+const Getopt = require('node-getopt');
+
+const Project = require('./component/project.js');
 
 const version = "Uniview Compiler v0.0.3 Alpha";
 const root = path.resolve("./");
 
 
-
-
-
 /*------------------------------------------
 	Compiler configuration flags
 ------------------------------------------*/
-if (process.argv.includes("--version")) {
+let getopt = new Getopt([
+	['m', 'mode=ARG', 'compilation mode'],
+	['', 'opt=ARG', 'optimisation level'],
+	['o', 'output=ARG', 'output name'],
+	['', 'version', 'show version']
+]).bindHelp();
+let opt = getopt.parse(process.argv.slice(2));
+
+if (opt.options.version) {
 	console.info(version);
 	process.exit(0);
 }
 
-let config = {
-	output: "out",
-	source: false,
-	execute: true,
-	compileOnly: false,
-	verifyOnly: false,
-	optimisation: "0",
-};
-let index = process.argv.indexOf('-o');
-if (index != -1 && index > 2) {
-	config.output = process.argv[index+1] || "out";
-}
-if (process.argv.includes('--execute')) {
-	config.execute = true;
-}
-if (process.argv.includes('--verifyOnly')) {
-	config.verifyOnly = true;
-	config.execute = false;
-}
-if (process.argv.includes('--compileOnly')) {
-	config.compileOnly = true;
-	config.execute = false;
-}
-index = process.argv.indexOf('-s');
-if (index != -1) {
-	config.source = process.argv[index+1] || "asm";
-}
-index = process.argv.indexOf('-opt');
-if (index != -1) {
-	config.optimisation = String(
-		Math.min(3, Number(process.argv[index+1]) || 0)
-	);
+
+if (!opt.options.opt) {
+	opt.options.opt = "O0";
+} else {
+	console.warn("Warn: Compilation does not currently support optimisation");
 }
 
-if (config.execute + config.verifyOnly + config.compileOnly > 1) {
-	console.error("Invalid arguments");
+if (!opt.options.mode) {
+	opt.options.mode = "execute";
+} else if (!["execute", "verify", "preprocess", "uvir", "llir"].includes(opt.options.mode)) {
+	console.error(`Invalid compilation mode "${opt.options.mode}"`);
 	process.exit(1);
 }
 
+if (!opt.options.output) {
+	opt.options.output = "out";
+}
+
+
+if (opt.argv.length > 1) {
+	console.error("Cannot take multiple uv starting points");
+	process.exit(1);
+}
 
 
 
@@ -69,9 +59,9 @@ if (config.execute + config.verifyOnly + config.compileOnly > 1) {
 	Compilation to LLVM
 ------------------------------------------*/
 // Load required files
-let origin = path.resolve(root, process.argv[2]);
+let origin = path.resolve(root, opt.argv[0]);
 let project = new Project(root, {
-	caching: config.caching
+	caching: false
 });
 project.import(origin, true);
 
@@ -93,11 +83,11 @@ if (project.error) {
 let asm = project.toLLVM();
 
 
-if (config.verifyOnly) {
+if (opt.options.mode == "preprocess") {
 	process.exit(0);
 }
 
-fs.writeFileSync(`${config.output}.ll`, asm.flattern(), 'utf8');
+fs.writeFileSync(`${opt.options.output}.ll`, asm.flattern(), 'utf8');
 
 
 
@@ -106,62 +96,22 @@ fs.writeFileSync(`${config.output}.ll`, asm.flattern(), 'utf8');
 	Compilation in Clang
 ------------------------------------------*/
 console.info("Compiling...");
-if (config.execute && config.source !== false) {
-	console.warn("Warn: Compilation flaged as executing result, but result is configured to output a non-executable");
-	config.execute = false;
-}
 
-if (config.source != "llvm") {
-	let args = project.includes
-		.concat([
-			["-Wno-override-module"],
-			["--language=ir", `${config.output}.ll`],
-			[`-O${config.optimisation}`]
-		])
-		.reduce((prev, curr) => prev.concat(curr), []);
+let args = [
+	`${opt.options.output}.ll`,
+	"-mode", "run",
+	"-opt", opt.options.opt
+].concat(project.includes);
 
-	let exec_out = "./" + config.output;
-	if (config.source == "asm") {
-		args.push('-S');
-		exec_out += ".s";
-	} else if (os.platform() == "win32") {
-		exec_out += ".exe";
-	} else if (os.platform() == "darwin") {
-		exec_out += ".app";
-	} else {
-		exec_out += ".out";
-	}
-	args = args.concat(["-o", exec_out]);
+console.info(`\ntools/uvc-tools.exe ${args.join(" ")}`);
+let tool = spawn('tools/uvc-tools.exe', args, {
+	cwd: project.rootPath
+});
 
-	console.info(`\nclang++ ${args.join(" ")}`);
-	let clang = spawnSync('clang++', args, {
-		cwd: project.rootPath
-	});
+tool.stdout.pipe(process.stdout);
+tool.stderr.pipe(process.stderr);
 
-	if (clang.status === 0){
-		process.stdout.write(clang.output[2]);
-
-		if (config.execute) {
-			console.info('\nRunning...');
-			let app = spawn(exec_out);
-			process.stdin.pipe (process.stdin);
-			app.stderr.pipe (process.stderr);
-			app.stdout.pipe (process.stdout);
-
-			app.on('close', (code) => {
-				if (code === null) {
-					console.error(app.signalCode);
-					process.exit(1);
-				}
-
-				process.exit(code);
-			});
-		} else {
-			process.exit(0);
-		}
-	} else {
-		console.error("FAILED TO COMPILE");
-		process.stderr.write(clang.output[2]);
-		process.exit(1);
-	}
-}
+tool.on('close', (code) => {
+	console.info(`\nStatus Code: ${code}`);
+	process.exit(code);
+});
