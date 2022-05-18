@@ -119,6 +119,8 @@ int main(int argc, char const *argv[]) {
 			}
 			break;
 		case CM_Run:
+			puts("Running...");
+
 			LLVMValueRef mainFn;
 			char * const mainFn_name = "main";
 			LLVMBool fail = LLVMFindFunction(engine, mainFn_name, &mainFn);
