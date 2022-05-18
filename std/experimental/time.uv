@@ -1,4 +1,4 @@
-include llvm "../../runtime/runtime.ll";
+// include llvm "../../runtime/runtime.ll";
 
 import "print.uv";
 
