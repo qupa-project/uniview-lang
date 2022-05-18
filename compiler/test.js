@@ -14,14 +14,7 @@ if (flags.exec) {
 	flags.clang = true;
 }
 
-let extraArgs = [];
-if (flags.exec) {
-	extraArgs.push('--execute');
-} else if (!flags.clang) {
-	extraArgs.push('--verifyOnly');
-} else {
-	extraArgs.push('--compileOnly');
-}
+let extraArgs = ["--mode", "execute"];
 
 
 const root = path.resolve(__dirname, "../");
