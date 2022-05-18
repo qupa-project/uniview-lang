@@ -84,10 +84,14 @@ let asm = project.toLLVM();
 
 
 if (opt.options.mode == "preprocess") {
+	console.log("Passed");
 	process.exit(0);
 }
 
 fs.writeFileSync(`${opt.options.output}.ll`, asm.flattern(), 'utf8');
+if (opt.options.mode == "uvir") {
+	process.exit(0);
+}
 
 
 
@@ -97,13 +101,30 @@ fs.writeFileSync(`${opt.options.output}.ll`, asm.flattern(), 'utf8');
 ------------------------------------------*/
 console.info("Compiling...");
 
+let tool_mode = "run";
+switch (opt.options.mode) {
+	case "execute":
+		tool_mode = "run";
+		break;
+	case "verify":
+		tool_mode = "verify";
+		break;
+	case "llir":
+		tool_mode = "ir";
+		break;
+	default:
+		console.error(`Invalid option mode ${opt.options.mode} for compilation tools`);
+		console.error(`This error shouldn't occur`);
+		process.exit(1);
+}
+
 let args = [
 	`${opt.options.output}.ll`,
-	"-mode", "run",
-	"-opt", opt.options.opt
+	"--mode", tool_mode,
+	// "-opt", opt.options.opt
 ].concat(project.includes);
 
-console.info(`\ntools/uvc-tools.exe ${args.join(" ")}`);
+console.info(`\ntools/uvc-tools.exe ${args.join(" ")}\n`);
 let tool = spawn('tools/uvc-tools.exe', args, {
 	cwd: project.rootPath
 });

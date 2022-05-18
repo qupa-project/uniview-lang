@@ -9,19 +9,33 @@
 #include <stdio.h>
 #include <string.h>
 
-// enum OutputType {
-// 	bitcode,
-// 	ir,
-// 	binary
-// };
+enum Compilation_Mode {
+	CM_Run,
+	CM_IR,
+	CM_Verify
+};
 
 int main(int argc, char const *argv[]) {
-	// OutputType outType = OutputType.ir;
+	enum Compilation_Mode outType = CM_Run;
 
 	for (int i=1; i<argc; i++) {
-		if (strcmp(argv[i], "--version") != 1) {
+		if (strcmp(argv[i], "--version") == 0) {
 			printf("Version: %s\n", "v0.0.0");
 			return 0;
+		}
+
+		if (strcmp(argv[i], "--mode") != 1 && i+1 < argc) {
+			switch (argv[i+1][0]) {
+				case 'r':
+					outType = CM_Run;
+					break;
+				case 'i':
+					outType = CM_IR;
+					break;
+				case 'v':
+					outType = CM_Verify;
+					break;
+			}
 		}
 	}
 
@@ -92,24 +106,32 @@ int main(int argc, char const *argv[]) {
 		return 1;
 	}
 
-	// Write out bitcode to file
-	if (LLVMWriteBitcodeToFile(main_mod, "out.bc") != 0) {
-		fprintf(stderr, "error writing bitcode to file, skipping\n");
-		return 0;
+	unsigned long long statusCode = 0;
+
+	switch (outType) {
+		case CM_Verify:
+			break;
+		case CM_IR:
+			// Write out bitcode to file
+			if (outType == CM_IR && LLVMWriteBitcodeToFile(main_mod, "out.bc") != 0) {
+				fprintf(stderr, "error writing bitcode to file, skipping\n");
+				return 0;
+			}
+			break;
+		case CM_Run:
+			LLVMValueRef mainFn;
+			char * const mainFn_name = "main";
+			LLVMBool fail = LLVMFindFunction(engine, mainFn_name, &mainFn);
+			if (fail) {
+				fprintf(stderr, "Cannot find main function");
+				return 1;
+			}
+
+			LLVMGenericValueRef res = LLVMRunFunction(engine, mainFn, 0, NULL);
+			statusCode = LLVMGenericValueToInt( res, (LLVMBool)1 );
+			LLVMDisposeGenericValue(res);
+			break;
 	}
-
-	LLVMValueRef mainFn;
-	char * const mainFn_name = "main";
-	LLVMBool fail = LLVMFindFunction(engine, mainFn_name, &mainFn);
-	if (fail) {
-		fprintf(stderr, "Cannot find main function");
-		return 1;
-	}
-
-
-	LLVMGenericValueRef res = LLVMRunFunction(engine, mainFn, 0, NULL);
-	unsigned long long statusCode = LLVMGenericValueToInt( res, (LLVMBool)1 );
-	LLVMDisposeGenericValue(res);
 
 
 	LLVMDisposeExecutionEngine(engine);
