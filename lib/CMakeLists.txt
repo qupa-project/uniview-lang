@@ -52,7 +52,7 @@ endif()
 # find_package(LLVM REQUIRED CONFIG)
 
 # set(LLVM_TARGETS_TO_BUILD:STRING "arm64;X86_64;WebAssembly;risv64") future targets
-set(LLVM_TARGETS_TO_BUILD:STRING "x86")
+set(LLVM_TARGETS_TO_BUILD "X86;WebAssembly" CACHE STRING "" FORCE)
 
 message("Building targets: ${LLVM_TARGETS_TO_BUILD}")
 

@@ -125,7 +125,7 @@ let args = [
 ].concat(project.includes);
 
 console.info(`\ntools/uvc-tools.exe ${args.join(" ")}\n`);
-let tool = spawn('tools/uvc-tools.exe', args, {
+let tool = spawn('build/Debug/uvc-tools.exe', args, {
 	cwd: project.rootPath
 });
 
