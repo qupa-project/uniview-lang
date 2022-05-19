@@ -20,7 +20,7 @@ message("Compiler architecture is ${_compiler_arch}")
 # list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_DIR}/lib/")
 
 
-SET(LLVM_DIR "C:/Program Files (x86)/LLVM/lib/cmake/llvm")
+SET(LLVM_DIR "C:/Program Files (x86)/univiewlibs/lib/cmake/llvm")
 find_package(LLVM REQUIRED REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -47,7 +47,7 @@ llvm_map_components_to_libnames(
 	Support
 	Target
 	# aarch64asmparser
-	aarch64codegen
+	# aarch64codegen
 	# aarch64desc
 	# aarch64info
 	# armasmparser
