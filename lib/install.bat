@@ -1,17 +1,16 @@
 echo off
 
-title "Building Uniview Dependencies"
+title "Uniview Dependencie Setup"
 
 set last=%cd%
 cd %~dp0
-cd build
 
-echo "Building CMake scaffold"
-cmake ..
-echo "Building libraries"
-cmake --build .
-echo "Installing libraries"
-cmake --build . --target install
+title Uniview Dependencie Setup - Configuring...
+cmake -S . -B build --install-prefix="%~dp0\install" -DLLVM_TARGETS_TO_BUILD=X86
+title Uniview Dependencie Setup - Building...
+cmake --build build
+title Uniview Dependencie Setup - Installing...
+cmake --build build --target install
 
 cd %last%
 

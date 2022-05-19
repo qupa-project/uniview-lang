@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13.4)
 
 file(STRINGS "VERSION" UNIVIEW_PROJECT_VERSION)
-project(uniview-lang VERSION ${UNIVIEW_PROJECT_VERSION} LANGUAGES C CXX)
+project(uniview-lang VERSION ${UNIVIEW_PROJECT_VERSION} LANGUAGES C)
 
 # System information
 message("-- CMAKE_SYSTEM_INFO_FILE: ${CMAKE_SYSTEM_INFO_FILE}")
@@ -20,7 +20,7 @@ message("Compiler architecture is ${_compiler_arch}")
 # list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_DIR}/lib/")
 
 
-SET(LLVM_DIR "C:/Program Files (x86)/univiewlibs/lib/cmake/llvm")
+SET(LLVM_DIR "lib/install/lib/cmake/llvm")
 find_package(LLVM REQUIRED REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -46,12 +46,13 @@ llvm_map_components_to_libnames(
 	MCJIT
 	Support
 	Target
+	Linker
 	# aarch64asmparser
 	# aarch64codegen
 	# aarch64desc
 	# aarch64info
 	# armasmparser
-	armcodegen
+	# armcodegen
 	# armdesc
 	# arminfo
 	x86asmparser

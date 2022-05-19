@@ -26,6 +26,7 @@ message("Compiler architecture is ${_compiler_arch}")
 
 
 # Download the submodules if missing
+find_package(Git)
 if(GIT_FOUND)
 	if(EXISTS "${PROJECT_SOURCE_DIR}/../.git")
 		# Update submodules as needed
@@ -39,17 +40,6 @@ if(GIT_FOUND)
 			if(NOT git_submod_result EQUAL "0")
 				message(FATAL_ERROR "git submodule update --init --recursive --depth 1 failed with ${git_submod_result}, please checkout submodules")
 			endif()
-
-			# we check to make sure the submodule hash matches
-			# the reason the submodule hash is in this file is to be able to use this file as a key for caching the libs in CI
-			execute_process(COMMAND ${GIT_EXECUTABLE} submodule status
-			    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-			    OUTPUT_VARIABLE git_submod_output)
-			#message("git_submod_output ${git_submod_output}")
-			string(FIND "${git_submod_output}" "${LLVM_DESIRED_HASH}" LLVM_SUBMOD_POS)
-			if(LLVM_SUBMOD_POS EQUAL "-1")
-				message(FATAL_ERROR "Expecting the lib/llvm/src submodule to be at hash '${LLVM_DESIRED_HASH}'; found '${git_submod_output}'; update the LLVM_DESIRED_HASH variable in lib/CMakeLists.txt if you've updated the submodule.")
-			endif()
 		endif()
 	endif()
 endif()
@@ -61,21 +51,20 @@ endif()
 #################################################################
 # find_package(LLVM REQUIRED CONFIG)
 
-set(LLVM_TARGETS_TO_BUILD "ARM;WebAssembly;X86")
-# set(LLVM_EXPERIMENTAL_TARGETS_TO_BUILD "x86-64")
+# set(LLVM_TARGETS_TO_BUILD:STRING "arm64;X86_64;WebAssembly;risv64") future targets
+set(LLVM_TARGETS_TO_BUILD:STRING "x86")
 
 message("Building targets: ${LLVM_TARGETS_TO_BUILD}")
 
-set(LLVM_ENABLE_BINDINGS OFF)
-set(LLVM_ENABLE_PIC OFF)
-set(LLVM_ENABLE_TERMINFO OFF)
-set(LLVM_ENABLE_WARNINGS OFF)
+# set(LLVM_ENABLE_BINDINGS OFF)
+# set(LLVM_ENABLE_PIC OFF)
+# set(LLVM_ENABLE_TERMINFO OFF)
+# set(LLVM_ENABLE_WARNINGS OFF)
 set(LLVM_ENABLE_Z3_SOLVER OFF)
-set(LLVM_TOOL_REMARKS_SHLIB_BUILD OFF)
 set(LLVM_ENABLE_ZLIB OFF)
 set(LLVM_ENABLE_ZLIB:STRING OFF)
 
-set(LLVM_ENABLE_RUNTIMES:STRING ON)
+set(LLVM_ENABLE_RUNTIMES:STRING "all")
 
 # Disable examples/benchmarks/docs
 set(LLVM_INCLUDE_EXAMPLES OFF)
