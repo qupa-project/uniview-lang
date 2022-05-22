@@ -64,14 +64,14 @@ int main(int argc, char const *argv[]) {
 		// Read file
 		fail = LLVMParseIRInContext(ctx, buf, &mod, &err);
 		if (err) {
-			fprintf(stderr, err);
+			fprintf(stderr, "%s", err);
 			return 1;
 		}
 
 		// Verify module
 		fail = LLVMVerifyModule(mod, LLVMAbortProcessAction, &err);
 		if (fail) {
-			fprintf(stderr, err);
+			fprintf(stderr, "%s", err);
 			return 1;
 		}
 		LLVMDisposeMessage(err);
