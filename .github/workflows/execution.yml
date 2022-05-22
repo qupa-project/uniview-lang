@@ -13,6 +13,10 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 14
       - name: Cache LLVM and Clang
         id: cache-llvm
         uses: actions/cache@v2
@@ -24,10 +28,6 @@ jobs:
         with:
           version: "14.0"
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 14
       - run: npm install --ignore-scripts
       - run: cmake . -B build
       - run: cmake --build build
