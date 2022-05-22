@@ -288,12 +288,6 @@ class File {
 			case "llvm":
 				type = "--language=ir";
 				break;
-			case "cpp":
-				type = "--language=c++";
-				break;
-			case "c":
-				type = "--language=c";
-				break;
 			default:
 				this.throw(
 					`Error: Cannot include file, unable to handle include type ${type}`,
@@ -331,7 +325,7 @@ class File {
 	throw (msg, refStart, refEnd) {
 		// let area = BNF.Message.HighlightArea(this.data, refStart, refEnd);
 		let area = helper.CodeSection(this.data, refStart, refEnd);
-		console.error(`\n${this.relPath}:\n ${msg}\n${area.replace(/\t/g, '  ')}`);
+		console.error(`\n${this.relPath}:\n ${msg.replace(/\n/g, "\n ")}\n${area.replace(/\t/g, '  ')}`);
 		this.project.markError();
 	}
 	warn (msg, refStart, refEnd) {

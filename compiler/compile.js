@@ -4,12 +4,13 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 const Getopt = require('node-getopt');
 
 const Project = require('./component/project.js');
 
-const version = "Uniview Compiler v0.0.3 Alpha";
+const version = "Uniview Compiler v0.1.0 Alpha";
 const root = path.resolve("./");
 
 
@@ -95,6 +96,10 @@ if (opt.options.mode == "uvir") {
 }
 
 
+// Emmit source
+if (config.source == "llvm") {
+	fs.writeFileSync(`${config.output}.ll`, asm.flattern(), 'utf8');
+}
 
 
 /*------------------------------------------
@@ -125,8 +130,16 @@ let args = [
 	// "-opt", opt.options.opt
 ].concat(project.includes);
 
-console.info(`\ntools/uvc-tools.exe ${args.join(" ")}\n`);
-let tool = spawn('build/Debug/uvc-tools.exe', args, {
+if (os.platform() == "win32") {
+	exec_out += "exe";
+} else if (os.platform() == "darwin") {
+	exec_out += "app";
+} else {
+	exec_out += "out";
+}
+
+console.info(`\ntools/uvc-tools.${exec_out} ${args.join(" ")}\n`);
+let tool = spawn(`build/Debug/uvc-tools.${exec_out}`, args, {
 	cwd: project.rootPath
 });
 

@@ -1,6 +1,6 @@
 {
 	"name": "@qupa/uniview",
-	"version": "0.0.2",
+	"version": "0.1.0",
 	"description": "Uniview Language",
 	"main": "compile/compile.js",
 	"preferGlobal": true,
@@ -10,7 +10,8 @@
 	},
 	"dependencies": {
 		"bnf-parser": "^2.2.5",
-		"node-getopt": "^0.3.2"
+		"node-getopt": "^0.3.2",
+		"unzipper": "^0.10.11"
 	},
 	"scripts": {
 		"setup": "npm install && npm run build",
@@ -20,7 +21,8 @@
 		"test-translation": "node compiler/test.js",
 		"test-compilation": "node compiler/test.js --bin",
 		"test-execution": "node compiler/test.js --bin --exec",
-		"postinstall": "npm run build",
+		"install-tools": "node install-tools.js",
+		"postinstall": "npm run install-tools & npm run build",
 		"build": "npm run build-syntax && npm run build-runtime",
 		"build-syntax": "node compiler/parser/build.js",
 		"build-runtime": "clang++ runtime/runtime.cpp -S -emit-llvm -o runtime/runtime.ll"

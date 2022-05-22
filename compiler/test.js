@@ -8,7 +8,8 @@ const path = require('path');
 
 let flags = {
 	clang: process.argv.includes('--bin'),
-	exec: process.argv.includes('--exec')
+	exec: process.argv.includes('--exec'),
+	action: process.argv.includes('--action')
 };
 if (flags.exec) {
 	flags.clang = true;
@@ -37,7 +38,7 @@ function Compile(filename, id) {
 		let start = Date.now();
 		let compile = spawn(`node`, [
 			"compiler/compile.js", target,
-			"-o", `./test/temp/${id}`
+			"-o", `./test/temp/${id}`, flags.action ? "--manualtooling" : "--automatictooling"
 		].concat(extraArgs), {
 			cwd: path.resolve(__dirname, "../")
 		});
@@ -99,7 +100,7 @@ async function Test () {
 	await Promise.all(tasks);
 
 	console.info(`\nFailed ${fails} of ${tests.length}`);
-	console.info(` Total Time: ${totalDuration.toFixed(3)}s`);
+	console.info(` Total Compute Time: ${totalDuration.toFixed(3)}s`);
 
 	if (fails > 0) {
 		process.exit(1);

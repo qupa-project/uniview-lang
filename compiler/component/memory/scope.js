@@ -12,6 +12,8 @@ class Scope {
 		this.ctx        = ctx;
 		this.variables  = {};
 		this.isChild    = false;
+
+		this.lentNormals = [];
 	}
 
 
@@ -56,17 +58,37 @@ class Scope {
 				return null;
 			}
 
+			// Load any lent normal types so they can be treated as normal variables
+			let resolvedNormal = false;
+			let id = new LLVM.ID();
+			let type = arg.type;
+			let reg = new LLVM.Name(id.reference(), false);
+			if (type.lent && type.type.typeSystem == "normal") {
+				resolvedNormal = true;
+
+				let nxtType = type.duplicate();
+				nxtType.lent = false;
+
+				let loadID = new LLVM.ID();
+				frag.append(new LLVM.Set(
+					new LLVM.Name(loadID, false),
+					new LLVM.Load(nxtType.toLLVM(), reg)
+				));
+
+				reg = new LLVM.Name(loadID.reference(), false);
+				type = nxtType;
+			}
+
 			// Creation of namespace
 			this.variables[arg.name] = new Variable(
-				arg.type.duplicate(),
+				type.duplicate(),
 				arg.name,
 				arg.ref
 			);
 
 			// Declaration in function argument
-			let id = new LLVM.ID();
 			registers.push(new LLVM.Argument(
-				this.variables[arg.name].type.toLLVM(),
+				arg.type.toLLVM(),
 				new LLVM.Name(id, false)
 			));
 
@@ -74,7 +96,7 @@ class Scope {
 			let chg = this.variables[arg.name].markUpdated(
 				new LLVM.Argument(
 					this.variables[arg.name].type.toLLVM(),
-					new LLVM.Name(id.reference(), false)
+					reg
 				),
 				true,
 				{
@@ -87,6 +109,14 @@ class Scope {
 				return null;
 			}
 			this.variables[arg.name].hasUpdated = false;
+
+			// Cache details so the final value can be stored back at the original address
+			if (resolvedNormal) {
+				this.lentNormals.push([
+					this.variables[arg.name],
+					new LLVM.Name(id.reference(), false)
+				]);
+			}
 		}
 
 		return {frag, registers};
@@ -219,6 +249,20 @@ class Scope {
 				return res;
 			}
 			frag.merge(res);
+		}
+
+
+		for (let val of this.lentNormals) {
+			let res = val[0].read(ref);
+			frag.merge(res.preamble);
+
+			let lentType = res.type.duplicate();
+			lentType.lent = true;
+
+			frag.append(new LLVM.Store(
+				new LLVM.Argument(lentType.toLLVM(), val[1]),
+				res.register
+			));
 		}
 
 		return frag;
