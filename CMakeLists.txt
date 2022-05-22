@@ -21,7 +21,7 @@ message("Compiler architecture is ${_compiler_arch}")
 # list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_DIR}/lib/")
 
 
-SET(LLVM_DIR "lib/install/lib/cmake/llvm")
+SET(LLVM_DIR "lib/install/lib/cmake/llvm" CACHE STRING "" FORCE)
 find_package(LLVM REQUIRED REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")

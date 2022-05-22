@@ -23,7 +23,7 @@ jobs:
         uses: KyleMayes/install-llvm-action@v1
         with:
           version: "14.0"
-          directory: "./lib/install"
+          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
