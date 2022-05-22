@@ -17,34 +17,19 @@ jobs:
       id: cache-llvm
       uses: actions/cache@v2
       with:
-        path: |
-          C:/Program Files/LLVM
-          ./llvm
-        key: llvm-12.0.1
-    - name: Install LLVM and Clang
-      uses: KyleMayes/install-llvm-action@v1
-      with:
-        version: "12.0.1"
-        cached: ${{ steps.cache-llvm.outputs.cache-hit }}
-
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: "14.x"
-
-    - name: Cache LLVM and Clang
-      id: cache-llvm
-      uses: actions/cache@v2
-      with:
         path: "./lib/install"
-        key: llvm-13.0
+        key: llvm-13.x
 
     - name: "Install LLVM and Clang"
       uses: KyleMayes/install-llvm-action@v1
       with:
-        version: "13.0"
+        version: "13.x"
         directory: "./lib/install"
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: "14.x"
 
     - run: npm install --ignore-scripts
     - run: npm run build-all
