@@ -81,4 +81,9 @@ set(LLVM_BUILD_DOCS OFF)
 set(LLVM_ENABLE_DOXYGEN OFF)
 set(LLVM_ENABLE_SPHINX OFF)
 
-add_subdirectory(llvm/llvm)
+add_subdirectory("llvm/llvm")
+
+# install(
+# 	TARGETS llvm/llvm
+# 	DESTINATION "${PROJECT_SOURCE_DIR}/install/"
+# )

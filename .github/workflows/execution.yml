@@ -2,9 +2,9 @@ name: Execution
 
 on:
   push:
-    branches: [ main, dev, staging ]
+    branches: [ main, staging ]
   pull_request:
-    branches: [ main, dev, staging ]
+    branches: [ main, staging ]
 
 jobs:
   build:
@@ -29,7 +29,8 @@ jobs:
           version: "14.0"
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}
       - run: npm install --ignore-scripts
+      # - run: "./lib/install.bat"
       - run: cmake . -B build
-      - run: cmake --build build
+      # - run: cmake --build build
       - run: npm run build-syntax
       - run: node ./compiler/test.js --action
