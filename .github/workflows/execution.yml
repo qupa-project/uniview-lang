@@ -29,5 +29,7 @@ jobs:
         with:
           node-version: 14
       - run: npm install --ignore-scripts
-      - run: npm run build-all
+      - run: cmake . -B build
+      - run: cmake --build build
+      - run: npm run build-syntax
       - run: node ./compiler/test.js --action

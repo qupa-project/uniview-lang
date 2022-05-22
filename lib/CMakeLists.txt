@@ -11,6 +11,7 @@ if(NOT DEFINED UNIVIEW_LIBS_BUILD_TYPE)
 endif()
 
 # System information
+message("Setup Uniview Libs ${UNIVIEW_PROJECT_VERSION}")
 message("-- CMAKE_SYSTEM_INFO_FILE: ${CMAKE_SYSTEM_INFO_FILE}")
 message("-- CMAKE_SYSTEM_NAME:      ${CMAKE_SYSTEM_NAME}")
 message("-- CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
