@@ -31,9 +31,9 @@ jobs:
       with:
         node-version: "14.x"
 
-    - name: Environment Setup
+    # - name: Environment Setup
     - run: npm install --ignore-scripts
     - run: npm run build-all
 
-    - name: Test Cases
+    # - name: Test Cases
     - run: node ./compiler/test.js --action
