@@ -1,3 +1,5 @@
+include llvm "memory.ll";
+
 external assume {
 	fn "llvm.memmove.p0i8.p0i8.i64" (dest: unsafe_blob, src: unsafe_blob, bytes: u64, volatile: bool) as Move;
 	fn "llvm.memcpy.p0i8.p0i8.i64" (dest: unsafe_blob, src: unsafe_blob, bytes: u64, volatile: bool) as Copy;
@@ -7,5 +9,5 @@ external assume {
 	fn "realloc" (src: unsafe_blob, size: u64): unsafe_blob as Realloc;
 	fn "free" (addr: unsafe_blob) as Free;
 
-	fn Offset(addr: unsafe_blob, amount: i64): unsafe_blob;
+	fn "offset_ptr" (addr: unsafe_blob, amount: i64): unsafe_blob as Offset;
 }
