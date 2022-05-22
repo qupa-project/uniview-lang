@@ -6,6 +6,8 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
+require('dotenv').config();
+
 const Getopt = require('node-getopt');
 
 const Project = require('./component/project.js');
@@ -30,7 +32,6 @@ if (opt.options.version) {
 	console.info(version);
 	process.exit(0);
 }
-
 
 if (!opt.options.opt) {
 	opt.options.opt = "O0";
@@ -96,12 +97,6 @@ if (opt.options.mode == "uvir") {
 }
 
 
-// Emmit source
-if (config.source == "llvm") {
-	fs.writeFileSync(`${config.output}.ll`, asm.flattern(), 'utf8');
-}
-
-
 /*------------------------------------------
 	Compilation in Clang
 ------------------------------------------*/
@@ -130,16 +125,17 @@ let args = [
 	// "-opt", opt.options.opt
 ].concat(project.includes);
 
+// Get platform specific build filetype
+let exec_out = "out";
 if (os.platform() == "win32") {
-	exec_out += "exe";
+	exec_out = "exe";
 } else if (os.platform() == "darwin") {
-	exec_out += "app";
-} else {
-	exec_out += "out";
+	exec_out = "app";
 }
 
-console.info(`\ntools/uvc-tools.${exec_out} ${args.join(" ")}\n`);
-let tool = spawn(`build/Debug/uvc-tools.${exec_out}`, args, {
+
+console.info(`\n${process.env.uvc_tool}.${exec_out} ${args.join(" ")}\n`);
+let tool = spawn(`${process.env.uvc_tool}.${exec_out}`, args, {
 	cwd: project.rootPath
 });
 

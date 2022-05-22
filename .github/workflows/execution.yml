@@ -46,8 +46,6 @@ jobs:
         version: "13.0"
         directory: "./lib/install"
 
-    - run: npm install
-    - run: npm run build --if-present
-    - run: cmake . -B build
-    - run: cmake --build build
+    - run: npm install --ignore-scripts
+    - run: npm run build-all
     - run: node ./compiler/test.js --action

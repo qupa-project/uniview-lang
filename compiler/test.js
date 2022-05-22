@@ -38,7 +38,7 @@ function Compile(filename, id) {
 		let start = Date.now();
 		let compile = spawn(`node`, [
 			"compiler/compile.js", target,
-			"-o", `./test/temp/${id}`, flags.action ? "--manualtooling" : "--automatictooling"
+			"-o", `./test/temp/${id}`
 		].concat(extraArgs), {
 			cwd: path.resolve(__dirname, "../")
 		});

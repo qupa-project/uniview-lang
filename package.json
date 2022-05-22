@@ -10,22 +10,20 @@
 	},
 	"dependencies": {
 		"bnf-parser": "^2.2.5",
+		"dotenv": "^16.0.1",
 		"node-getopt": "^0.3.2",
 		"unzipper": "^0.10.11"
 	},
 	"scripts": {
-		"setup": "npm install && npm run build",
-		"start": "node compiler/compile.js",
-		"compile": "node compiler/compile.js",
 		"test": "npm run test-execution",
 		"test-translation": "node compiler/test.js",
 		"test-compilation": "node compiler/test.js --bin",
 		"test-execution": "node compiler/test.js --bin --exec",
+		"postinstall": "npm run build-all",
 		"install-tools": "node install-tools.js",
-		"postinstall": "npm run install-tools & npm run build",
-		"build": "npm run build-syntax && npm run build-runtime",
+		"build-all": "npm run build-syntax & npm run build-tools",
 		"build-syntax": "node compiler/parser/build.js",
-		"build-runtime": "clang++ runtime/runtime.cpp -S -emit-llvm -o runtime/runtime.ll"
+		"build-tools": "cmake . -B build & cmake --build build"
 	},
 	"bin": {
 		"uvc": "compiler/compile.js"
@@ -39,8 +37,5 @@
 	"bugs": {
 		"url": "https://github.com/qupa-project/uniview-lang/issues"
 	},
-	"homepage": "https://github.com/qupa-project/uniview-lang#readme",
-	"directories": {
-		"test": "test"
-	}
+	"homepage": "https://github.com/qupa-project/uniview-lang#readme"
 }
