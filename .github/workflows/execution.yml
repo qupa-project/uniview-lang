@@ -35,11 +35,12 @@ jobs:
       - run: npm install --ignore-scripts
       # - run: "./lib/install.bat"
       - run: cmake . -B build
-      # - run: cmake --build build
+      - run: cmake --build build
       - run: npm run build-syntax
       - run: node ./compiler/test.js --action
 
   build-win:
+    if: ${{ false }}  # disable for now
     runs-on: windows-latest
     timeout-minutes: 10
 
