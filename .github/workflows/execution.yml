@@ -26,14 +26,15 @@ jobs:
     #     version: "14.0"
     #     directory: "./lib/install"
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: "14.x"
+      - name: Use Node.js ${{ matrix.node-version }}
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 14
 
-    # - name: Environment Setup
-    - run: npm install --ignore-scripts
-    - run: npm run build-all
+      - name: Environment Setup
+      - run: npm install --ignore-scripts
+      - run: npm run build-all
 
-    # - name: Test Cases
-    - run: node ./compiler/test.js --action
+      - name: Test Cases
+      - run: node ./compiler/test.js --action
