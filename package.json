@@ -19,7 +19,7 @@
 		"test-translation": "node compiler/test.js",
 		"test-compilation": "node compiler/test.js --bin",
 		"test-execution": "node compiler/test.js --bin --exec",
-		"postinstall": "npm run build-all",
+		"postinstall": "npm run build-syntax & npm run install-tools",
 		"install-tools": "node install-tools.js",
 		"build-all": "npm run build-syntax & npm run build-tools",
 		"build-syntax": "node compiler/parser/build.js",
