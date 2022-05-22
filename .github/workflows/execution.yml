@@ -18,12 +18,12 @@ jobs:
       uses: actions/cache@v2
       with:
         path: "./lib/install"
-        key: llvm-15.0
+        key: llvm-14.0
 
     - name: "Install LLVM and Clang"
       uses: KyleMayes/install-llvm-action@v1
       with:
-        version: "15.0"
+        version: "14.0"
         directory: "./lib/install"
 
     - name: Use Node.js ${{ matrix.node-version }}
