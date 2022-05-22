@@ -22,7 +22,7 @@ message("Compiler architecture is ${_compiler_arch}")
 
 
 SET(LLVM_DIR "./lib/install/lib/cmake/llvm" CACHE STRING "" FORCE)
-find_package(LLVM REQUIRED REQUIRED CONFIG)
+find_package(LLVM REQUIRED CONFIG PATHS "./lib/install/lib/cmake/llvm" "lib/install/lib/cmake/llvm" NO_DEFAULT_PATH)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
