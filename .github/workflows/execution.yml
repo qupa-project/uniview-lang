@@ -13,28 +13,10 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      # - name: Cache LLVM and Clang
-      #   id: cache-llvm
-      #   uses: actions/cache@v2
-      #   with:
-      #     path: "./lib/install"
-      #     key: llvm-14.0
-
-      # - name: "Install LLVM and Clang"
-      #   uses: KyleMayes/install-llvm-action@v1
-      #   with:
-      #     version: "14.0"
-      #     directory: "./lib/install"
-
-      - name: Use Node.js ${{ matrix.node-version }}
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 14
-
-      # - name: Environment Setup
       - run: npm install --ignore-scripts
       - run: npm run build-all
-
-      # - name: Test Cases
       - run: node ./compiler/test.js --action
