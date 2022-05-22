@@ -65,7 +65,7 @@ async function InstallTools() {
 
 		console.info("  Downloading tools from https://github.com/qupa-project/uniview-lang/releases/tag/tools")
 		await Download(
-			'https://github.com/qupa-project/uniview-lang/releases/download/tools/tools.zip',
+			'https://github.com/qupa-project/uniview-lang/releases/download/tools-v0.0.2/tools.zip',
 			'./tools/tools.zip'
 		);
 
