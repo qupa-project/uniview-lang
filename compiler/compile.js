@@ -16,8 +16,9 @@ const root = path.resolve("./");
 /*------------------------------------------
 	Compiler configuration flags
 ------------------------------------------*/
+const validModes = ["execute", "verify", "preprocess", "uvir", "llir"];
 let getopt = new Getopt([
-	['m', 'mode=ARG', 'compilation mode'],
+	['m', 'mode=ARG', `compilation mode (${validModes.join("|")})`],
 	['', 'opt=ARG', 'optimisation level'],
 	['o', 'output=ARG', 'output name'],
 	['', 'version', 'show version']
@@ -38,7 +39,7 @@ if (!opt.options.opt) {
 
 if (!opt.options.mode) {
 	opt.options.mode = "execute";
-} else if (!["execute", "verify", "preprocess", "uvir", "llir"].includes(opt.options.mode)) {
+} else if (!validModes.includes(opt.options.mode)) {
 	console.error(`Invalid compilation mode "${opt.options.mode}"`);
 	process.exit(1);
 }
