@@ -20,13 +20,14 @@
 		"test-compilation": "node compiler/test.js --bin",
 		"test-execution": "node compiler/test.js --bin --exec",
 		"postinstall": "npm run build-syntax & npm run install-tools",
-		"install-tools": "node install-tools.js",
+		"install-tools": "node tools/install.js",
 		"build-all": "npm run build-syntax & npm run build-tools",
 		"build-syntax": "node compiler/parser/build.js",
 		"build-tools": "cmake . -B build & cmake --build build"
 	},
 	"bin": {
-		"uvc": "compiler/compile.js"
+		"uvc": "compiler/compile.js",
+		"uvc-env": "tools/env-binder.js"
 	},
 	"repository": {
 		"type": "git",

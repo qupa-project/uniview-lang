@@ -33,7 +33,6 @@ jobs:
         run: sudo ln -s libclang-14.so.1 /lib/x86_64-linux-gnu/libclang.so
         working-directory: ${{ env.LLVM_PATH }}/lib
       - run: npm install --ignore-scripts
-      # - run: "./lib/install.bat"
       - run: cmake . -B build
       - run: cmake --build build
       - run: npm run build-syntax

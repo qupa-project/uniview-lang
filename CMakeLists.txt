@@ -7,8 +7,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/build/bin/")
-
 # System information
 message("Setup Uniview ${UNIVIEW_PROJECT_VERSION}")
 message("-- CMAKE_SYSTEM_INFO_FILE: ${CMAKE_SYSTEM_INFO_FILE}")
@@ -83,3 +81,7 @@ TARGET_LINK_LIBRARIES( ${APP_EXE} "${llvm_libs}" )
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
+
+add_custom_command(TARGET uvc-tools POST_BUILD
+	COMMAND node "${PROJECT_SOURCE_DIR}/tools/env-bind.js" "--uvc_tool=$<TARGET_FILE:uvc-tools>"
+)

@@ -3,7 +3,8 @@ const https = require('https');
 const fs = require('fs');
 const os = require('os');
 
-let config = require('dotenv').config().parsed;
+const env = require('./env-bind.js');
+const path = require('path');
 
 /**
  * Download a resource from `url` to `dest`.
@@ -66,22 +67,17 @@ async function InstallTools() {
 		console.info("  Downloading tools from https://github.com/qupa-project/uniview-lang/releases/tag/tools")
 		await Download(
 			'https://github.com/qupa-project/uniview-lang/releases/download/tools-v0.0.2/tools.zip',
-			'./tools/tools.zip'
+			'./tools.zip'
 		);
 
 		console.info("  Unzipping tools...");
-		await Unzip('./tools/tools.zip', './tools/');
+		await Unzip('./tools.zip', './');
 
-		config.uvc_tool = "./tools/uvc-tools";
-		let data = "";
-		for (let key in config) {
-			data += `${key}="${config[key]}"\n`;
-		}
-		fs.writeFileSync(".env", data);
+		env.UpdateEnv({uvc_tool: path.resolve(__dirname, "./uvc-tools.exe")});
 
 		console.info("  Installation complete");
 		console.info("  Running cleanup");
-		fs.unlinkSync('./tools/tools.zip');
+		fs.unlinkSync('./tools.zip');
 	}
 }
 
