@@ -7,6 +7,9 @@ const spawn = require("child_process").spawn;
 const path = require('path');
 
 console.log(fs.readdirSync("./build/bin"));
+try {
+	console.log(fs.readdirSync("./build/bin/uvc-tools"));
+}
 
 let flags = {
 	clang: process.argv.includes('--bin'),
