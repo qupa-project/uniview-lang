@@ -135,7 +135,7 @@ if (os.platform() == "win32") {
 
 
 console.info(`\n${process.env.uvc_tool}${exec_out} ${args.join(" ")}\n`);
-let tool = spawn(`${process.env.uvc_tool}.${exec_out}`, args, {
+let tool = spawn(`${process.env.uvc_tool}${exec_out}`, args, {
 	cwd: project.rootPath
 });
 
