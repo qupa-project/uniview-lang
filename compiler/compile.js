@@ -128,13 +128,13 @@ let args = [
 // Get platform specific build filetype
 let exec_out = "";
 if (os.platform() == "win32") {
-	exec_out = "exe";
+	exec_out = ".exe";
 } else if (os.platform() == "darwin") {
-	exec_out = "app";
+	exec_out = ".app";
 }
 
 
-console.info(`\n${process.env.uvc_tool}.${exec_out} ${args.join(" ")}\n`);
+console.info(`\n${process.env.uvc_tool}${exec_out} ${args.join(" ")}\n`);
 let tool = spawn(`${process.env.uvc_tool}.${exec_out}`, args, {
 	cwd: project.rootPath
 });
