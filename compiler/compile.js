@@ -126,7 +126,7 @@ let args = [
 ].concat(project.includes);
 
 // Get platform specific build filetype
-let exec_out = "out";
+let exec_out = "";
 if (os.platform() == "win32") {
 	exec_out = "exe";
 } else if (os.platform() == "darwin") {

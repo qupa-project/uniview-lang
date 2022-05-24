@@ -6,7 +6,7 @@ const spawn = require("child_process").spawn;
 
 const path = require('path');
 
-console.log(fs.readdirSync("./build"));
+console.log(fs.readdirSync("./build/bin"));
 
 let flags = {
 	clang: process.argv.includes('--bin'),
