@@ -9,6 +9,8 @@ const path = require('path');
 console.log(fs.readdirSync("./build/bin"));
 try {
 	console.log(fs.readdirSync("./build/bin/uvc-tools"));
+} catch (e) {
+	console.error(e);
 }
 
 let flags = {
