@@ -134,8 +134,15 @@ if (os.platform() == "win32") {
 }
 
 
-console.info(`\n${process.env.uvc_tool}${exec_out} ${args.join(" ")}\n`);
-let tool = spawn(`${process.env.uvc_tool}${exec_out}`, args, {
+let tool_path = path.resolve(__dirname, `../${process.env.uvc_tool}${exec_out}`);
+if (!fs.existsSync(tool_path)) {
+	console.log(`Cannot find tool: ${tool_path}`);
+	process.exit(1);
+}
+
+
+console.info(`\n${tool_path} ${args.join(" ")}\n`);
+let tool = spawn(tool_path, args, {
 	cwd: project.rootPath
 });
 
