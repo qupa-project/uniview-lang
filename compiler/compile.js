@@ -125,16 +125,8 @@ let args = [
 	// "-opt", opt.options.opt
 ].concat(project.includes);
 
-// Get platform specific build filetype
-let exec_out = "";
-if (os.platform() == "win32") {
-	exec_out = ".exe";
-} else if (os.platform() == "darwin") {
-	exec_out = ".app";
-}
 
-
-let tool_path = path.resolve(__dirname, `../${process.env.uvc_tool}${exec_out}`);
+let tool_path = process.env.uvc_tool;
 if (!fs.existsSync(tool_path)) {
 	console.log(`Cannot find tool: ${tool_path}`);
 	process.exit(1);
