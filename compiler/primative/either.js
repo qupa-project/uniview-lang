@@ -80,14 +80,15 @@ class Either_Instance {
 		this.typeSystem = "linear";
 		this.size = -1;
 
-		this.getSize();
-	}
+		this.destructor = false;
+		this.cloner = false;
 
-	getDestructor() {
-		return false;
-	}
-	getCloner() {
-		return false;
+		this.getSize();
+
+		if (this.signature.map(x => x.type.meta == "CLASS").includes(true)) {
+			this.generateCloner();
+			this.generateDestructor();
+		}
 	}
 
 	getFile() {
@@ -268,6 +269,23 @@ class Either_Instance {
 				ref
 			)
 		};
+	}
+
+
+
+
+	getDestructor() {
+		return this.destructor;
+	}
+	getCloner() {
+		return this.cloner;
+	}
+
+	generateCloner() {
+		throw "unimplemented";
+	}
+	generateDestructor() {
+		throw "unimplemented";
 	}
 }
 

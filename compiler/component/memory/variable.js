@@ -753,6 +753,34 @@ class Variable extends Value {
 		return latent;
 	}
 
+	// Reverts the behaviour of induceType
+	deduceType(type, register, ref) {
+		let frag = new LLVM.Fragment();
+
+		// Update the mode of the either type to this type
+
+		if (this.type.size == 0) {
+			throw "Unimplemented";
+		}
+
+		if (this.type.typeSystem == "normal") {
+			// Store the data from this variable at the given location
+			throw "unimplemented";
+		}	else {
+			// Move the data from the pointer address of this location
+			//  to the address of the either data-block
+		}
+
+		let latent = new LLVM.Latent(
+			frag
+		);
+
+		this.probability = new Probability(latent, register, ref);
+		this.type = type;
+
+		return latent;
+	}
+
 
 
 

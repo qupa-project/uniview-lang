@@ -210,7 +210,7 @@ class ExecutionFlow extends ExecutionExpr {
 
 				let scope = this.scope.clone();
 				let variable = scope.getVar(ast.tokens[0]);
-				let latent = variable.induceType(typeRef, target.instruction);
+				let latent = variable.induceType(typeRef, target.instruction, select.ref);
 
 				let branch = this.compile_branch(select.tokens[1], select.ref, scope);
 				if (branch === null) {
@@ -222,6 +222,14 @@ class ExecutionFlow extends ExecutionExpr {
 					latent,
 					...branch.frag.stmts.slice(1)
 				];
+
+
+				// reintroduce original value if valid
+				if (!variable.isUndefined()) {
+					branch.frag.stmts.append(
+						variable.deduceType(target.type, target.instruction, select.ref)
+					);
+				}
 
 				branches.push([
 					index,
@@ -349,6 +357,7 @@ class ExecutionFlow extends ExecutionExpr {
 			this.returned = true;
 		}
 
+		console.log(351, target);
 
 		return frag;
 	}
