@@ -39,5 +39,6 @@
 		"xstddef": "cpp",
 		"xtr1common": "cpp",
 		"xutility": "cpp"
-	}
+	},
+	"esbonio.server.enabled": true
 }

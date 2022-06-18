@@ -3,6 +3,9 @@ const https = require('https');
 const fs = require('fs');
 const os = require('os');
 
+const env = require('./env-bind.js');
+const path = require('path');
+
 /**
  * Download a resource from `url` to `dest`.
  * @param {string} url - Valid URL to attempt download of resource
@@ -63,16 +66,18 @@ async function InstallTools() {
 
 		console.info("  Downloading tools from https://github.com/qupa-project/uniview-lang/releases/tag/tools")
 		await Download(
-			'https://github.com/qupa-project/uniview-lang/releases/download/tools/tools.zip',
-			'./llvm/tools.zip'
+			'https://github.com/qupa-project/uniview-lang/releases/download/tools-v0.0.2/tools.zip',
+			'./tools.zip'
 		);
 
 		console.info("  Unzipping tools...");
-		await Unzip('./llvm/tools.zip', './llvm/');
+		await Unzip('./tools.zip', './');
+
+		env.UpdateEnv({uvc_tool: path.resolve(__dirname, "./uvc-tools.exe")});
 
 		console.info("  Installation complete");
 		console.info("  Running cleanup");
-		fs.unlinkSync('./llvm/tools.zip');
+		fs.unlinkSync('./tools.zip');
 	}
 }
 

@@ -1,74 +1,60 @@
 #!/usr/bin/env node
 "use strict";
 
-const Project = require('./component/project.js');
-
+const { spawn } = require('child_process');
 const path = require('path');
-const os = require('os');
 const fs = require('fs');
-const { exec, spawn, spawnSync } = require('child_process');
+const os = require('os');
+
+require('dotenv').config();
+
+const Getopt = require('node-getopt');
+
+const Project = require('./component/project.js');
 
 const version = "Uniview Compiler v0.1.0 Alpha";
 const root = path.resolve("./");
 
 
-
-
-
 /*------------------------------------------
 	Compiler configuration flags
 ------------------------------------------*/
-if (process.argv.includes("--version")) {
+const validModes = ["execute", "verify", "preprocess", "uvir", "llir"];
+let getopt = new Getopt([
+	['m', 'mode=ARG', `compilation mode (${validModes.join("|")})`],
+	['', 'opt=ARG', 'optimisation level'],
+	['o', 'output=ARG', 'output name'],
+	['', 'version', 'show version']
+]).bindHelp();
+let opt = getopt.parse(process.argv.slice(2));
+
+if (opt.options.version) {
 	console.info(version);
 	process.exit(0);
 }
 
-let config = {
-	output: path.basename(process.argv[2], path.extname(process.argv[2])) || "out",
-	source: false,
-	execute: true,
-	compileOnly: false,
-	verifyOnly: false,
-	manualTooling: os.platform() == "win32" || process.argv.includes('--manualtooling'),
-	optimisation: "0",
-};
-
-let index = process.argv.indexOf('-o');
-if (index != -1 && index > 2) {
-	config.output = process.argv[index+1] || "out";
-}
-if (process.argv.includes('--verifyOnly')) {
-	config.verifyOnly = true;
-	config.execute = false;
-}
-if (process.argv.includes('--compileOnly')) {
-	config.compileOnly = true;
-	config.execute = false;
-}
-if (process.argv.includes('--execute')) {
-	config.execute = true;
-}
-index = process.argv.indexOf('-s');
-if (index != -1) {
-	config.source = process.argv[index+1] || "asm";
-}
-index = process.argv.indexOf('-opt');
-if (index != -1) {
-	config.optimisation = String(
-		Math.min(3, Number(process.argv[index+1]) || 0)
-	);
+if (!opt.options.opt) {
+	opt.options.opt = "O0";
+} else {
+	console.warn("Warn: Compilation does not currently support optimisation");
 }
 
-if (config.execute && config.source !== false) {
-	console.warn("Warn: Compilation flaged as executing result, but result is configured to output a non-executable");
-	config.execute = false;
-}
-
-if (config.execute + config.verifyOnly + config.compileOnly > 1) {
-	console.error("Invalid arguments");
+if (!opt.options.mode) {
+	opt.options.mode = "execute";
+} else if (!validModes.includes(opt.options.mode)) {
+	console.error(`Invalid compilation mode "${opt.options.mode}"`);
 	process.exit(1);
 }
 
+if (!opt.options.output) {
+	opt.options.output = "out";
+}
+
+
+if (opt.argv.length > 1) {
+	console.error("Cannot take multiple uv starting points");
+	process.exit(1);
+}
 
 
 
@@ -76,9 +62,9 @@ if (config.execute + config.verifyOnly + config.compileOnly > 1) {
 	Compilation to LLVM
 ------------------------------------------*/
 // Load required files
-let origin = path.resolve(root, process.argv[2]);
+let origin = path.resolve(root, opt.argv[0]);
 let project = new Project(root, {
-	caching: config.caching
+	caching: false
 });
 project.import(origin, true);
 
@@ -100,14 +86,14 @@ if (project.error) {
 let asm = project.toLLVM();
 
 
-if (config.verifyOnly) {
+if (opt.options.mode == "preprocess") {
+	console.log("Passed");
 	process.exit(0);
 }
 
-
-// Emmit source
-if (config.source == "llvm") {
-	fs.writeFileSync(`${config.output}.ll`, asm.flattern(), 'utf8');
+fs.writeFileSync(`${opt.options.output}.ll`, asm.flattern(), 'utf8');
+if (opt.options.mode == "uvir") {
+	process.exit(0);
 }
 
 
@@ -116,52 +102,46 @@ if (config.source == "llvm") {
 ------------------------------------------*/
 console.info("Compiling...");
 
-let platSP = config.manualTooling ?
-	path.resolve(__dirname, '../llvm/') +
-		(os.platform() == "win32" ? "\\" : "/") :
-	"";
-let exec_out = "./" + config.output;
-if (config.source == "asm") {
-	exec_out += ".s";
-} else if (os.platform() == "win32") {
-	exec_out += ".exe";
-} else if (os.platform() == "darwin") {
-	exec_out += ".app";
-} else {
-	exec_out += ".out";
+let tool_mode = "run";
+switch (opt.options.mode) {
+	case "execute":
+		tool_mode = "run";
+		break;
+	case "verify":
+		tool_mode = "verify";
+		break;
+	case "llir":
+		tool_mode = "ir";
+		break;
+	default:
+		console.error(`Invalid option mode ${opt.options.mode} for compilation tools`);
+		console.error(`This error shouldn't occur`);
+		process.exit(1);
 }
 
-let command =
-	`${platSP}llvm-link - ` + project.includes.map(x => x[1].replace("\"", "\\\"")).join(" ") + // link the llvm IRs
-	` | ${platSP}opt -enable-coroutines -O${config.optimisation}` + // run the coroutine pass
-	` | clang++ -x ir - -o ${exec_out}`;  // compile the executable
+let args = [
+	`${opt.options.output}.ll`,
+	"--mode", tool_mode,
+	// "-opt", opt.options.opt
+].concat(project.includes);
 
-let compilation = exec(command, () => {
-	if (compilation.exitCode === 0){
-		if (config.execute) {
-			console.info('\nRunning...');
-			let app = spawn(exec_out);
-			process.stdin.pipe (process.stdin);
-			app.stderr.pipe (process.stderr);
-			app.stdout.pipe (process.stdout);
 
-			app.on('close', (code) => {
-				if (code === null) {
-					console.error('SEGFAULT', app.signalCode);
-					process.exit(1);
-				}
+let tool_path = process.env.uvc_tool;
+if (!fs.existsSync(tool_path)) {
+	console.log(`Cannot find tool: ${tool_path}`);
+	process.exit(1);
+}
 
-				console.info(`Exited code ${code}`);
-				process.exit(code);
-			});
-		} else {
-			process.exit(0);
-		}
-	} else {
-		console.error("FAILED TO COMPILE");
-		process.exit(1);
-	}
+
+console.info(`\n${tool_path} ${args.join(" ")}\n`);
+let tool = spawn(tool_path, args, {
+	cwd: project.rootPath
 });
-compilation.stdout.pipe(process.stdout);
-compilation.stderr.pipe(process.stderr);
-compilation.stdin.end( asm.flattern() );
+
+tool.stdout.pipe(process.stdout);
+tool.stderr.pipe(process.stderr);
+
+tool.on('close', (code) => {
+	console.info(`\nStatus Code: ${code}`);
+	process.exit(code);
+});

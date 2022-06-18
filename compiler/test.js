@@ -15,14 +15,7 @@ if (flags.exec) {
 	flags.clang = true;
 }
 
-let extraArgs = [];
-if (flags.exec) {
-	extraArgs.push('--execute');
-} else if (!flags.clang) {
-	extraArgs.push('--verifyOnly');
-} else {
-	extraArgs.push('--compileOnly');
-}
+let extraArgs = ["--mode", "execute"];
 
 
 const root = path.resolve(__dirname, "../");
@@ -45,7 +38,7 @@ function Compile(filename, id) {
 		let start = Date.now();
 		let compile = spawn(`node`, [
 			"compiler/compile.js", target,
-			"-o", `./test/temp/${id}`, flags.action ? "--manualtooling" : "--automatictooling"
+			"-o", `./test/temp/${id}`
 		].concat(extraArgs), {
 			cwd: path.resolve(__dirname, "../")
 		});
