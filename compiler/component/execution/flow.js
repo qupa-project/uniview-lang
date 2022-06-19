@@ -226,7 +226,7 @@ class ExecutionFlow extends ExecutionExpr {
 
 				// reintroduce original value if valid
 				if (!variable.isUndefined()) {
-					branch.frag.stmts.append(
+					branch.frag.append(
 						variable.deduceType(target.type, target.instruction, select.ref)
 					);
 				}

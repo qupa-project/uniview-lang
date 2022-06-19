@@ -1,0 +1,30 @@
+import "print.uv";
+
+fn Producer(switch: bool): Either#[void, int, float] {
+	if (switch) {
+		return Either#[void, int, float](void);
+	} else {
+		return Either#[void, int, float](3);
+	}
+}
+
+fn main(): int {
+	let val = Producer(false);
+
+	when val {
+		void {
+			println("Failure");
+			return 1;
+		}
+		int {
+			print("Int: ");
+			println(val); // val is an integer within this scope
+		}
+		float {
+			print("Float: ");
+			println(val); // val is a float within this scope
+		}
+	}
+
+	return 0;
+}
