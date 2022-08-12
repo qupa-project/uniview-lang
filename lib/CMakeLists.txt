@@ -6,9 +6,9 @@ project(univiewlibs VERSION ${UNIVIEW_PROJECT_VERSION} LANGUAGES C CXX)
 include(ExternalProject)
 
 
-if(NOT DEFINED UNIVIEW_LIBS_BUILD_TYPE)
-	set(UNIVIEW_LIBS_BUILD_TYPE Release)
-endif()
+# if(NOT DEFINED UNIVIEW_LIBS_BUILD_TYPE)
+# 	set(UNIVIEW_LIBS_BUILD_TYPE Debug)
+# endif()
 
 # System information
 message("Setup Uniview Libs ${UNIVIEW_PROJECT_VERSION}")
@@ -54,6 +54,7 @@ endif()
 
 # set(LLVM_TARGETS_TO_BUILD:STRING "arm64;X86_64;WebAssembly;risv64") future targets
 set(LLVM_TARGETS_TO_BUILD "X86;WebAssembly" CACHE STRING "" FORCE)
+set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "" FORCE)
 
 message("Building targets: ${LLVM_TARGETS_TO_BUILD}")
 
