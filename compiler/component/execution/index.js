@@ -433,49 +433,27 @@ class Execution extends ExecutionFlow {
 			frag.merge(res.preamble);
 
 			if (returnType.type.typeSystem == "linear") {
-
-				let size = returnType.type.sizeof(ast.ref);
-				frag.append(size.preamble);
-
-				let fromID = new LLVM.ID();
+				let cacheID = new LLVM.ID();
 				frag.append(new LLVM.Set(
-					new LLVM.Name(fromID, false),
-					new LLVM.Bitcast(
-						new LLVM.Type("i8", 1),
-						res.instruction
-					)
-				));
-				let toID = new LLVM.ID();
-				frag.append(new LLVM.Set(
-					new LLVM.Name(toID, false),
-					new LLVM.Bitcast(
-						new LLVM.Type("i8", 1),
-						new LLVM.Argument(
-							returnType.toLLVM(),
-							new LLVM.Name("0", false, ast.ref),
-							ast.ref
-						)
-					)
+					new LLVM.Name(cacheID, false),
+					new LLVM.Load(
+						res.instruction.type.duplicate().offsetPointer(-1),
+						res.instruction.name
+					),
+					ast.ref
 				));
 
-				frag.append(new LLVM.Call(
-					new LLVM.Type("void", 0),
-					new LLVM.Name("llvm.memmove.p0i8.p0i8.i64", true),
-					[
-						new LLVM.Argument(
-							new LLVM.Type("i8", 1),
-							new LLVM.Name(toID.reference(), false)
-						),
-						new LLVM.Argument(
-							new LLVM.Type("i8", 1),
-							new LLVM.Name(fromID.reference(), false)
-						),
-						size.instruction,
-						new LLVM.Argument(
-							new LLVM.Type('i1', 0),
-							new LLVM.Constant("0")
-						)
-					]
+				frag.append(new LLVM.Store(
+					new LLVM.Argument(
+						returnType.toLLVM(),
+						new LLVM.Name("0", false, ast.ref),
+						ast.ref
+					),
+					new LLVM.Argument(
+						returnType.toLLVM().offsetPointer(-1),
+						new LLVM.Name(cacheID.reference(), false)
+					),
+					ast.ref
 				));
 
 				inner = new LLVM.Type("void", 0, ast.ref);

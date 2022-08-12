@@ -288,44 +288,23 @@ class Structure extends TypeDef {
 			new LLVM.Name(storeID.reference(), false)
 		);
 
-		let size = this.sizeof(ref);
-		preamble.merge(size.preamble);
-
-		let fromID = new LLVM.ID();
+		let cacheID = new LLVM.ID();
 		preamble.append(new LLVM.Set(
-			new LLVM.Name(fromID, false),
-			new LLVM.Bitcast(
-				new LLVM.Type("i8", 1),
-				argument
-			)
-		));
-		let toID = new LLVM.ID();
-		preamble.append(new LLVM.Set(
-			new LLVM.Name(toID, false),
-			new LLVM.Bitcast(
-				new LLVM.Type("i8", 1),
-				instruction
-			)
+			new LLVM.Name(cacheID, false),
+			new LLVM.Load(
+				type.toLLVM(ref, true),
+				argument.name
+			),
+			ref
 		));
 
-		preamble.append(new LLVM.Call(
-			new LLVM.Type("void", 0),
-			new LLVM.Name("llvm.memcpy.p0i8.p0i8.i64", true),
-			[
-				new LLVM.Argument(
-					new LLVM.Type("i8", 1),
-					new LLVM.Name(toID.reference(), false)
-				),
-				new LLVM.Argument(
-					new LLVM.Type("i8", 1),
-					new LLVM.Name(fromID.reference(), false)
-				),
-				size.instruction,
-				new LLVM.Argument(
-					new LLVM.Type('i1', 0),
-					new LLVM.Constant("0")
-				)
-			]
+		preamble.append(new LLVM.Store(
+			instruction,
+			new LLVM.Argument(
+				type.toLLVM(ref, true),
+				new LLVM.Name(cacheID.reference(ref), false, ref)
+			),
+			ref
 		));
 
 		return {
