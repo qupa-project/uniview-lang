@@ -16,6 +16,7 @@ class TypeDef {
 
 		this.represent = "unknown";
 		this.name = "unknown";
+		this.alignment = 0;
 		this.size = 0;
 
 		this.typeSystem = 'linear';

@@ -39,6 +39,7 @@ class Structure extends TypeDef {
 		this.terms = [];
 		this.linked = false;
 		this.size = -1;
+		this.alignment = 0;
 	}
 
 	/**
@@ -316,9 +317,16 @@ class Structure extends TypeDef {
 
 	getSize () {
 		if (this.size == -1) {
+			this.alignment = Math.max.apply(null,
+				this.terms
+					.map(x => x.typeRef.type)
+					.map(x => x.primative ? x.size : x.alignment)
+			);
+
 			this.size = this.terms
 				.map(x => x.getSize())
-				.reduce((tally, curr) => tally+curr, 0);
+				.map(x => Math.ceil(x/this.alignment)*this.alignment)
+				.reduce((tally, curr) => tally + curr, 0);
 		}
 
 		return this.size;
