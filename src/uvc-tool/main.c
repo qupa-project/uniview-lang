@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "verbose.h"
+
 enum Compilation_Mode {
 	CM_Run,
 	CM_IR,
@@ -19,9 +21,15 @@ int main(int argc, char const *argv[]) {
 	enum Compilation_Mode outType = CM_Run;
 
 	for (int i=1; i<argc; i++) {
+		verbose("loop %i of %i", i, argc);
 		if (strcmp(argv[i], "--version") == 0) {
 			printf("Version: %s\n", "v0.0.0");
 			return 0;
+		}
+
+		if (strcmp(argv[i], "--verbose") == 0) {
+			setVerbose(true);
+			verbose("Verbose Enabled\n");
 		}
 
 		if (strcmp(argv[i], "--mode") != 1 && i+1 < argc) {
@@ -39,6 +47,8 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 
+	verbose("Creating Context\n");
+
 	LLVMContextRef ctx = LLVMContextCreate();
 	LLVMModuleRef main_mod = NULL;
 
@@ -49,11 +59,14 @@ int main(int argc, char const *argv[]) {
 		}
 
 		// Create Module
+		verbose("Creating Module:\n   %s\n", argv[i]);
 		char *err = NULL;
 		LLVMBool fail;
 		LLVMModuleRef mod = LLVMModuleCreateWithNameInContext(argv[i], ctx);
 
+
 		// Open file
+		verbose("  Opening file\n");
 		LLVMMemoryBufferRef buf;
 		LLVMCreateMemoryBufferWithContentsOfFile(argv[i], &buf, &err);
 		if (err) {
@@ -62,6 +75,7 @@ int main(int argc, char const *argv[]) {
 		}
 
 		// Read file
+		verbose("  Interpreting\n");
 		fail = LLVMParseIRInContext(ctx, buf, &mod, &err);
 		if (err) {
 			fprintf(stderr, "%s", err);
@@ -69,6 +83,7 @@ int main(int argc, char const *argv[]) {
 		}
 
 		// Verify module
+		verbose("  Verifying\n");
 		fail = LLVMVerifyModule(mod, LLVMAbortProcessAction, &err);
 		if (fail) {
 			fprintf(stderr, "%s", err);
@@ -79,6 +94,7 @@ int main(int argc, char const *argv[]) {
 		if (i == 1) {
 			main_mod = mod;
 		} else {
+			verbose("  Linking\n");
 			LLVMLinkModules2(main_mod, mod);
 		}
 	}
@@ -90,6 +106,7 @@ int main(int argc, char const *argv[]) {
 
 
 
+	verbose("Starting Execution Engine\n");
 	char *err = NULL;
 	LLVMExecutionEngineRef engine;
 	LLVMLinkInMCJIT();
@@ -119,7 +136,7 @@ int main(int argc, char const *argv[]) {
 			}
 			break;
 		case CM_Run:
-			puts("Running...");
+			verbose("Running\n");
 
 			LLVMValueRef mainFn;
 			char * const mainFn_name = "main";
@@ -136,6 +153,7 @@ int main(int argc, char const *argv[]) {
 	}
 
 
+	verbose("Shutting down execution Engine\n");
 	LLVMDisposeExecutionEngine(engine);
 	// LLVMDisposeModule(main_mod);
 	// should dispose all other modules first?

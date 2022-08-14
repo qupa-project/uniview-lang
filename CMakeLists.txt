@@ -71,8 +71,10 @@ llvm_map_components_to_libnames(
 # ADD_LIBRARY( Uniview-Core STATIC "src/core/main.c" )
 
 SET( APP_EXE uvc-tools )
-# add_executable( ${APP_EXE} main.cpp)
-add_executable( ${APP_EXE} "src/uvc-tool/main.c")
+SET( TAR )
+add_executable( ${APP_EXE} "src/uvc-tool/main.c"
+	"src/uvc-tool/verbose.c"
+)
 
 # TARGET_LINK_LIBRARIES( Uniview-Core ${llvm_libs} )
 # TARGET_LINK_LIBRARIES( ${APP_EXE} Uniview-Core )

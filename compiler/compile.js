@@ -24,7 +24,8 @@ let getopt = new Getopt([
 	['m', 'mode=ARG', `compilation mode (${validModes.join("|")})`],
 	['', 'opt=ARG', 'optimisation level'],
 	['o', 'output=ARG', 'output name'],
-	['', 'version', 'show version']
+	['', 'version', 'show version'],
+	['', 'verbose', 'verbose logs']
 ]).bindHelp();
 let opt = getopt.parse(process.argv.slice(2));
 
@@ -124,6 +125,10 @@ let args = [
 	"--mode", tool_mode,
 	// "-opt", opt.options.opt
 ].concat(project.includes);
+
+if (opt.options.verbose) {
+	args.push("--verbose");
+}
 
 
 let tool_path = process.env.uvc_tool;

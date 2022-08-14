@@ -38,7 +38,8 @@ function Compile(filename, id) {
 		let start = Date.now();
 		let compile = spawn(`node`, [
 			"compiler/compile.js", target,
-			"-o", `./test/temp/${id}`
+			"-o", `./test/temp/${id}`,
+			'--verbose'
 		].concat(extraArgs), {
 			cwd: path.resolve(__dirname, "../")
 		});
