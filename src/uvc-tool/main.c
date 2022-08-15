@@ -20,16 +20,22 @@ enum Compilation_Mode {
 int main(int argc, char const *argv[]) {
 	enum Compilation_Mode outType = CM_Run;
 
+	char* valid = (char*)malloc(argc);
+	valid[0] = 0;
+
 	for (int i=1; i<argc; i++) {
 		verbose("loop %i of %i", i, argc);
 		if (strcmp(argv[i], "--version") == 0) {
 			printf("Version: %s\n", "v0.0.0");
-			return 0;
+			valid[i] = 0;
+			continue;
 		}
 
 		if (strcmp(argv[i], "--verbose") == 0) {
 			setVerbose(true);
 			verbose("Verbose Enabled\n");
+			valid[i] = 0;
+			continue;
 		}
 
 		if (strcmp(argv[i], "--mode") != 1 && i+1 < argc) {
@@ -44,7 +50,14 @@ int main(int argc, char const *argv[]) {
 					outType = CM_Verify;
 					break;
 			}
+
+			valid[i] = 0;
+			valid[i+1] = 0;
+			i++;
+			continue;
 		}
+
+		valid[i] = 1;
 	}
 
 	verbose("Creating Context\n");
@@ -52,9 +65,8 @@ int main(int argc, char const *argv[]) {
 	LLVMContextRef ctx = LLVMContextCreate();
 	LLVMModuleRef main_mod = NULL;
 
-	for (int i=1; i<argc; i++) {
-		if (argv[i][0] == ("-")[0]) {
-			i++;      // skip the next
+	for (int i=0; i<argc; i++) {
+		if (valid[i] == 0) {
 			continue; // skip the current
 		}
 
@@ -98,6 +110,8 @@ int main(int argc, char const *argv[]) {
 			LLVMLinkModules2(main_mod, mod);
 		}
 	}
+
+	free(valid);
 
 	if (main_mod == NULL) {
 		fprintf(stderr, "Missing main module argument");
