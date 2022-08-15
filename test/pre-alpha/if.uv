@@ -1,14 +1,12 @@
-import "print.uv";
-
 fn test(a: int, b: int) {
 	if (a > b) {
-		println("Greater");
+		printf("%s", "Greater");
 	} elif (a < b) {
-		println("Lesser");
+		printf("%s", "Lesser");
 	} elif (a > b) {
-		println("Logic error, should have already been caught");
+		printf("%s", "Logic error, should have already been caught");
 	} else {
-		println("Equal");
+		printf("%s", "Equal");
 	}
 
 	return;

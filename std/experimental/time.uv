@@ -1,7 +1,3 @@
-// include llvm "../../runtime/runtime.ll";
-
-import "print.uv";
-
 external assume {
 	// struct tm {
 	// 	tm_sec: i32;   // seconds after the minute - [0, 60] including leap second

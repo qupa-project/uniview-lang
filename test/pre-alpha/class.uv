@@ -1,5 +1,3 @@
-import "print.uv";
-
 class Cat {
 	id: int;
 
@@ -10,26 +8,24 @@ class Cat {
 	}
 
 	fn Say(this: Cat) {
-		print(this.id);
-		println(": meow");
+		printf("%i: meow\n", this.id);
 		Cat.Delete(this);
 	}
 
 	fn Say(this: @Cat) {
-		print(this.id);
-		println(": meow");
+		printf("%i: meow\n", this.id);
 	}
 
 	fn Clone(src: @Cat): Cat {
 		let out = Blank#[Cat]();
-		println("Cloning cat");
+		printf("%s", "Cloning cat\n");
 		out.id = src.id + 1;
 
 		return out;
 	}
 
 	fn Delete(this: Cat) {
-		println ("Deleting cat...");
+		printf("%s", "Deleting cat...\n");
 		delete this.id;
 	}
 }

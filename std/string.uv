@@ -1,7 +1,7 @@
 include llvm "./string.ll";
 import "memory.uv" as Memory;
 
-import "print.uv";
+import "io.uv";
 
 external assume {
 	fn "qupa.cstring.size" (str: cstring): u64 as sizeof;
@@ -131,5 +131,5 @@ class String {
 
 
 fn puts(str: #String) {
-	puts(str.data);
+	puts(cast#[cstring](str.data));
 }
