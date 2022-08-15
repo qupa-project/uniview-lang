@@ -50,7 +50,6 @@ class Template_Primative_Printf extends Template {
 	toLLVM() {
 		let frag = new LLVM.Fragment();
 		frag.append(new LLVM.Raw("declare dso_local i32 @printf(i8*, ...)"));
-		console.log(51, frag);
 		return frag;
 	}
 }
