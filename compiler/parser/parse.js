@@ -43,6 +43,9 @@ function Simplify_Stmt_Top (node) {
 		case "struct":
 			inner = Simplify_Struct(node.tokens[0]);
 			break;
+		case "impl":
+			inner = Simplify_Impl(node.tokens[0]);
+			break;
 		default:
 			throw new TypeError(`Unexpected top level statement ${node.tokens[0].type}`);
 	}
@@ -153,23 +156,35 @@ function Simplify_String (node) {
 
 
 
-function Simplify_Class (node) {
+function Simplify_Impl (node) {
 	let out = [
-		Simplify_Name(node.tokens[2][0]),
-		Simplify_Class_Body(node.tokens[7][0])
+		Simplify_Data_Type(node.tokens[2][0]),
+		node.tokens[3][0] ? Simplify_Impl_For(node.tokens[3][0]) : null,
+		Simplify_Impl_Body(node.tokens[7][0])
 	];
+
+	// Swap the type references when a for is present
+	if (out[1]) {
+		let t = out[1];
+		out[1] = out[0];
+		out[0] = t;
+	}
+
 	node.tokens  = out;
 	node.reached = null;
 	return node;
 }
-function Simplify_Class_Body (node) {
+function Simplify_Impl_For (node) {
+	return Simplify_Data_Type(node.tokens[3][0]);
+}
+function Simplify_Impl_Body (node) {
 	node.tokens = node.tokens[0]
 		.filter ( x => x.tokens[0].type != "comment")
-		.map( x => Simplify_Class_Stmt(x.tokens[1][0]).tokens[0] );
+		.map( x => Simplify_Impl_Stmt(x.tokens[1][0]).tokens[0] );
 	node.reached = null;
 	return node;
 }
-function Simplify_Class_Stmt (node) {
+function Simplify_Impl_Stmt (node) {
 	switch (node.tokens[0].type) {
 		case "comment":
 			break;
@@ -430,7 +445,6 @@ function Simplify_Data_Type (node) {
 	node.tokens = inner;
 	return node;
 }
-
 function Simplify_Data_Type_Access (node) {
 	node.tokens = [ ".", Simplify_Name(node.tokens[1][0]) ];
 	node.reached = null;
@@ -879,7 +893,6 @@ function Simplify_Expr (node) {
 
 	return ApplyPrecedence(queue);
 }
-
 function Simplify_Expr_Arg (node) {
 	switch (node.tokens[0].type) {
 		case "expr_val":
@@ -890,7 +903,6 @@ function Simplify_Expr_Arg (node) {
 			throw new Error(`Unexpected expression argument ${node.tokens[0].type}`);
 	}
 }
-
 function Simplify_Expr_Val (node) {
 	let subject = node.tokens[2][0].tokens[0];
 	subject = subject.type == "variable" ?
@@ -909,7 +921,6 @@ function Simplify_Expr_Val (node) {
 
 	return subject;
 }
-
 function Simplify_Expr_Unary (opperation, node) {
 	switch (opperation.tokens) {
 		case "-":
@@ -958,7 +969,6 @@ function Simplify_Expr_Unary (opperation, node) {
 			throw new Error(`Unexpected unary operation "${opperation.tokens}"`);
 	}
 }
-
 function Simplify_Expr_Call (name, node, ref) {
 	return new BNF_SyntaxNode(
 		"call",
@@ -981,7 +991,6 @@ function Simplify_Expr_Call (name, node, ref) {
 		null
 	);
 }
-
 function Simplify_Expr_Brackets (node) {
 	node.tokens = [
 		Simplify_Expr(node.tokens[2][0])
@@ -989,7 +998,6 @@ function Simplify_Expr_Brackets (node) {
 	node.reached = null;
 	return node;
 }
-
 function Simplify_Expr_Lend (node) {
 	node.tokens = [
 		Simplify_Variable(node.tokens[1][0])

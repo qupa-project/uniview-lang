@@ -100,7 +100,7 @@ program ::= w* ( stmt_top w* )*
 		struct_stmt ::= comment | struct_attribute
 			struct_attribute ::= name w* ":" w* data_type w* ";"
 
-	impl ::= "impl" w+ name impl_for? w* "{" w* impl_body w* "}"
+	impl ::= "impl" w+ data_type impl_for? w* "{" w* impl_body w* "}"
 		impl_for ::= w+ "for" w+ data_type
 		impl_body ::= ( w* impl_stmt )*
 			impl_stmt ::= comment | function
