@@ -40,17 +40,8 @@ function Simplify_Stmt_Top (node) {
 		case "library":
 			inner = Simplify_Library(node.tokens[0]);
 			break;
-		case "class":
-			inner = Simplify_Class(node.tokens[0]);
-			break;
-		case "template":
-			inner = Simplify_Template(node.tokens[0]);
-			break;
 		case "struct":
 			inner = Simplify_Struct(node.tokens[0]);
-			break;
-		case "flag_definition":
-			inner = Simplify_Flag_Definition(node.tokens[0]);
 			break;
 		default:
 			throw new TypeError(`Unexpected top level statement ${node.tokens[0].type}`);
@@ -227,14 +218,6 @@ function Simplify_Template_Arg (node) {
 }
 
 
-
-function Simplify_Flag_Definition (node) {
-	// TODO
-	return node;
-}
-
-
-
 function Simplify_External (node) {
 	node.tokens = [
 		node.tokens[2][0].tokens,                        // mode
@@ -340,20 +323,6 @@ function Simplify_Struct_Attribute (node) {
 	];
 
 	node.tokens = out;
-	node.reached = null;
-	return node;
-}
-
-
-
-function Simplify_Composition (node) {
-	node = node.tokens[0];
-
-	if (node.type != "decompose" && node.type != "compose") {
-		throw new Error(`Unexpected composition statement "${node.type}"`);
-	}
-
-	node.tokens = [ Simplify_Variable(node.tokens[2][0]) ];
 	node.reached = null;
 	return node;
 }
@@ -550,7 +519,8 @@ function Simplify_Void (node) {
 function Simplify_Function (node) {
 	node.tokens = [
 		Simplify_Function_Head(node.tokens[0][0]), // head
-		Simplify_Function_Body(node.tokens[2][0])  // body
+		node.tokens[2][0].tokens == ";" ? null :
+			Simplify_Function_Body(node.tokens[2][0].tokens[0])  // body
 	];
 	node.reached = null;
 	return node;
@@ -686,9 +656,6 @@ function Simplify_Function_Stmt (node) {
 			break;
 		case "when":
 			inner = Simplify_When(node.tokens[0]);
-			break;
-		case "composition":
-			inner = Simplify_Composition(node.tokens[0]);
 			break;
 		default:
 			throw new TypeError(`Unexpected function statement ${node.tokens[0].type}`);

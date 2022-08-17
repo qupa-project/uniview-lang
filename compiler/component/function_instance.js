@@ -18,7 +18,7 @@ class Function_Instance {
 		this.ast = ast;
 		this.ref = ast.ref.start;
 		this.external = external;
-		this.abstract = abstract;
+		this.abstract = abstract || this.ast.tokens[1] == null;
 
 		this.returnType = null;
 		this.signature = [];
