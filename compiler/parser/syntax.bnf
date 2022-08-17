@@ -25,7 +25,7 @@ program ::= w* ( stmt_top w* )*
 #=============================
 #  Constants
 #=============================
-	constant ::= boolean | string | hexidecimal | octal | binary | float | integer
+	constant ::= boolean | void | string | hexidecimal | octal | binary | float | integer
 
 	string ::= string_unicode | string_text
 		string_unicode   ::= "\"" ( "\\\"" | !( "\"" ) )* "\""
@@ -40,6 +40,8 @@ program ::= w* ( stmt_top w* )*
 	binary ::= "0b" ( "0" | "1" )+
 
 	boolean ::= "true" | "false"
+
+	void ::= "void"
 
 	integer ::= "-"? integer_u
 		integer_u ::= ( digit_nz digit* ) | zero
@@ -85,7 +87,7 @@ program ::= w* ( stmt_top w* )*
 				func_arg_list ::= func_arg w* ( "," w* func_arg w* )*
 				func_arg      ::= name w* ":" w* ( "@" | "#" )? w* data_type
 		function_body ::= "{" w* ( func_stmt w* )* "}"
-			func_stmt ::= comment | if | return | composition | declare | delete | assign | declare_assign | call_procedure
+			func_stmt ::= comment | if | when | return | composition | declare | delete | assign | declare_assign | call_procedure
 
 	function_outline ::= func_head w* ";"
 	function_redirect ::= "fn" w+ string w* func_arguments ( w* ":" w* data_type )? w+ "as" w+ name w* ";"
@@ -179,3 +181,10 @@ program ::= w* ( stmt_top w* )*
 		if_stmt   ::= "if"   w* "(" w* expr w* ")" w* function_body
 		elif_stmt ::= "elif" w* "(" w* expr w* ")" w* function_body
 		else_stmt ::= "else" w* function_body
+
+
+#=============================
+#  When statement
+#=============================
+	when ::= "when" w+ variable w* "{" when_opt+ "}"
+		when_opt ::= w* ( "default" | data_type ) w* function_body w*

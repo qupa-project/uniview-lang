@@ -1,13 +1,14 @@
 const { Generator_ID } = require('./generate.js');
 
 const Flattern = require('./../parser/flattern.js');
-const TypeDef = require('./typedef.js');
 const LLVM = require('../middle/llvm.js');
 const Execution = require('./execution/index.js');
 const Scope = require('./memory/scope.js');
 const TypeRef = require('./typeRef.js');
-const Structure = require('./struct.js');
 
+const Primative = {
+	types: require('./../primative/types.js')
+};
 
 let funcIDGen = new Generator_ID();
 
@@ -85,6 +86,13 @@ class Function_Instance {
 		for (let [i, type] of types.entries()){
 			let search = exec.resolveType(type);
 			if (search instanceof TypeRef) {
+				if (i !== 0 && search.type == Primative.types.void) {
+					file.throw(
+						`Functions cannot include void type as argument`,
+						type.ref.start, type.ref.end
+					);
+				}
+
 				search.pointer  = type.tokens[0]; // Copy the pointer level across
 				search.lent     = borrows[i];
 				search.constant = consts[i];
@@ -193,7 +201,11 @@ class Function_Instance {
 				scope,
 				entry_id.reference()
 			);
-			frag.merge(exec.compile(this.ast.tokens[1]));
+			let inner = exec.compile(this.ast.tokens[1]);
+			if (inner === null) {
+				return null;
+			}
+			frag.merge(inner);
 		}
 
 		let gen = new Generator_ID(0);

@@ -13,10 +13,18 @@ class Struct_Term {
 		this.name = name;
 		this.typeRef = typeRef;
 		this.declared = ref;
-		this.size = typeRef.type.size;
+		this.size = -1;
 		this.typeSystem = "linear";
 
 		this.ir = new LLVM.Fragment();
+	}
+
+	getSize () {
+		if (this.size == -1) {
+			this.size = this.typeRef.type.getSize();
+		}
+
+		return this.size;
 	}
 
 	toLLVM() {
@@ -30,6 +38,8 @@ class Structure extends TypeDef {
 		super(ctx, ast, external);
 		this.terms = [];
 		this.linked = false;
+		this.size = -1;
+		this.alignment = 0;
 	}
 
 	/**
@@ -168,7 +178,6 @@ class Structure extends TypeDef {
 			return;
 		}
 
-		this.size = 0;
 		for (let node of this.ast.tokens[1].tokens) {
 			switch (node.type) {
 				case "comment":
@@ -182,6 +191,7 @@ class Structure extends TypeDef {
 					throw new Error(`Unexpected attribute ${node.type}`);
 			}
 		}
+
 		this.linked = true;
 	}
 
@@ -209,6 +219,15 @@ class Structure extends TypeDef {
 			return false;
 		}
 
+		if (typeRef.type == Primative.types.void) {
+			this.ctx.getFile().throw(
+				`Error: Structures cannot include void type as an attribute`,
+				typeNode.ref.start,
+				typeNode.ref.end
+			);
+			return false;
+		}
+
 		// Check a structure is not including a class attribute
 		if (this.meta != "CLASS" && typeRef.type.meta == "CLASS") {
 			this.ctx.getFile().throw(
@@ -230,7 +249,6 @@ class Structure extends TypeDef {
 			node.ref.start
 		);
 		this.terms.push(term);
-		this.size += term.size;
 		return true;
 	}
 
@@ -271,50 +289,47 @@ class Structure extends TypeDef {
 			new LLVM.Name(storeID.reference(), false)
 		);
 
-		let size = this.sizeof(ref);
-		preamble.merge(size.preamble);
-
-		let fromID = new LLVM.ID();
+		let cacheID = new LLVM.ID();
 		preamble.append(new LLVM.Set(
-			new LLVM.Name(fromID, false),
-			new LLVM.Bitcast(
-				new LLVM.Type("i8", 1),
-				argument
-			)
-		));
-		let toID = new LLVM.ID();
-		preamble.append(new LLVM.Set(
-			new LLVM.Name(toID, false),
-			new LLVM.Bitcast(
-				new LLVM.Type("i8", 1),
-				instruction
-			)
+			new LLVM.Name(cacheID, false),
+			new LLVM.Load(
+				type.toLLVM(ref, true),
+				argument.name
+			),
+			ref
 		));
 
-		preamble.append(new LLVM.Call(
-			new LLVM.Type("void", 0),
-			new LLVM.Name("llvm.memcpy.p0i8.p0i8.i64", true),
-			[
-				new LLVM.Argument(
-					new LLVM.Type("i8", 1),
-					new LLVM.Name(toID.reference(), false)
-				),
-				new LLVM.Argument(
-					new LLVM.Type("i8", 1),
-					new LLVM.Name(fromID.reference(), false)
-				),
-				size.instruction,
-				new LLVM.Argument(
-					new LLVM.Type('i1', 0),
-					new LLVM.Constant("0")
-				)
-			]
+		preamble.append(new LLVM.Store(
+			instruction,
+			new LLVM.Argument(
+				type.toLLVM(ref, true),
+				new LLVM.Name(cacheID.reference(ref), false, ref)
+			),
+			ref
 		));
 
 		return {
 			preamble,
 			instruction
 		};
+	}
+
+
+	getSize () {
+		if (this.size == -1) {
+			this.alignment = Math.max.apply(null,
+				this.terms
+					.map(x => x.typeRef.type)
+					.map(x => x.primative ? x.size : x.alignment)
+			);
+
+			this.size = this.terms
+				.map(x => x.getSize())
+				.map(x => Math.ceil(x/this.alignment)*this.alignment)
+				.reduce((tally, curr) => tally + curr, 0);
+		}
+
+		return this.size;
 	}
 }
 

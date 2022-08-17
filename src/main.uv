@@ -1,0 +1,95 @@
+import "experimental/file.uv";
+import "print.uv";
+
+class Reference {
+	index: int;
+	line: int;
+	col: int;
+
+	fn New(): Reference {
+		let out = Blank#[Reference]();
+		out.index = 0;
+		out.line = 1;
+		out.col = 1;
+
+		return out;
+	}
+}
+
+class ReferenceRange {
+	start: Reference;
+	end  : Reference;
+	reach: Reference;
+
+	fn New(): ReferenceRange {
+		let out = Blank#[ReferenceRange]();
+		out.start = Reference();
+		out.end   = Reference();
+		out.reach = Reference();
+
+		return out;
+	}
+
+	fn New(start: Reference): ReferenceRange {
+		let out = Blank#[ReferenceRange]();
+		out.start = $start;
+		out.end   = start;
+		out.reach = Reference();
+
+		return out;
+	}
+
+	fn Length(this: #ReferenceRange): int {
+		return this.end.index - this.start.index;
+	}
+
+	fn IsFailure(this: #ReferenceRange): bool {
+		return ReferenceRange.Length(@this) < 1;
+	}
+}
+
+
+
+fn MatchName(file: @File, ref: Reference): ReferenceRange {
+	let range = ReferenceRange($ref);
+
+	let char = cast#[int](File.GetChar(@file));
+	if (File.IsEOF($file)) {
+		delete range;
+		return ReferenceRange(ref);
+	} else {
+		delete ref;
+	}
+
+	// If char is A-Z or a-z or 0-9 or _
+	if ((65 <= char && char <= 90) || (97 <= char && char <= 122) || (48 <= char && char <= 57) || char == 95) {
+		range.end.index = range.end.index + 1;
+		range.end.col = range.end.col + 1;
+	}
+
+	let next = MatchName(@file, $range.end);
+	range.end = next.end;
+	delete next;
+
+	return range;
+};
+
+
+fn main(): int {
+	println("Start");
+	let file = File("./test.uv", "r");
+
+	let start = Reference();
+	let res = MatchName(@file, start);
+	let len = ReferenceRange.Length(res);
+	if (len < 1) {
+		println("Failed");
+	} else {
+		print("Consumed ");
+		print(len);
+		println(" tokens");
+	}
+
+	File.Delete(file);
+	return 0;
+}

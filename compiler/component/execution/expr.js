@@ -35,6 +35,13 @@ class ExecutionExpr extends ExecutionBase {
 					ast.ref.start
 				);
 				break;
+			case "void":
+				type = new TypeRef(0, Primative.types.void);
+				val = new LLVM.Constant(
+					"null",
+					ast.ref.start
+				);
+				break;
 			case "integer":
 				type = new TypeRef(0, Primative.types.i64);
 				val = new LLVM.Constant(

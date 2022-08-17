@@ -1,5 +1,10 @@
 const Flattern = require('../../parser/flattern.js');
 const LLVM     = require("../../middle/llvm.js");
+const TypeRef = require('../typeRef.js');
+
+const Primative = {
+	types: require('./../../primative/types.js')
+};
 
 class ExecutionBase {
 	/**
@@ -78,7 +83,12 @@ class ExecutionBase {
 					template.push(type);
 					break;
 				case "constant":
-					template.push(this.compile_constant(arg));
+					let cnst = this.compile_constant(arg);
+					if (cnst.type.type == Primative.types.void) {
+						template.push(new TypeRef(0, Primative.types.void, false, false));
+					} else {
+						template.push(cnst);
+					}
 					break;
 				default:
 					this.getFile().throw(

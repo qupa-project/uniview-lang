@@ -72,7 +72,7 @@ class TypeRef {
 			this.type.represent,
 			flat ? 0 :
 				pointer ? 1 :
-				this.lent || this.type.typeSystem == "linear" ? 1 : 0,
+					this.lent || this.type.typeSystem == "linear" ? 1 : 0,
 			ref
 		);
 	}

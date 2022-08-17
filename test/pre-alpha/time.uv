@@ -1,5 +1,4 @@
 import "experimental/time.uv" as Time;
-import "print.uv";
 
 fn println(dt: Time.DateTime) {
 	let time = dt.time;
@@ -9,44 +8,30 @@ fn println(dt: Time.DateTime) {
 		time.hours = time.hours - 12;
 	}
 
-	print(time.hours);
-	print(":");
-	print(time.minutes);
-	print(":");
-	print(time.seconds);
+	printf("%i:%i:%i", time.hours, time.minutes, time.seconds);
 
 	if (pm) {
-		print("PM");
+		printf("%s", " PM");
 	} else {
-		print("AM");
+		printf("%s", " AM");
 	}
 
-	print(" ");
 	let date = dt.date;
-	print(date.day);
-	print("/");
-	print(date.month);
-	print("/");
-	print(date.year);
-	print("  ");
-	print(date.weekDay);
-	print("  ");
-	println(date.days);
+	printf(" %i/%i/%i %i %i\n", date.day, date.month, date.year, date.weekDay, date.days);
 
 	return;
 }
 
 fn main(): int {
 	let now = Time.Now();
-	print("Unix   : ");
-	println(now);
+	printf("Unix   : %i\n", now);
 
-	print("UTC    : ");
+	printf("%s", "UTC    : ");
 	let dt = Time.GetDateTime(now);
 	println(dt);
 
 	dt = Time.GetDateTime(now + 10*60*60);
-	print("UTC+10 : ");
+	printf("%s", "UTC+10 : ");
 	println(dt);
 
 	return 0;

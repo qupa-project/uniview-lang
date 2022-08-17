@@ -1,0 +1,26 @@
+fn Producer(switch: bool): Either#[void, int, float] {
+	if (switch) {
+		return Either#[void, int, float](void);
+	} else {
+		return Either#[void, int, float](3);
+	}
+}
+
+fn main(): int {
+	let val = Producer(false);
+
+	when val {
+		void {
+			printf("%s", "Failure");
+			return 1;
+		}
+		int {
+			printf("Int: %i", val); // val is an integer within this scope
+		}
+		float {
+			printf("Float: %f", val); // val is a float within this scope
+		}
+	}
+
+	return 0;
+}

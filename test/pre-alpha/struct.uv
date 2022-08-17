@@ -1,5 +1,3 @@
-import "print.uv";
-
 // Keep this function before struct definition:
 //  - checks out of order declaration is working
 //  - checks storing structs within structs
@@ -51,21 +49,14 @@ fn age(p: @Person) {
 }
 
 fn print(p: Person) {
-	print("Person { id: ");
-	print(p.id);
-	print(", age: ");
-	print(p.age);
-	print(", finger: ");
+	printf("Person { id: %i, age: %i, finger: ", p.id, p.age);
 	print(p.finger);
-	print(" }");
+	printf("%s", " }");
 
 	return;
 }
 fn print(f: FingerPrint) {
-	print("FingerPrint { id: ");
-	print(f.id);
-	print(" }");
-
+	printf("FingerPrint { id: %i }", f.id);
 	return;
 }
 
@@ -74,49 +65,49 @@ fn print(f: FingerPrint) {
 fn main(): int {
 	let p = init(false);
 	if (check(@p, 0, 16, 1) == 1) {
-		println("Failed init test");
+		printf("%s", "Failed init test\n");
 		print(p);
-		print(" != Person { id: 0, age: 16, finger: Finger Print { id: 1 } }");
+		printf("%s", " != Person { id: 0, age: 16, finger: Finger Print { id: 1 } }\n");
 		return 1;
 	}
 
 
 	p = init(true);
 	if (check(@p, 0, 21, 1) == 1) {
-		println("Failed init test");
+		printf("%s", "Failed init test\n");
 		print(p);
-		print(" != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }");
+		printf("%s", " != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }\n");
 		return 1;
 	}
 
 	let q = $p;
 	if (check(@q, 0, 21, 1) == 1) {
-		println("Failed clone test");
+		printf("%s", "Failed clone test\n");
 		print(q);
-		print(" != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }");
+		printf("%s", " != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }\n");
 		return 1;
 	}
 
 	age(@p);
 	if (check(@p, 0, 22, 1) == 1) {
-		println("Failed clone independence test");
+		printf("%s", "Failed clone independence test\n");
 		print(p);
-		print(" != Person { id: 0, age: 22, finger: Finger Print { id: 1 } }");
+		printf("%s", " != Person { id: 0, age: 22, finger: Finger Print { id: 1 } }\n");
 		return 1;
 	}
 	if (check(@q, 0, 21, 1) == 1) {
-		println("Failed clone independence test");
+		printf("%s", "Failed clone independence test\n");
 		print(q);
-		print(" != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }");
+		printf("%s", " != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }\n");
 		return 1;
 	}
 
 
 	p.finger = Blank#[FingerPrint]();
 	if (check(@p, 0, 22, 1) != 1) {
-		println("Failed changing sub structure");
+		printf("%s", "Failed changing sub structure\n");
 		print(p);
-		print(" != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }");
+		printf("%s", " != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }\n");
 		return 1;
 	}
 

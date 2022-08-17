@@ -16,6 +16,7 @@ class TypeDef {
 
 		this.represent = "unknown";
 		this.name = "unknown";
+		this.alignment = 0;
 		this.size = 0;
 
 		this.typeSystem = 'linear';
@@ -29,6 +30,10 @@ class TypeDef {
 	}
 	getElement () {
 		return null;
+	}
+
+	getSize () {
+		return this.size;
 	}
 
 	getFile() {
@@ -79,7 +84,7 @@ class TypeDef {
 			preamble: new LLVM.Fragment(),
 			instruction: new LLVM.Argument(
 				new LLVM.Type("i64"),
-				new LLVM.Constant(this.size),
+				new LLVM.Constant(this.getSize()),
 				ref
 			)
 		};

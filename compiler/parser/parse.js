@@ -477,6 +477,9 @@ function Simplify_Constant (node) {
 		case "boolean":
 			node.tokens = [ Simplify_Boolean(node.tokens[0]) ];
 			break;
+		case "void":
+			node.tokens = [ Simplify_Void(node.tokens[0]) ];
+			break;
 		case "integer":
 			node.tokens = [ Simplify_Integer(node.tokens[0]) ];
 			break;
@@ -530,6 +533,10 @@ function Simplify_Float (node) {
 	return node;
 }
 function Simplify_Boolean (node) {
+	node.reached = null;
+	return node;
+}
+function Simplify_Void (node) {
 	node.reached = null;
 	return node;
 }
@@ -677,8 +684,8 @@ function Simplify_Function_Stmt (node) {
 		case "if":
 			inner = Simplify_If(node.tokens[0]);
 			break;
-		case "while":
-			inner = Simplify_While(node.tokens[0]);
+		case "when":
+			inner = Simplify_When(node.tokens[0]);
 			break;
 		case "composition":
 			inner = Simplify_Composition(node.tokens[0]);
@@ -815,14 +822,24 @@ function Simplify_If_Else (node) {
 
 
 
-function Simplify_While (node) {
-	let out = [
-		Simplify_Expr(node.tokens[4][0]),
-		Simplify_Function_Body(node.tokens[8][0])
+function Simplify_When (node) {
+	node.tokens = [
+		Simplify_Variable(node.tokens[2][0]),
+		node.tokens[5].map(Simplify_When_Stmt)
 	];
-
-	node.tokens = out;
 	node.reached = null;
+
+	return node;
+}
+function Simplify_When_Stmt (node) {
+	node.tokens = [
+		node.tokens[1][0].tokens == "default" ?
+			"default" :
+			Simplify_Data_Type(node.tokens[1][0].tokens[0]),
+		Simplify_Function_Body(node.tokens[3][0])
+	];
+	node.reached = null;
+
 	return node;
 }
 

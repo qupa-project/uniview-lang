@@ -169,4 +169,9 @@ types.unsafe_blob.typeSystem = "normal";
 types.unsafe_blob.primative = true;
 
 
+for (let key in types) {
+	types[key].alignment = types[key].size;
+}
+
+
 module.exports = types;

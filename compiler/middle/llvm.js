@@ -33,6 +33,7 @@ const Select = require('./select.js');
 const Set = require('./set.js');
 const Store = require('./store.js');
 const Struct = require('./struct.js');
+const Switch = require('./switch.js');
 const Sub = require('./sub.js');
 const Trunc = require('./trunc.js');
 const Type = require('./type.js');
@@ -56,7 +57,7 @@ module.exports = {
 	Phi, Procedure, PtrToInt,
 	Raw, Return,
 	Rem,
-	Select, Set, Store, Struct, Sub,
+	Select, Set, Store, Struct, Sub, Switch,
 	Trunc, Type,
 	WPad,
 	XOr

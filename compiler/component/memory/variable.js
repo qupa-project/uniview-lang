@@ -703,6 +703,87 @@ class Variable extends Value {
 
 
 
+	induceType(type, register, ref) {
+		if (type.type.size == 0) {
+			this.type = type;
+			this.store = undefined;
+			this.probability = undefined;
+			this.hasUpdated = false;
+			return new LLVM.Latent(new LLVM.Fragment());
+		}
+
+		let id = new LLVM.ID();
+		let frag = new LLVM.Fragment();
+
+		if (type.type.typeSystem == "normal" && this.type.typeSystem != "normal") {
+			frag.append(new LLVM.Set(
+				new LLVM.Name(id, false, ref),
+				new LLVM.Bitcast(
+					type.toLLVM(ref, false, true),
+					register
+				)
+			));
+
+			let load = new LLVM.ID();
+			frag.append(new LLVM.Set(
+				new LLVM.Name(load, false),
+				new LLVM.Load(type.toLLVM(), new LLVM.Name(id.reference()))
+			));
+			id = load;
+		} else {
+			frag.append(new LLVM.Set(
+				new LLVM.Name(id, false, ref),
+				new LLVM.Bitcast(
+					type.toLLVM(ref),
+					register
+				)
+			));
+		}
+
+		let latent = new LLVM.Latent(
+			frag
+		);
+
+		this.probability = new Probability(
+			latent,
+			new LLVM.Argument(type.toLLVM(), new LLVM.Name(id.reference(), false, ref))
+		);
+		this.type = type;
+
+		return latent;
+	}
+
+	// Reverts the behaviour of induceType
+	deduceType(type, register, ref) {
+		let frag = new LLVM.Fragment();
+
+		// Update the mode of the either type to this type
+
+		if (this.type.size == 0) {
+			throw "Unimplemented";
+		}
+
+		if (this.type.typeSystem == "normal") {
+			// Store the data from this variable at the given location
+			throw "unimplemented";
+		}	else {
+			// Move the data from the pointer address of this location
+			//  to the address of the either data-block
+		}
+
+		let latent = new LLVM.Latent(
+			frag
+		);
+
+		this.probability = new Probability(latent, register, ref);
+		this.type = type;
+
+		return latent;
+	}
+
+
+
+
 
 	clone () {
 		let out = new Variable(this.type, this.name, this.ref);

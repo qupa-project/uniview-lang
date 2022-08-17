@@ -3,6 +3,9 @@
 ## Upcoming
 
 ## Additions
+ - [x] `printf` function
+ - [x] `either` types
+
 ## Fixes
  - [x] Lent normal values are now treated as non-lent values within a function, however, the final values are stored back in the original location upon function cleanup
 

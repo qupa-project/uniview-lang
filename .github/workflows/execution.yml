@@ -2,39 +2,51 @@ name: Execution
 
 on:
   push:
-    branches: [ main, dev, staging ]
+    branches: [ main, staging ]
   pull_request:
-    branches: [ main, dev, staging ]
+    branches: [ main, staging ]
 
 jobs:
-  build:
+  build-linux:
 
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
-    strategy:
-      matrix:
-        node-version: [ 14.x ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 14
+      - name: Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v2
+        with:
+          path: "./lib/install"
+          key: llvm-14.0
+      - name: "Install LLVM and Clang"
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "14.0"
+          directory: "./lib/install"
+      - name: Symlink libclang.so (Linux)
+        if: contains(matrix.os, 'ubuntu')
+        run: sudo ln -s libclang-14.so.1 /lib/x86_64-linux-gnu/libclang.so
+        working-directory: ${{ env.LLVM_PATH }}/lib
+      - run: npm install --ignore-scripts
+      - run: cmake . -B build
+      - run: cmake --build build
+      - run: npm run build-syntax
+      - run: node ./compiler/test.js --action
+
+  build-win:
+    if: ${{ false }}  # disable for now
+    runs-on: windows-latest
+    timeout-minutes: 10
 
     steps:
-    - name: Cache LLVM and Clang
-      id: cache-llvm
-      uses: actions/cache@v2
-      with:
-        path: |
-          C:/Program Files/LLVM
-          ./llvm
-        key: llvm-12.0.1
-    - name: Install LLVM and Clang
-      uses: KyleMayes/install-llvm-action@v1
-      with:
-        version: "12.0.1"
-        cached: ${{ steps.cache-llvm.outputs.cache-hit }}
-
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm install
-    - run: node ./compiler/test.js --action
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 14
+      - run: npm install
+      - run: node ./compiler/test.js --action
