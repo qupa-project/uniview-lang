@@ -40,6 +40,9 @@ class Structure extends TypeDef {
 		this.linked = false;
 		this.size = -1;
 		this.alignment = 0;
+
+		this.defaultImpl = null;
+		this.impls = new Map();
 	}
 
 	/**
@@ -70,6 +73,12 @@ class Structure extends TypeDef {
 			index: i,
 			type: type
 		};
+	}
+
+	getFunction(access, signature, template) {
+		if (this.defaultImpl) {
+			return this.defaultImpl.getFunction(access, signature, template);
+		}
 	}
 
 	indexOfTerm (name) {
@@ -250,6 +259,30 @@ class Structure extends TypeDef {
 		);
 		this.terms.push(term);
 		return true;
+	}
+
+	bindImplementation (impl) {
+		if (impl.interface == null) {
+			if (this.defaultImpl) {
+				this.ctx.getFile().throw(
+					`Error: Struct ${this.name} already has a default implementation, however a new one is attempting to be assigned`,
+					this.defaultImpl.ref,
+					impl.ref
+				)
+			}
+
+			this.defaultImpl = impl;
+		} else {
+			if (this.impls[impl.interface]) {
+				this.ctx.getFile().throw(
+					`Error: Struct ${this.name} already has an implementation for interface ${impl.interface.name}, however a new one is attempting to be assigned`,
+					this.defaultImpl.ref,
+					impl.ref
+				);
+			}
+
+			this.impls[impl.interface] = impl;
+		}
 	}
 
 	compile () {

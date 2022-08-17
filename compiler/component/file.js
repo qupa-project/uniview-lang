@@ -7,7 +7,7 @@ const LLVM = require('./../middle/llvm.js');
 const Function = require('./function.js');
 const TypeDef  = require('./typedef.js');
 const Structure = require('./struct.js');
-const Class = require('./class.js');
+const Implement = require('./impl.js');
 const TypeRef = require('./typeRef.js');
 const Import  = require('./import.js');
 
@@ -28,6 +28,8 @@ class File {
 		this.represent = this.id.toString(36);
 
 		this.names = {};
+
+		this.impls = [];
 
 		let prim = this.project.getPrimative();
 		if (prim) {
@@ -108,8 +110,7 @@ class File {
 				space = new TypeDef(this, element, external);
 				break;
 			case "function_outline":
-				abstract = !external;
-				// continue to function case
+				abstract = !external; // continue to function case
 			case "function":
 				space = new Function(this, element, external, abstract);
 				break;
@@ -123,9 +124,9 @@ class File {
 			case "struct":
 				space = new Structure(this, element, external);
 				break;
-			case "class":
-				space = new Class(this, element, external);
-				break;
+			case "impl":
+				this.impls.push( new Implement(this, element) );
+				return;
 			default:
 				throw new Error(`Unexpected file scope namespace type "${element.type}"`);
 		}
@@ -343,12 +344,20 @@ class File {
 		for (let external of this.exports) {
 			this.registerExport(external);
 		}
+
+		for (let imp of this.impls) {
+			imp.link();
+		}
 	}
 
 
 	compile () {
 		for (let key in this.names) {
 			this.names[key].compile();
+		}
+
+		for (let imp of this.impls) {
+			imp.compile();
 		}
 	}
 
@@ -365,6 +374,15 @@ class File {
 			}
 
 			let res = this.names[key].toLLVM();
+			if (res instanceof LLVM.Fragment) {
+				fragment.merge(res);
+			} else {
+				fragment.append(res);
+			}
+		}
+
+		for (let imp of this.impls) {
+			let res = imp.toLLVM();
 			if (res instanceof LLVM.Fragment) {
 				fragment.merge(res);
 			} else {
