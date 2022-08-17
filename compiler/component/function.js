@@ -51,6 +51,14 @@ class Function {
 
 	matchSignature (sig) {
 		for (let instance of this.instances) {
+			if (instance.abstract && !instance.external) {
+				this.getFile().throw(
+					`Error: Cannot call abstract function "${this.name}" as it has no implementation`,
+					instance.ref,
+					instance.ref
+				);
+			}
+
 			if (instance.matchSignature(sig)) {
 				return instance;
 			}
