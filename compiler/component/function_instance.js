@@ -55,6 +55,10 @@ class Function_Instance {
 		return this;
 	}
 
+	getType(node, template) {
+		return this.ctx.getType(node, template);
+	}
+
 
 
 	link () {

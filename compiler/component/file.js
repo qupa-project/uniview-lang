@@ -7,6 +7,7 @@ const LLVM = require('./../middle/llvm.js');
 const Function = require('./function.js');
 const TypeDef  = require('./typedef.js');
 const Structure = require('./struct.js');
+const Trait = require('./trait.js');
 const Implement = require('./impl.js');
 const TypeRef = require('./typeRef.js');
 const Import  = require('./import.js');
@@ -123,6 +124,9 @@ class File {
 				break;
 			case "struct":
 				space = new Structure(this, element, external);
+				break;
+			case "trait":
+				space = new Trait(this, element, external);
 				break;
 			case "impl":
 				this.impls.push( new Implement(this, element) );

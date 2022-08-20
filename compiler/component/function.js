@@ -49,6 +49,10 @@ class Function {
 		return this.matchSignature(signature);
 	}
 
+	getType(node, template) {
+		return this.ctx.getType(node, template);
+	}
+
 	matchSignature (sig) {
 		for (let instance of this.instances) {
 			if (instance.abstract && !instance.external) {

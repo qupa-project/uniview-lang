@@ -108,7 +108,7 @@ program ::= w* ( stmt_top w* )*
 	trait ::= "trait" w+ name w* trait_reliance? w* "{" w* trait_body w* "}"
 		trait_reliance ::= ":" w* data_type ( w* "," w* data_type )*
 		trait_body ::= ( w* trait_stmt )*
-			trait_stmt ::= comment | function
+			trait_stmt ::= comment | function_outline
 
 
 #=============================

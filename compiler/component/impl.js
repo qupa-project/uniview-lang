@@ -3,6 +3,8 @@ const Flattern = require('../parser/flattern.js');
 const Function = require('./function.js');
 const LLVM = require('../middle/llvm.js');
 
+const TypeRef = require('./typeRef.js');
+
 class Implement {
 	constructor (ctx, ast, external = false) {
 		this.ctx = ctx;
@@ -19,6 +21,18 @@ class Implement {
 
 	getFile() {
 		return this.ctx.getFile();
+	}
+
+	getType(node, template) {
+		if (
+			node.length == 1 &&
+			template.length == 0 &&
+			node[0][1] == "Self"
+		) {
+			return new TypeRef(0, this.struct);
+		}
+
+		return this.ctx.getType(node, template);
 	}
 
 	link () {

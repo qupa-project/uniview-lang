@@ -65,7 +65,7 @@ class ExecutionBase {
 		for (let arg of node.tokens) {
 			switch (arg.type) {
 				case "data_type":
-					let type = this.getFile().getType(
+					let type = this.ctx.getType(
 						Flattern.DataTypeList(arg),
 						this.resolveTemplate(arg.tokens[3])
 					);
@@ -181,7 +181,7 @@ class ExecutionBase {
 			return null;
 		}
 
-		let type = this.getFile().getType(
+		let type = this.ctx.getType(
 			Flattern.DataTypeList(node),
 			template
 		);
