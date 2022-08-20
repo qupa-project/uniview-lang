@@ -14,6 +14,17 @@ class Trait {
 		return null;
 	}
 
+	getTrait(access, template) {
+		if (access.length != 0) {
+			return null;
+		}
+		if (template.length != 0) {
+			return null;
+		}
+
+		return this;
+	}
+
 	parse () {}
 
 	link () {

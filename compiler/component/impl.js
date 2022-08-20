@@ -13,7 +13,7 @@ class Implement {
 
 		this.names = {};
 
-		this.interface = null;
+		this.trait = null;
 		this.struct = null;
 
 		this.represent = "%impl.";
@@ -50,18 +50,19 @@ class Implement {
 		}
 		this.struct = this.struct.type;
 
-		let interfaceToken = this.ast.tokens[1];
-		if (interfaceToken) {
+		let traitToken = this.ast.tokens[1];
+		this.trait = this.ctx.getFile().getTrait(Flattern.DataTypeList(traitToken), []);
+		if (this.trait) {
 			file.throw(
-				`Cannot implement for known interface "${Flattern.DataTypeStr(interfaceToken)}"`,
+				`Cannot implement for known trait "${Flattern.DataTypeStr(traitToken)}"`,
 				this.ref, structToken.ref.end
 			);
 		}
-		this.represent = this.struct.name + "." + (this.interface?.name || "default");
+		this.represent = this.struct.name + "." + (this.trait?.name || "default");
 
 		this.struct.bindImplementation(this);
-		if (this.interface) {
-			this.interface.bindImplementation(this);
+		if (this.trait) {
+			this.trait.bindImplementation(this);
 		}
 
 		for (let node of this.ast.tokens[2].tokens) {

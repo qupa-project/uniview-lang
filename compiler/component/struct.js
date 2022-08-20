@@ -262,7 +262,7 @@ class Structure extends TypeDef {
 	}
 
 	bindImplementation (impl) {
-		if (impl.interface == null) {
+		if (impl.trait == null) {
 			if (this.defaultImpl) {
 				this.ctx.getFile().throw(
 					`Error: Struct ${this.name} already has a default implementation, however a new one is attempting to be assigned`,
@@ -273,15 +273,15 @@ class Structure extends TypeDef {
 
 			this.defaultImpl = impl;
 		} else {
-			if (this.impls[impl.interface]) {
+			if (this.impls[impl.trait]) {
 				this.ctx.getFile().throw(
-					`Error: Struct ${this.name} already has an implementation for interface ${impl.interface.name}, however a new one is attempting to be assigned`,
+					`Error: Struct ${this.name} already has an implementation for trait ${impl.trait.name}, however a new one is attempting to be assigned`,
 					this.defaultImpl.ref,
 					impl.ref
 				);
 			}
 
-			this.impls[impl.interface] = impl;
+			this.impls[impl.trait] = impl;
 		}
 	}
 
