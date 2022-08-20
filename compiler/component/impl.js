@@ -115,7 +115,4 @@ class Implement {
 	}
 }
 
-
-const TypeRef = require('./typeRef.js');
-
 module.exports = Implement;

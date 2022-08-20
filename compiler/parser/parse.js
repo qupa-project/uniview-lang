@@ -46,6 +46,9 @@ function Simplify_Stmt_Top (node) {
 		case "impl":
 			inner = Simplify_Impl(node.tokens[0]);
 			break;
+		case "trait":
+			inner = Simplify_Trait(node.tokens[0]);
+			break;
 		default:
 			throw new TypeError(`Unexpected top level statement ${node.tokens[0].type}`);
 	}
@@ -185,6 +188,57 @@ function Simplify_Impl_Body (node) {
 	return node;
 }
 function Simplify_Impl_Stmt (node) {
+	switch (node.tokens[0].type) {
+		case "comment":
+			break;
+		case "struct_attribute":
+			node.tokens = [ Simplify_Struct_Attribute(node.tokens[0]) ];
+			break;
+		case "function":
+			node.tokens = [ Simplify_Function(node.tokens[0]) ];
+			break;
+		default:
+			throw new Error(`Unexpected class statement "${node.tokens[0].type}"`);
+	}
+
+	node.reached = null;
+	return node;
+}
+
+function Simplify_Trait (node) {
+	let out = [
+		Simplify_Name(node.tokens[2][0]),
+		node.tokens[4][0] ? Simplify_Trait_Reliance(node.tokens[4][0]) : null,
+		Simplify_Trait_Body(node.tokens[8][0])
+	];
+
+	// Swap the type references when a for is present
+	if (out[1]) {
+		let t = out[1];
+		out[1] = out[0];
+		out[0] = t;
+	}
+
+	node.tokens  = out;
+	node.reached = null;
+	return node;
+}
+function Simplify_Trait_Reliance (node) {
+	let out = [
+		node.tokens[2][0],
+		...node.tokens[3].map(x => x.tokens[3][0])
+	].map(x => Simplify_Data_Type(x));
+
+	return out;
+}
+function Simplify_Trait_Body (node) {
+	node.tokens = node.tokens[0]
+		.filter ( x => x.tokens[0].type != "comment")
+		.map( x => Simplify_Trait_Stmt(x.tokens[1][0]).tokens[0] );
+	node.reached = null;
+	return node;
+}
+function Simplify_Trait_Stmt (node) {
 	switch (node.tokens[0].type) {
 		case "comment":
 			break;
