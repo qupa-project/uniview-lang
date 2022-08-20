@@ -10,6 +10,7 @@ class Implement {
 		this.ctx = ctx;
 		this.ast = ast;
 		this.ref = ast.ref.start;
+		this.endRef = ast.ref.end;
 
 		this.names = {};
 
@@ -38,8 +39,6 @@ class Implement {
 	link () {
 		let file = this.ctx.getFile();
 
-		// this.struct = file.getType();
-
 		let structToken = this.ast.tokens[0];
 		this.struct = this.ctx.getType(Flattern.DataTypeList(structToken));
 		if (this.struct == null) {
@@ -51,19 +50,18 @@ class Implement {
 		this.struct = this.struct.type;
 
 		let traitToken = this.ast.tokens[1];
-		this.trait = this.ctx.getFile().getTrait(Flattern.DataTypeList(traitToken), []);
-		if (this.trait) {
-			file.throw(
-				`Cannot implement for known trait "${Flattern.DataTypeStr(traitToken)}"`,
-				this.ref, structToken.ref.end
-			);
+		if (traitToken) {
+			this.trait = this.ctx.getFile().getTrait(Flattern.DataTypeList(traitToken), []);
+			if (this.trait == null) {
+				file.throw(
+					`Cannot implement for known trait "${Flattern.DataTypeStr(traitToken)}"`,
+					this.ref, structToken.ref.end
+				);
+			}
 		}
 		this.represent = this.struct.name + "." + (this.trait?.name || "default");
 
 		this.struct.bindImplementation(this);
-		if (this.trait) {
-			this.trait.bindImplementation(this);
-		}
 
 		for (let node of this.ast.tokens[2].tokens) {
 			switch (node.type) {
@@ -96,6 +94,11 @@ class Implement {
 		// Link all successful functions
 		for (let name in this.names) {
 			this.names[name].link();
+		}
+
+
+		if (this.trait) {
+			this.trait.bindImplementation(this);
 		}
 	}
 

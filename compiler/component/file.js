@@ -257,7 +257,7 @@ class File {
 		let first = access[0];
 		let forward = access.slice(1);
 		if (Array.isArray(first)) {
-			if (first[0] == ".") {
+			if (first[0] == "." || first[0] == 0) {
 				first = first[1];
 			} else {
 				return null;

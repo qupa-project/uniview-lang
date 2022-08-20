@@ -60,12 +60,17 @@ class Function_Instance {
 	}
 
 
+	relink () {
+		this.linked = false;
+		this.link();
+	}
 
 	link () {
 		if (this.linked) {
 			return;
 		}
 
+		this.signature = [];
 		let file = this.getFile();
 		let head = this.ast.tokens[0];
 		let args = head.tokens[2].tokens;
@@ -125,6 +130,8 @@ class Function_Instance {
 		return this.matchSignature(other.signature);
 	}
 	matchSignature (sig) {
+		// console.log(136, this.signature, sig);
+
 		if (this.signature.length != sig.length) {
 			return false;
 		}
@@ -218,6 +225,9 @@ class Function_Instance {
 		this.ir = frag;
 	}
 
+	toString() {
+		return `${this.name}(${this.signature.map(x => x.toString()).join(", ")}): ${this.returnType.toString()}`;
+	}
 
 	toLLVM() {
 		return this.ir;

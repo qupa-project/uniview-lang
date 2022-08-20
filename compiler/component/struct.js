@@ -79,6 +79,8 @@ class Structure extends TypeDef {
 		if (this.defaultImpl) {
 			return this.defaultImpl.getFunction(access, signature, template);
 		}
+
+		return null;
 	}
 
 	indexOfTerm (name) {

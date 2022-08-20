@@ -62,13 +62,42 @@ class Function {
 					instance.ref
 				);
 			}
-
 			if (instance.matchSignature(sig)) {
 				return instance;
 			}
 		}
 
 		return null;
+	}
+
+	ensureEquivalence(other) {
+		outer: for (let instA of this.instances) {
+			for (let instB of other.instances) {
+				if (instA.matchSignature(instB.signature)) {
+					continue outer;
+				}
+			}
+
+			this.ctx.getFile().throw(
+				`Error: Unable to find implementation of ${instA.toString()} for trait ${this.ctx.trait.name} in implementation`,
+				this.ctx.ref,
+				this.ctx.endRef
+			);
+		}
+
+		outer: for (let instA of other.instances) {
+			for (let instB of this.instances) {
+				if (instA.matchSignature(instB.signature)) {
+					continue outer;
+				}
+			}
+
+			this.ctx.getFile().throw(
+				`Error: Implementation has an extra function instance ${instA.toString()} for trait ${this.ctx.trait.name} in implementation`,
+				this.ctx.ref,
+				instA.ref
+			);
+		}
 	}
 
 	merge (other){
@@ -95,6 +124,12 @@ class Function {
 		}
 
 		return;
+	}
+
+	relink() {
+		for (let instance of this.instances) {
+			instance.relink();
+		}
 	}
 
 	compile () {
