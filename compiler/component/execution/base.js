@@ -31,6 +31,11 @@ class ExecutionBase {
 		return this.getFile().getFunction(access, signature, template);
 	}
 
+	getType(node, template) {
+		return this.ctx.getType(node, template);
+	}
+
+
 	getFunctionGroup () {
 		return this.ctx.getFunctionGroup();
 	}
