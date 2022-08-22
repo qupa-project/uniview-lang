@@ -130,8 +130,6 @@ class Function_Instance {
 		return this.matchSignature(other.signature);
 	}
 	matchSignature (sig) {
-		// console.log(136, this.signature, sig);
-
 		if (this.signature.length != sig.length) {
 			return false;
 		}
@@ -148,7 +146,7 @@ class Function_Instance {
 
 
 	compile () {
-		if (this.abstract) {
+		if (this.abstract && !this.external) {
 			return null;
 		}
 
