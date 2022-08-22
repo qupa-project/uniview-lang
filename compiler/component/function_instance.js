@@ -81,7 +81,7 @@ class Function_Instance {
 		let consts = [ false ];
 		if (args.length > 0) {
 			borrows = borrows.concat(args.map(x => x[0] == "@"));
-			consts = consts.concat(args.map(x => x[0] == "#"));
+			consts = consts.concat(args.map(x => x[0] == "&"));
 			types = types.concat(args.map((x) => x[1]));
 		}
 

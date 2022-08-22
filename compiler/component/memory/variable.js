@@ -826,38 +826,23 @@ class Variable extends Value {
 				return res;
 			}
 
-			if (
-				this.type.type.meta == "CLASS" &&
-				!this.isUndefined(ref)
-			) {
-				return {
-					error: true,
-					msg: `Variable "${this.name}" is still defined. All classes must be consumed`,
-					ref: ref
-				};
+			// The value has not been consumed and will fall out of scope
+			if (!this.isUndefined(ref)) {
+				let res = this.read(ref);
+
+				let del = this.type.type.getDestructor();
+
+				frag.merge(res.preamble);
+				frag.append(new LLVM.Call(
+					new LLVM.Type("void", 0, ref),
+					new LLVM.Name(del.represent, true, ref),
+					[res.register]
+				));
+				frag.append(new LLVM.Comment(`"${this.name}" should be deleted here`));
 			}
 		}
 
 		return frag;
-	}
-
-	delete (ref) {
-		if (this.isUndefined()) {
-			return {
-				error: true,
-				msg: "Cannot delete an already undefined value",
-				ref: ref
-			};
-		} else if (this.type.constant) {
-			return {
-				error: true,
-				msg: "Cannot delete a constant value",
-				ref: ref
-			};
-		}
-
-		this.makeUndefined(ref);
-		return new LLVM.Fragment();
 	}
 }
 

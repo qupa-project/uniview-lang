@@ -54,7 +54,7 @@ class Implement {
 			this.trait = this.ctx.getFile().getTrait(Flattern.DataTypeList(traitToken), []);
 			if (this.trait == null) {
 				file.throw(
-					`Cannot implement for known trait "${Flattern.DataTypeStr(traitToken)}"`,
+					`Cannot implement for unknown trait "${Flattern.DataTypeStr(traitToken)}"`,
 					this.ref, structToken.ref.end
 				);
 			}

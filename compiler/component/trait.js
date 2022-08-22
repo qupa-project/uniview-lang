@@ -1,6 +1,5 @@
 const LLVM = require('../middle/llvm.js');
 const Flattern = require('../parser/flattern.js');
-const TypeDef = require('./typedef.js');
 const TypeRef = require('./typeRef.js');
 
 const Function = require('./function.js');
