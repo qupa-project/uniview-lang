@@ -25,7 +25,6 @@ function CodeSection (string, refStart, refEnd) {
 		refStart.col
 	);
 	let maxLen = Math.max(...string.map(elm => elm[1].length));
-	console.log(46, maxLen, string.map(elm => elm[1].length), indent);
 
 	if (string.length > 5) {
 		string = [
