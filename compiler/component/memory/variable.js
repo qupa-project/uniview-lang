@@ -828,17 +828,18 @@ class Variable extends Value {
 
 			// The value has not been consumed and will fall out of scope
 			if (!this.isUndefined(ref)) {
-				let res = this.read(ref);
-
 				let del = this.type.type.getDestructor();
+				if (del) {
+					let res = this.read(ref);
 
-				frag.merge(res.preamble);
-				frag.append(new LLVM.Call(
-					new LLVM.Type("void", 0, ref),
-					new LLVM.Name(del.represent, true, ref),
-					[res.register]
-				));
-				frag.append(new LLVM.Comment(`"${this.name}" should be deleted here`));
+					frag.merge(res.preamble);
+					frag.append(new LLVM.Call(
+						new LLVM.Type("void", 0, ref),
+						new LLVM.Name(del.represent, true, ref),
+						[res.register]
+					));
+					frag.append(new LLVM.Comment(`"${this.name}" should be deleted here`));
+				}
 			}
 		}
 
