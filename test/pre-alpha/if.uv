@@ -1,12 +1,12 @@
 fn test(a: int, b: int) {
 	if (a > b) {
-		printf("%s", "Greater");
+		printf("%s", "Greater\n");
 	} elif (a < b) {
-		printf("%s", "Lesser");
+		printf("%s", "Lesser\n");
 	} elif (a > b) {
-		printf("%s", "Logic error, should have already been caught");
+		printf("%s", "Logic error, should have already been caught\n");
 	} else {
-		printf("%s", "Equal");
+		printf("%s", "Equal\n");
 	}
 
 	return;
@@ -14,13 +14,16 @@ fn test(a: int, b: int) {
 
 
 struct Test {}
+
+fn Consume(t: Test) {}
+
 fn UnifiedUndefined() {
 	let t = Blank#[Test]();
 
 	if (true) {
-		delete t;
+		Consume(t);
 	} else {
-		delete t;
+		Consume(t);
 	}
 }
 

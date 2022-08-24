@@ -7,10 +7,19 @@ external assume {
 	fn "qupa.cstring.size" (str: cstring): u64 as sizeof;
 }
 
-class String {
+struct String {
 	data: unsafe_blob;
 	size: u64;
+}
 
+
+impl Drop for String {
+	fn drop(this: @String) {
+		Memory.Free(this.data);
+	}
+}
+
+impl String {
 	fn New(str: cstring): String {
 		let out = Blank#[String]();
 		out.size = sizeof($str);
@@ -104,7 +113,7 @@ class String {
 	}
 
 
-	fn Length(this: #String): u64 {
+	fn Length(this: &String): u64 {
 		return this.size - cast#[u64](1);
 	}
 
@@ -120,16 +129,9 @@ class String {
 
 		return out;
 	}
-
-
-	fn Delete(this: String) {
-		Memory.Free(this.data);
-		delete this.data;
-		delete this.size;
-	}
 }
 
 
-fn puts(str: #String) {
+fn puts(str: @String) {
 	puts(cast#[cstring](str.data));
 }

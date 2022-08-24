@@ -1,6 +1,8 @@
-class Cat {
+struct Cat {
 	id: int;
+}
 
+impl Cat{
 	fn New(id: int): Cat {
 		let out = Blank#[Cat]();
 		out.id = id;
@@ -9,7 +11,6 @@ class Cat {
 
 	fn Say(this: Cat) {
 		printf("%i: meow\n", this.id);
-		Cat.Delete(this);
 	}
 
 	fn Say(this: @Cat) {
@@ -23,10 +24,11 @@ class Cat {
 
 		return out;
 	}
+}
 
-	fn Delete(this: Cat) {
+impl Drop for Cat {
+	fn drop(this: @Cat) {
 		printf("%s", "Deleting cat...\n");
-		delete this.id;
 	}
 }
 
@@ -34,6 +36,5 @@ fn main(): int {
 	let c = Cat.New(2);
 	Cat.Say($c);
 	Cat.Say(@c);
-	Cat.Delete(c);
 	return 0;
 }
