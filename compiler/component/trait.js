@@ -61,13 +61,13 @@ class Trait {
 			this.names[name].relink();
 
 			if (!impl.names[name]) {
-				this.ctx.getFile().throw(
+				impl.getFile().throw(
 					`Error: Namespace "${name}" not present in implementation of trait ${this.name} for ${impl.struct.name}`,
 					impl.ref,
 					impl.endRef
 				);
 				this.ctx.getFile().throw(
-					`  Above implementation is missing function on last line of below snippet`,
+					`  Above implementation is missing function "${name}" from the below snippet`,
 					this.ref,
 					this.names[name].ref
 				);
@@ -78,7 +78,7 @@ class Trait {
 
 		for (let name in impl.names) {
 			if (!this.names[name]) {
-				this.ctx.getFile().throw(
+				impl.getFile().throw(
 					`Error: Implementation has extra namespace "${name}" present in trait ${this.name} implementated for ${impl.struct.name}`,
 					impl.ref,
 					impl.names[name].ref
