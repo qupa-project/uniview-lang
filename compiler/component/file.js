@@ -32,12 +32,10 @@ class File {
 
 		this.impls = [];
 
-		let prim = this.project.getPrimative();
-		if (prim) {
-			let lib = new Import(this, null);
-			lib.inject(prim);
-			this.names["*"] = lib;
-		}
+		let prims = this.project.getPrimatives();
+		let lib = new Import(this, null);
+		this.names["*"] = lib;
+		prims.map(x => lib.inject(x))
 
 		this.exports = [];
 		this.imports = [];

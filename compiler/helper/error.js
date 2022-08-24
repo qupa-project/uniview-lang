@@ -6,6 +6,11 @@ function FixStringLength (string, count, filler = " ") {
 function CodeSection (string, refStart, refEnd) {
 	string = string.replace(/\t/g, "  ");
 
+	if (refStart.index == refEnd.index) {
+		refEnd.index = string.length;
+		refEnd.line = refStart.line + string.split('\n').length;
+	}
+
 	let offset = refStart.line;
 	let digits = refEnd.line.toString().length;
 
@@ -20,6 +25,7 @@ function CodeSection (string, refStart, refEnd) {
 		refStart.col
 	);
 	let maxLen = Math.max(...string.map(elm => elm[1].length));
+	console.log(46, maxLen, string.map(elm => elm[1].length), indent);
 
 	if (string.length > 5) {
 		string = [
