@@ -707,9 +707,6 @@ function Simplify_Function_Stmt (node) {
 		case "declare_assign":
 			inner = Simplify_Declare_Assign(node.tokens[0]);
 			break;
-		case "delete":
-			inner = Simplify_Delete(node.tokens[0]);
-			break;
 		case "assign":
 			inner = Simplify_Assign(node.tokens[0]);
 			break;
@@ -922,15 +919,6 @@ function Simplify_Assign  (node) {
 		Simplify_Expr     (node.tokens[4][0])  // value
 	];
 	node.reached = null;
-	return node;
-}
-
-function Simplify_Delete (node) {
-	node.tokens = [
-		Simplify_Variable(node.tokens[2][0])
-	];
-	node.reached = null;
-
 	return node;
 }
 

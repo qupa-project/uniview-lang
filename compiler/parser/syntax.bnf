@@ -67,8 +67,6 @@ program ::= w* ( stmt_top w* )*
 	data_type ::= name data_type_access* template?
 		data_type_access ::= "." name
 
-	delete ::= "delete" w+ variable w* ";"
-
 
 #=============================
 #  Function
@@ -79,7 +77,7 @@ program ::= w* ( stmt_top w* )*
 				func_arg_list ::= func_arg w* ( "," w* func_arg w* )*
 				func_arg      ::= name w* ":" w* ( "@" | "&" )? w* data_type
 		function_body ::= "{" w* ( func_stmt w* )* "}"
-			func_stmt ::= comment | if | when | return | declare | delete | assign | declare_assign | call_procedure
+			func_stmt ::= comment | if | when | return | declare | assign | declare_assign | call_procedure
 
 	function_outline ::= func_head w* ";"
 	function_redirect ::= "fn" w+ string w* func_arguments ( w* ":" w* data_type )? w+ "as" w+ name w* ";"

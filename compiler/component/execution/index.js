@@ -147,51 +147,6 @@ class Execution extends ExecutionFlow {
 	}
 
 
-	compile_delete (ast) {
-		let frag = new LLVM.Fragment();
-
-		let target = this.getVar(ast.tokens[0], true);
-		if (target.error) {
-			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
-			return null;
-		}
-		frag.merge(target.preamble);
-		target = target.variable;
-
-		if (target.type.lent) {
-			this.getFile().throw(
-				`Cannot delete lent values`,
-				ast.ref.start, ast.ref.end
-			);
-			return null;
-		}
-
-		let res = target.delete(ast.ref);
-		if (res.error) {
-			this.getFile().throw(res.msg, res.ref.start, res.ref.end);
-			return null;
-		}
-
-		let destructor = target.type.type.getDestructor();
-		if (destructor) {
-			if (this.ctx == destructor) {
-				this.getFile().throw(
-					`Error: Dangerous destructor, does not properly destruct all child values`,
-					ast.ref.start, ast.ref.end
-				);
-			} else {
-				this.getFile().warn(
-					`Warn: This class type has a destructor, recommend calling ${target.type.type.name}.Delete(${target.name})`,
-					ast.ref.start, ast.ref.end
-				);
-			}
-		}
-
-		frag.merge(res);
-		return frag;
-	}
-
-
 
 
 	/**
@@ -535,9 +490,6 @@ class Execution extends ExecutionFlow {
 					break;
 				case "decompose":
 					inner = this.compile_decompose(token);
-					break;
-				case "delete":
-					inner = this.compile_delete(token);
 					break;
 				default:
 					this.getFile().throw(
