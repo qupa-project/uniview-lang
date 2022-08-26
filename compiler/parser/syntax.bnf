@@ -98,6 +98,10 @@ program ::= w* ( stmt_top w* )*
 		struct_stmt ::= comment | struct_attribute
 			struct_attribute ::= name w* ":" w* data_type w* ";"
 
+	expr_struct ::= data_type w* "{" w* expr_struct_args? w* "}"
+		expr_struct_args ::= expr_struct_arg w* ( "," w* expr_struct_arg )* w* ","?
+			expr_struct_arg ::= name w* ":" w* expr
+
 	impl ::= "impl" w+ data_type impl_for? w* "{" w* impl_body w* "}"
 		impl_for ::= w+ "for" w+ data_type
 		impl_body ::= ( w* impl_stmt )*
@@ -123,7 +127,7 @@ program ::= w* ( stmt_top w* )*
 	expr ::= w* expr_arg w* ( expr_middle_opper w* expr_arg w* )*
 		expr_right_opper ::= "!" | "$" | "-"
 		expr_middle_opper ::= "?" | ":" | "&&" | "||" | "==" | "!=" | "<=" | ">=" | "<" | ">" | "%" | "*" | "/" | "+" | "-"
-		expr_arg ::= expr_val | expr_brackets
+		expr_arg ::= expr_struct | expr_val | expr_brackets
 			expr_val ::= expr_right_opper? w* ( constant | variable ) w* ( template? w* call_args )?
 			expr_brackets ::= "(" w* expr w* ")"
 

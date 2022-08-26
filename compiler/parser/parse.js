@@ -941,18 +941,33 @@ function Simplify_Expr_Arg (node) {
 			return Simplify_Expr_Val(node.tokens[0]);
 		case "expr_brackets":
 			return Simplify_Expr_Brackets(node.tokens[0]);
+		case "expr_struct":
+			return Simplify_Expr_Struct(node.tokens[0]);
 		default:
 			throw new Error(`Unexpected expression argument ${node.tokens[0].type}`);
 	}
 }
 function Simplify_Expr_Val (node) {
 	let subject = node.tokens[2][0].tokens[0];
-	subject = subject.type == "variable" ?
-		Simplify_Variable(subject) :
-		Simplify_Constant(subject);
+	let isNameSpace = false;
+	switch (subject.type) {
+		case "variable":
+			isNameSpace = true;
+			subject = Simplify_Variable(subject);
+			break;
+		case "constant":
+			subject = Simplify_Constant(subject);
+			break;
+		default:
+			throw "Implementation error";
+	}
 
 	let call = node.tokens[4];
 	if (call.length > 0) {
+		if (!isNameSpace) {
+			console.error(`Error: Malformed function call at ${node.ref.start.toString()}`);
+			process.exit(1);
+		}
 		return Simplify_Expr_Call(subject, call[0], subject.ref);
 	}
 
@@ -1046,6 +1061,33 @@ function Simplify_Expr_Lend (node) {
 	];
 	node.reached = null;
 
+	return node;
+}
+
+function Simplify_Expr_Struct (node) {
+	node.tokens = [
+		Simplify_Data_Type(node.tokens[0][0]),
+		node.tokens[4][0] ? Simplify_Expr_Struct_Args(node.tokens[4][0]) : null
+	];
+	node.reached = null;
+
+	return node;
+}
+function Simplify_Expr_Struct_Args (node) {
+	node.tokens = node.tokens[0]
+		.concat(node.tokens[2]
+			.map(x => x.tokens[2][0]))
+		.map(x => Simplify_Expr_Struct_Arg(x));
+	node.reached = null;
+
+	return node;
+}
+function Simplify_Expr_Struct_Arg(node) {
+	node.tokens = [
+		Simplify_Name(node.tokens[0][0]),
+		Simplify_Expr(node.tokens[4][0])
+	];
+	node.reached = null;
 	return node;
 }
 

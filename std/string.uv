@@ -1,8 +1,6 @@
 include llvm "./string.ll";
 import "memory.uv" as Memory;
 
-import "io.uv";
-
 external assume {
 	fn "qupa.cstring.size" (str: cstring): u64 as sizeof;
 }
@@ -22,9 +20,12 @@ impl Drop for String {
 impl Clone for String {
 	fn clone(this: @String): String {
 		// Initiliase the data structure
-		let out = Blank#[String]();
-		out.data = Memory.Alloc(this.size);
-		out.size = this.size;
+		let data = Memory.Alloc(this.size);
+
+		let out = String {
+			data: data,
+			size: this.size
+		};
 
 		// Copy the blob data to the new allocation
 		Memory.Copy($out.data, $this.data, this.size, false);
@@ -35,10 +36,11 @@ impl Clone for String {
 
 impl String {
 	fn New(str: cstring): String {
-		let out = Blank#[String]();
-		out.size = sizeof($str);
-
-		out.data = Memory.Alloc(out.size);
+		let size = sizeof($str);
+		let out = String {
+			data: Memory.Alloc(size),
+			size: size
+		};
 
 		let other = bitcast#[unsafe_blob](str);
 		Memory.Move($out.data, $other, out.size, false);
@@ -54,7 +56,6 @@ impl String {
 		Memory.Move(insert, $other.data, other.size, false);
 
 		this.size = nx_len;
-		String.Delete(other);
 	}
 
 
@@ -71,10 +72,12 @@ impl String {
 		}
 
 		// Create a space for the new data
-		let sub = Blank#[String]();
 		let length = end - begin;
-		sub.size = length + cast#[u64](1);
-		sub.data = Memory.Alloc(sub.size);
+		let size = length + cast#[u64](1);
+		let sub = String {
+			size: size,
+			data: Memory.Alloc(size)
+		};
 
 		// Move the taken slice to the new string
 		let sect_start = Memory.Offset($this.data, cast#[i64](begin));
@@ -109,10 +112,12 @@ impl String {
 		}
 
 		// Create a space for the new data
-		let sub = Blank#[String]();
 		let length = end - begin;
-		sub.size = length + cast#[u64](1);
-		sub.data = Memory.Alloc(sub.size);
+		let size = length + cast#[u64](1);
+		let sub = String {
+			size: size,
+			data: Memory.Alloc(size)
+		};
 
 		// Move the taken slice to the new string
 		let sect_start = Memory.Offset($this.data, cast#[i64](begin));
@@ -121,8 +126,6 @@ impl String {
 		// Add the null terminator
 		let terminator = Memory.Offset($sub.data, cast#[i64](sub.size) -1);
 		Memory.Set(terminator, cast#[i8](0), cast#[u64](1), false);
-
-		String.Delete(this);
 		return sub;
 	}
 
@@ -134,5 +137,9 @@ impl String {
 
 
 fn puts(str: @String) {
-	puts(cast#[cstring](str.data));
+	printf("%s", cast#[cstring](str.data));
+}
+
+fn puts(str: String) {
+	printf("%s", cast#[cstring](str.data));
 }

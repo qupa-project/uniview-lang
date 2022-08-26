@@ -4,8 +4,9 @@ struct Cat {
 
 impl Cat{
 	fn new(id: int): Cat {
-		let out = Blank#[Cat]();
-		out.id = id;
+		let out = Cat {
+			id: id
+		};
 		return out;
 	}
 
@@ -20,9 +21,10 @@ impl Cat{
 
 impl Clone for Cat {
 	fn clone(src: @Cat): Cat {
-		let out = Blank#[Cat]();
+		let out = Cat {
+			id: src.id + 1
+		};
 		printf("%s", "Cloning cat\n");
-		out.id = src.id + 1;
 
 		return out;
 	}
@@ -43,8 +45,9 @@ fn Consume(o: CatCage){}
 
 impl CatCage {
 	fn new(cat: Cat): Self {
-		let o = Blank#[CatCage]();
-		o.inside = cat;
+		let o = CatCage {
+			inside: cat
+		};
 
 		return o;
 	}
