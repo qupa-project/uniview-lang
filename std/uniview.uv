@@ -8,5 +8,5 @@ trait Drop {
 }
 
 trait Clone {
-	fn clone(this: @Self, other: &Self);
+	fn clone(this: @Self): Self;
 }

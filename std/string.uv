@@ -19,6 +19,20 @@ impl Drop for String {
 	}
 }
 
+impl Clone for String {
+	fn clone(this: @String): String {
+		// Initiliase the data structure
+		let out = Blank#[String]();
+		out.data = Memory.Alloc(this.size);
+		out.size = this.size;
+
+		// Copy the blob data to the new allocation
+		Memory.Copy($out.data, $this.data, this.size, false);
+
+		return out;
+	}
+}
+
 impl String {
 	fn New(str: cstring): String {
 		let out = Blank#[String]();
@@ -115,19 +129,6 @@ impl String {
 
 	fn Length(this: &String): u64 {
 		return this.size - cast#[u64](1);
-	}
-
-
-	fn Clone(this: @String): String {
-		// Initiliase the data structure
-		let out = Blank#[String]();
-		out.data = Memory.Alloc(this.size);
-		out.size = this.size;
-
-		// Copy the blob data to the new allocation
-		Memory.Copy($out.data, $this.data, this.size, false);
-
-		return out;
 	}
 }
 

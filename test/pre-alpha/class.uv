@@ -3,21 +3,23 @@ struct Cat {
 }
 
 impl Cat{
-	fn New(id: int): Cat {
+	fn new(id: int): Cat {
 		let out = Blank#[Cat]();
 		out.id = id;
 		return out;
 	}
 
-	fn Say(this: Cat) {
+	fn say(this: Cat) {
 		printf("%i: meow\n", this.id);
 	}
 
-	fn Say(this: @Cat) {
+	fn say(this: @Cat) {
 		printf("%i: meow\n", this.id);
 	}
+}
 
-	fn Clone(src: @Cat): Cat {
+impl Clone for Cat {
+	fn clone(src: @Cat): Cat {
 		let out = Blank#[Cat]();
 		printf("%s", "Cloning cat\n");
 		out.id = src.id + 1;
@@ -32,9 +34,28 @@ impl Drop for Cat {
 	}
 }
 
+
+struct CatCage {
+	inside: Cat;
+}
+
+fn Consume(o: CatCage){}
+
+impl CatCage {
+	fn new(cat: Cat): Self {
+		let o = Blank#[CatCage]();
+		o.inside = cat;
+
+		return o;
+	}
+}
+
+
 fn main(): int {
-	let c = Cat.New(2);
-	Cat.Say($c);
-	Cat.Say(@c);
+	let c = Cat.new(2);
+	Cat.say($c);
+	Cat.say(@c);
+
+	let h = CatCage.new(c);
 	return 0;
 }
