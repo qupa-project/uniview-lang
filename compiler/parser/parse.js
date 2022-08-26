@@ -25,9 +25,6 @@ function Simplify_Program (node) {
 function Simplify_Stmt_Top (node) {
 	let inner;
 	switch (node.tokens[0].type) {
-		case "comment":
-			inner = node.tokens[0];
-			break;
 		case "external":
 			inner = Simplify_External(node.tokens[0]);
 			break;
@@ -182,15 +179,12 @@ function Simplify_Impl_For (node) {
 }
 function Simplify_Impl_Body (node) {
 	node.tokens = node.tokens[0]
-		.filter ( x => x.tokens[0].type != "comment")
 		.map( x => Simplify_Impl_Stmt(x.tokens[1][0]).tokens[0] );
 	node.reached = null;
 	return node;
 }
 function Simplify_Impl_Stmt (node) {
 	switch (node.tokens[0].type) {
-		case "comment":
-			break;
 		case "struct_attribute":
 			node.tokens = [ Simplify_Struct_Attribute(node.tokens[0]) ];
 			break;
@@ -233,15 +227,12 @@ function Simplify_Trait_Reliance (node) {
 }
 function Simplify_Trait_Body (node) {
 	node.tokens = node.tokens[0]
-		.filter ( x => x.tokens[0].type != "comment")
 		.map( x => Simplify_Trait_Stmt(x.tokens[1][0]).tokens[0] );
 	node.reached = null;
 	return node;
 }
 function Simplify_Trait_Stmt (node) {
 	switch (node.tokens[0].type) {
-		case "comment":
-			break;
 		case "struct_attribute":
 			node.tokens = [ Simplify_Struct_Attribute(node.tokens[0]) ];
 			break;
@@ -326,8 +317,6 @@ function Simplify_External_Term (node) {
 		case "declare":
 			inner = Simplify_Declare(node.tokens[0]);
 			break;
-		case "comment":
-			break;
 		default:
 			throw new TypeError(`Unexpected external statement ${node.tokens[0].type}`);
 	}
@@ -366,15 +355,12 @@ function Simplify_Struct (node) {
 }
 function Simplify_Struct_Body (node) {
 	node.tokens = node.tokens[0]
-		.filter ( x => x.tokens[0].type != "comment")
 		.map( x => Simplify_Struct_Stmt(x.tokens[1][0]).tokens[0] );
 	node.reached = null;
 	return node;
 }
 function Simplify_Struct_Stmt (node) {
 	switch (node.tokens[0].type) {
-		case "comment":
-			break;
 		case "struct_attribute":
 			node.tokens = [ Simplify_Struct_Attribute(node.tokens[0]) ];
 			break;
@@ -699,8 +685,6 @@ function Simplify_Function_Body (node) {
 function Simplify_Function_Stmt (node) {
 	let inner;
 	switch (node.tokens[0].type) {
-		case "comment":
-			return null;
 		case "declare":
 			inner = Simplify_Declare(node.tokens[0]);
 			break;
