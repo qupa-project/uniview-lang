@@ -52,14 +52,9 @@ class Execution extends ExecutionFlow {
 			return null;
 		}
 
+		// If there is already a value in this variable, clear it first
 		if (!access.isUndefined() && access.type.type.getDestructor()) {
-			this.getFile().throw(
-				`Error: Unsafe value drop\n` +
-				`  The previous value of ${access.name} was not destructed or consumed - but has now been lost\n` +
-				`  Suggest adding ${access.type.type.name}.Delete(${access.name}) before the current line`,
-				ast.ref.start, ast.ref.end
-			);
-			return null;
+			frag.merge(access.cleanup(ast.ref));
 		}
 
 		let chg = access.markUpdated(expr.instruction, false, ast.ref);
