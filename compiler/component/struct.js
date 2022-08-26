@@ -56,7 +56,7 @@ class Structure extends TypeDef {
 		if (typeof(name) == "number") {
 			found = i < this.terms.length;
 			i = name;
-		} else{
+		} else {
 			for (; i<this.terms.length && !found; i++) {
 				if (this.terms[i].name == name) {
 					found = true;
