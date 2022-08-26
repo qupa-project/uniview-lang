@@ -7,7 +7,8 @@
  - [x] `either` types
  - [x] `trait` declaration
  - [x] `impl` statement for functions tied to a type, based on required behaviour
- - [] Intrinsic `Drop` trait which automatically gets executed on structs with this type when the value falls out of scope
+ - [x] `struct {key: value}` syntax now available for creating structures
+ - [x] Intrinsic `Drop` trait which automatically gets executed on structs with this type when the value falls out of scope
 
 ## Fixes
  - [x] Lent normal values are now treated as non-lent values within a function, however, the final values are stored back in the original location upon function cleanup
