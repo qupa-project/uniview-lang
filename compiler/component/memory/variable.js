@@ -224,9 +224,9 @@ class Variable extends Value {
 		}
 		preamble.merge(res.preamble);
 
-		if (accessor.tokens != undefined) {
-			throw new Error("Invalid variable accessor");
-		}
+		// if (accessor.tokens != undefined) {
+		// 	throw new Error("Invalid variable accessor");
+		// }
 
 		// Automatically decompoase the value if needed
 		if (!this.isDecomposed) {
@@ -769,6 +769,7 @@ class Variable extends Value {
 		}	else {
 			// Move the data from the pointer address of this location
 			//  to the address of the either data-block
+			throw "unimplemented";
 		}
 
 		let latent = new LLVM.Latent(
@@ -838,7 +839,28 @@ class Variable extends Value {
 						new LLVM.Name(del.represent, true, ref),
 						[res.register]
 					));
-					frag.append(new LLVM.Comment(`"${this.name}" should be deleted here`));
+				} else {
+					if (this.type.type instanceof Structure) {
+						let names = this.type.type.terms
+							.filter(x => x.typeRef.type instanceof Structure)
+							.map(x => x.name);
+
+						for (let name of names) {
+							let res = this.access(name, ref);
+							if (res.error) {
+								return res;
+							}
+							frag.append(res.preamble);
+
+							res = res.variable.cleanup(ref);
+							if (res.error) {
+								return res;
+							}
+							frag.append(res);
+						}
+
+						this.makeUndefined(ref);
+					}
 				}
 			}
 		}
