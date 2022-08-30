@@ -61,12 +61,8 @@ class Implement {
 		}
 		this.represent = this.struct.name + "." + (this.trait?.name || "default");
 
-		this.struct.bindImplementation(this);
-
 		for (let node of this.ast.tokens[2].tokens) {
 			switch (node.type) {
-				case "comment":
-					break;
 				case "function":
 					let space = new Function(this, node, false, false);
 
@@ -100,6 +96,7 @@ class Implement {
 		if (this.trait) {
 			this.trait.bindImplementation(this);
 		}
+		this.struct.bindImplementation(this);
 	}
 
 	getFunction (access, signature, template) {

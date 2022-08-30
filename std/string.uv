@@ -137,9 +137,9 @@ impl String {
 
 
 fn puts(str: @String) {
-	printf("%s", cast#[cstring](str.data));
+	printf("%s", bitcast#[cstring](str.data));
 }
 
 fn puts(str: String) {
-	printf("%s", cast#[cstring](str.data));
+	printf("%s", bitcast#[cstring](str.data));
 }
