@@ -2,6 +2,8 @@ const LLVM     = require("../../middle/llvm.js");
 const TypeRef  = require('../typeRef.js');
 const Structure = require('../struct.js');
 
+const Flattern = require('../../parser/flattern.js');
+
 const Primative = {
 	types: require('../../primative/types.js')
 };
@@ -571,6 +573,90 @@ class ExecutionExpr extends ExecutionBase {
 		};
 	}
 
+	compile_expr_struct (ast) {
+		let typeRef = this.resolveType(ast.tokens[0]);
+		if (!(typeRef instanceof TypeRef) || !(typeRef.type instanceof Structure)) {
+			this.getFile().throw(`Error: Invalid struct type "${
+				Flattern.DataTypeStr(ast.tokens[0])
+			}"`, ast.ref.start, ast.ref.end);
+			return null;
+		}
+		let type = typeRef.type;
+
+		let preamble = new LLVM.Fragment();
+		let epilog = new LLVM.Fragment();
+		let id = new LLVM.ID();
+		preamble.append(new LLVM.Set(
+			new LLVM.Name(id, false, ast.ref),
+			new LLVM.Alloc(typeRef.toLLVM(), ast.ref)
+		));
+		id = id.reference();
+
+		if (ast.tokens[1] != null) {
+			let failed = false;
+			for (let x of ast.tokens[1].tokens) {
+				// Find attribute name
+				let name = x.tokens[0].tokens;
+				let i = type.indexOfTerm(name);
+				if (i == -1) {
+					this.getFile().throw(
+						`Error: Invalid struct attribute name "${name}"`,
+					x.tokens[0].ref.start, x.tokens[0].ref.end);
+					failed = true;
+					return null;
+				}
+
+				// Resolve attribute address
+				let res = type.accessGEPByIndex(
+					i,
+					new LLVM.Argument(typeRef.toLLVM(), new LLVM.Name(id, false, x.ref), x.ref),
+					x.ref, false
+				);
+				preamble.merge(res.preamble);
+				let reg = res.instruction;
+
+				res = this.compile_expr(x.tokens[1], null, true);
+				if (res == null) {
+					return null;
+				}
+				preamble.merge(res.preamble);
+				epilog.merge(res.epilog);
+				let instruction = res.instruction;
+
+				if (res.type.type.typeSystem == "linear") {
+					let load = new LLVM.ID();
+					preamble.append(new LLVM.Set(
+						new LLVM.Name(load, false, x.ref),
+						new LLVM.Load(
+							new LLVM.Type(instruction.type.term, 0),
+							instruction.name, x.ref
+						)
+					));
+					instruction = new LLVM.Argument(
+						new LLVM.Type(instruction.type.term, 0, x.ref),
+						new LLVM.Name(load.reference(), false, x.ref),
+					x.ref);
+				}
+
+				preamble.append(new LLVM.Store(
+					reg,
+					instruction,
+					x.ref
+				));
+			}
+		}
+
+		return {
+			preamble,
+			instruction: new LLVM.Argument(
+				typeRef.toLLVM(ast.ref),
+				new LLVM.Name(id, false, ast.ref)
+			),
+			epilog,
+			type: typeRef
+		};
+	}
+
 
 
 	/**
@@ -605,6 +691,9 @@ class ExecutionExpr extends ExecutionBase {
 				break;
 			case "expr_lend":
 				res = this.compile_expr_lend(ast.tokens[0]);
+				break;
+			case "expr_struct":
+				res = this.compile_expr_struct(ast);
 				break;
 			default:
 				throw new Error(`Unexpected expression type ${ast.type}`);

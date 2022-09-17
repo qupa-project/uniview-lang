@@ -1,39 +1,64 @@
-class Cat {
+struct Cat {
 	id: int;
+}
 
-	fn New(id: int): Cat {
-		let out = Blank#[Cat]();
-		out.id = id;
+impl Cat{
+	fn new(id: int): Cat {
+		let out = Cat {
+			id: id
+		};
 		return out;
 	}
 
-	fn Say(this: Cat) {
-		printf("%i: meow\n", this.id);
-		Cat.Delete(this);
-	}
-
-	fn Say(this: @Cat) {
+	fn say(this: Cat) {
 		printf("%i: meow\n", this.id);
 	}
 
-	fn Clone(src: @Cat): Cat {
-		let out = Blank#[Cat]();
-		printf("%s", "Cloning cat\n");
-		out.id = src.id + 1;
-
-		return out;
-	}
-
-	fn Delete(this: Cat) {
-		printf("%s", "Deleting cat...\n");
-		delete this.id;
+	fn say(this: @Cat) {
+		printf("%i: meow\n", this.id);
 	}
 }
 
+impl Clone for Cat {
+	fn clone(src: @Cat): Cat {
+		let out = Cat {
+			id: src.id + 1
+		};
+		printf("%s", "Cloning cat\n");
+
+		return out;
+	}
+}
+
+impl Drop for Cat {
+	fn drop(this: @Cat) {
+		printf("%s", "Deleting cat...\n");
+	}
+}
+
+
+struct CatCage {
+	inside: Cat;
+}
+
+fn Consume(o: CatCage){}
+
+impl CatCage {
+	fn new(cat: Cat): Self {
+		let o = CatCage {
+			inside: cat
+		};
+
+		return o;
+	}
+}
+
+
 fn main(): int {
-	let c = Cat.New(2);
-	Cat.Say($c);
-	Cat.Say(@c);
-	Cat.Delete(c);
+	let c = Cat.new(2);
+	Cat.say($c);
+	Cat.say(@c);
+
+	let h = CatCage.new(c);
 	return 0;
 }

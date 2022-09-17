@@ -6,6 +6,11 @@ function FixStringLength (string, count, filler = " ") {
 function CodeSection (string, refStart, refEnd) {
 	string = string.replace(/\t/g, "  ");
 
+	if (refStart.index == refEnd.index) {
+		refEnd.index = string.length;
+		refEnd.line = refStart.line + string.split('\n').length;
+	}
+
 	let offset = refStart.line;
 	let digits = refEnd.line.toString().length;
 

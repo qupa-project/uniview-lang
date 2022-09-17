@@ -1,10 +1,10 @@
 program ::= w* ( stmt_top w* )*
-	stmt_top ::= comment | library | class | template_def | struct | flag_definition | external | include | function
+	stmt_top ::= comment | library | struct | impl | trait | external | include | function
 
 #=============================
 #  Helper patterns
 #=============================
-	w ::= " " | "\t" | nl
+	w ::= " " | "\t" | nl | comment
 	nl ::= "\r\n" | "\n"
 
 	digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
@@ -67,27 +67,17 @@ program ::= w* ( stmt_top w* )*
 	data_type ::= name data_type_access* template?
 		data_type_access ::= "." name
 
-	delete ::= "delete" w+ variable w* ";"
-
-
-#=============================
-#  Flags
-#=============================
-	flags ::= ":" w* "[" w* flag_args w* "]"
-		flag_args ::= variable ( w* "," w* variable )*
-	flag_definition ::= "flag" w+ name w+ "[" w* name ( w* "," w* name )* w* "]" w* ";"
-
 
 #=============================
 #  Function
 #=============================
-	function ::= func_head w* function_body w* ";"?
+	function ::= func_head w* ( function_body | ";" )
 		func_head ::= "fn" w+ name w* func_arguments w* ( ":" w* data_type )?
 			func_arguments ::= "(" w* func_arg_list? ")"
 				func_arg_list ::= func_arg w* ( "," w* func_arg w* )*
-				func_arg      ::= name w* ":" w* ( "@" | "#" )? w* data_type
+				func_arg      ::= name w* ":" w* ( "@" | "&" )? w* data_type
 		function_body ::= "{" w* ( func_stmt w* )* "}"
-			func_stmt ::= comment | if | when | return | composition | declare | delete | assign | declare_assign | call_procedure
+			func_stmt ::= if | when | return | declare | assign | declare_assign | call_procedure
 
 	function_outline ::= func_head w* ";"
 	function_redirect ::= "fn" w+ string w* func_arguments ( w* ":" w* data_type )? w+ "as" w+ name w* ";"
@@ -103,34 +93,29 @@ program ::= w* ( stmt_top w* )*
 #=============================
 #  Structure
 #=============================
-	struct  ::= "struct" w+ name w* "{" w* struct_body w* "}" w* ";"?
+	struct  ::= "struct" w+ name w* "{" w* struct_body w* "}"
 		struct_body ::= ( w* struct_stmt )*
-		struct_stmt ::= comment | struct_attribute
+		struct_stmt ::= struct_attribute | struct_attribute
 			struct_attribute ::= name w* ":" w* data_type w* ";"
 
-	composition ::= compose | decompose
-		decompose ::= "decompose" w+ variable w* ";"
-		compose   ::= "compose" w+ variable w* ";"
+	expr_struct ::= data_type w* "{" w* expr_struct_args? w* "}"
+		expr_struct_args ::= expr_struct_arg w* ( "," w* expr_struct_arg )* w* ","?
+			expr_struct_arg ::= name w* ":" w* expr
 
+	impl ::= "impl" w+ data_type impl_for? w* "{" w* impl_body w* "}"
+		impl_for ::= w+ "for" w+ data_type
+		impl_body ::= ( w* impl_stmt )*
+			impl_stmt ::= function | function
 
-#=============================
-#  Class
-#=============================
-	class ::= "class" w+ name w+ class_inherit? w* "{" class_body "}" w* ";"?
-		class_inherit ::= "extends" w+ variable
-		class_body ::= ( w* class_stmt )* w*
-		class_stmt ::= comment | function | struct_attribute
-		class_access ::= "public:" | "private:" | "protected:" | "static:"
+	trait ::= "trait" w+ name w* trait_reliance? w* "{" w* trait_body w* "}"
+		trait_reliance ::= ":" w* data_type ( w* "," w* data_type )*
+		trait_body ::= ( w* trait_stmt )*
+			trait_stmt ::= function | function
 
 
 #=============================
 #  Template
 #=============================
-	template_def ::= "template" w* template_arguments w* template_opperand
-		template_def_arguments ::= "(" w* ( template_arg w* )? ( "," w* template_arg w* )* ")"
-			template_def_arg ::= "^"? data_type w+ name flags?
-		template_opperand ::= function_outline | function | class
-
 	template ::= "#[" w* template_args w* "]"
 		template_args ::= template_arg ( w* "," w* template_arg )*
 		template_arg  ::= constant | data_type
@@ -142,7 +127,7 @@ program ::= w* ( stmt_top w* )*
 	expr ::= w* expr_arg w* ( expr_middle_opper w* expr_arg w* )*
 		expr_right_opper ::= "!" | "$" | "-"
 		expr_middle_opper ::= "?" | ":" | "&&" | "||" | "==" | "!=" | "<=" | ">=" | "<" | ">" | "%" | "*" | "/" | "+" | "-"
-		expr_arg ::= expr_val | expr_brackets
+		expr_arg ::= expr_struct | expr_val | expr_brackets
 			expr_val ::= expr_right_opper? w* ( constant | variable ) w* ( template? w* call_args )?
 			expr_brackets ::= "(" w* expr w* ")"
 
@@ -169,7 +154,6 @@ program ::= w* ( stmt_top w* )*
 		external_mode ::= "assume" | "export"
 		external_body ::= ( external_term w* )*
 		external_term ::= function_redirect | function_outline | type_def | struct | comment
-		# function_outline
 
 	type_def ::= "type" w+ name w+ "size" w+ integer w* ";"
 

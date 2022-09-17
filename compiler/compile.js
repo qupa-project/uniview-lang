@@ -88,7 +88,7 @@ let asm = project.toLLVM();
 
 
 if (opt.options.mode == "preprocess") {
-	console.log("Passed");
+	console.info("Passed");
 	process.exit(0);
 }
 
@@ -133,7 +133,7 @@ if (opt.options.verbose) {
 
 let tool_path = process.env.uvc_tool;
 if (!fs.existsSync(tool_path)) {
-	console.log(`Cannot find tool: ${tool_path}`);
+	console.error(`Cannot find tool: ${tool_path}`);
 	process.exit(1);
 }
 

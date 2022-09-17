@@ -7,7 +7,8 @@ const LLVM = require('./../middle/llvm.js');
 const Function = require('./function.js');
 const TypeDef  = require('./typedef.js');
 const Structure = require('./struct.js');
-const Class = require('./class.js');
+const Trait = require('./trait.js');
+const Implement = require('./impl.js');
 const TypeRef = require('./typeRef.js');
 const Import  = require('./import.js');
 
@@ -29,12 +30,12 @@ class File {
 
 		this.names = {};
 
-		let prim = this.project.getPrimative();
-		if (prim) {
-			let lib = new Import(this, null);
-			lib.inject(prim);
-			this.names["*"] = lib;
-		}
+		this.impls = [];
+
+		let prims = this.project.getPrimatives();
+		let lib = new Import(this, null);
+		this.names["*"] = lib;
+		prims.map(x => lib.inject(x))
 
 		this.exports = [];
 		this.imports = [];
@@ -108,8 +109,7 @@ class File {
 				space = new TypeDef(this, element, external);
 				break;
 			case "function_outline":
-				abstract = !external;
-				// continue to function case
+				abstract = !external; // continue to function case
 			case "function":
 				space = new Function(this, element, external, abstract);
 				break;
@@ -123,9 +123,12 @@ class File {
 			case "struct":
 				space = new Structure(this, element, external);
 				break;
-			case "class":
-				space = new Class(this, element, external);
+			case "trait":
+				space = new Trait(this, element, external);
 				break;
+			case "impl":
+				this.impls.push( new Implement(this, element) );
+				return;
 			default:
 				throw new Error(`Unexpected file scope namespace type "${element.type}"`);
 		}
@@ -244,6 +247,43 @@ class File {
 		return null;
 	}
 
+	getTrait (access, template, stack = []) {
+		if (access.length < 1) {
+			return null;
+		}
+
+		let first = access[0];
+		let forward = access.slice(1);
+		if (Array.isArray(first)) {
+			if (first[0] == "." || first[0] == 0) {
+				first = first[1];
+			} else {
+				return null;
+			}
+		}
+
+		if (this.names[first]) {
+			let res = this.names[first].getTrait(forward, template);
+			if (res !== null) {
+				return res;
+			}
+		}
+
+		// Circular loop
+		if (stack.includes(this)) {
+			return null;
+		}
+		stack.push(this);
+
+		// If the name isn't defined in this file in a regular name space
+		//   Check namespace imports
+		if (this.names["*"] instanceof Import) {
+			return this.names["*"].getTrait(access, template, stack);
+		}
+
+		return null;
+	}
+
 	getMain () {
 		return this.names['main'];
 	}
@@ -343,12 +383,20 @@ class File {
 		for (let external of this.exports) {
 			this.registerExport(external);
 		}
+
+		for (let imp of this.impls) {
+			imp.link();
+		}
 	}
 
 
 	compile () {
 		for (let key in this.names) {
 			this.names[key].compile();
+		}
+
+		for (let imp of this.impls) {
+			imp.compile();
 		}
 	}
 
@@ -365,6 +413,15 @@ class File {
 			}
 
 			let res = this.names[key].toLLVM();
+			if (res instanceof LLVM.Fragment) {
+				fragment.merge(res);
+			} else {
+				fragment.append(res);
+			}
+		}
+
+		for (let imp of this.impls) {
+			let res = imp.toLLVM();
 			if (res instanceof LLVM.Fragment) {
 				fragment.merge(res);
 			} else {

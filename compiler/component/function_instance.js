@@ -18,7 +18,7 @@ class Function_Instance {
 		this.ast = ast;
 		this.ref = ast.ref.start;
 		this.external = external;
-		this.abstract = abstract;
+		this.abstract = abstract || this.ast.tokens[1] == null;
 
 		this.returnType = null;
 		this.signature = [];
@@ -55,13 +55,22 @@ class Function_Instance {
 		return this;
 	}
 
+	getType(node, template) {
+		return this.ctx.getType(node, template);
+	}
 
+
+	relink () {
+		this.linked = false;
+		this.link();
+	}
 
 	link () {
 		if (this.linked) {
 			return;
 		}
 
+		this.signature = [];
 		let file = this.getFile();
 		let head = this.ast.tokens[0];
 		let args = head.tokens[2].tokens;
@@ -72,7 +81,7 @@ class Function_Instance {
 		let consts = [ false ];
 		if (args.length > 0) {
 			borrows = borrows.concat(args.map(x => x[0] == "@"));
-			consts = consts.concat(args.map(x => x[0] == "#"));
+			consts = consts.concat(args.map(x => x[0] == "&"));
 			types = types.concat(args.map((x) => x[1]));
 		}
 
@@ -137,7 +146,7 @@ class Function_Instance {
 
 
 	compile () {
-		if (this.abstract) {
+		if (this.abstract && !this.external) {
 			return null;
 		}
 
@@ -214,6 +223,9 @@ class Function_Instance {
 		this.ir = frag;
 	}
 
+	toString() {
+		return `${this.name}(${this.signature.map(x => x.toString()).join(", ")}): ${this.returnType.toString()}`;
+	}
 
 	toLLVM() {
 		return this.ir;

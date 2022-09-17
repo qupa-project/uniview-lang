@@ -224,9 +224,9 @@ class Variable extends Value {
 		}
 		preamble.merge(res.preamble);
 
-		if (accessor.tokens != undefined) {
-			throw new Error("Invalid variable accessor");
-		}
+		// if (accessor.tokens != undefined) {
+		// 	throw new Error("Invalid variable accessor");
+		// }
 
 		// Automatically decompoase the value if needed
 		if (!this.isDecomposed) {
@@ -715,29 +715,21 @@ class Variable extends Value {
 		let id = new LLVM.ID();
 		let frag = new LLVM.Fragment();
 
-		if (type.type.typeSystem == "normal" && this.type.typeSystem != "normal") {
-			frag.append(new LLVM.Set(
-				new LLVM.Name(id, false, ref),
-				new LLVM.Bitcast(
-					type.toLLVM(ref, false, true),
-					register
-				)
-			));
+		frag.append(new LLVM.Set(
+			new LLVM.Name(id, false, ref),
+			new LLVM.Bitcast(
+				type.toLLVM(ref, false, true),
+				register
+			)
+		));
 
+		if (type.type.typeSystem == "normal") {
 			let load = new LLVM.ID();
 			frag.append(new LLVM.Set(
 				new LLVM.Name(load, false),
 				new LLVM.Load(type.toLLVM(), new LLVM.Name(id.reference()))
 			));
 			id = load;
-		} else {
-			frag.append(new LLVM.Set(
-				new LLVM.Name(id, false, ref),
-				new LLVM.Bitcast(
-					type.toLLVM(ref),
-					register
-				)
-			));
 		}
 
 		let latent = new LLVM.Latent(
@@ -755,27 +747,59 @@ class Variable extends Value {
 
 	// Reverts the behaviour of induceType
 	deduceType(type, register, ref) {
-		let frag = new LLVM.Fragment();
+
+		// There is no value to be updated
+		if (this.isUndefined()) {
+			this.type = type;
+			return new LLVM.Latent(new LLVM.Fragment());
+		}
 
 		// Update the mode of the either type to this type
-
 		if (this.type.size == 0) {
-			throw "Unimplemented";
+			throw new Error("Unimplemented");
 		}
 
-		if (this.type.typeSystem == "normal") {
-			// Store the data from this variable at the given location
-			throw "unimplemented";
-		}	else {
-			// Move the data from the pointer address of this location
-			//  to the address of the either data-block
+		// Read the current value
+		let val = this.read(ref);
+		if (val.error) {
+			return val;
 		}
+
+		// Transform the location to the correct pointer type
+		let id = new LLVM.ID();
+		let frag = new LLVM.Fragment();
+		frag.append(new LLVM.Set(
+			new LLVM.Name(id, false, ref),
+			new LLVM.Bitcast(
+				val.type.toLLVM(ref, false, true),
+				register
+			)
+		));
+
+		// Load the struct into memory
+		if (this.type.type.typeSystem != "normal") {
+			let load = new LLVM.ID();
+			frag.append(new LLVM.Set(
+				new LLVM.Name(load, false),
+				new LLVM.Load(type.toLLVM(), new LLVM.Name(id.reference()))
+			));
+			id = load;
+		}
+
+		// Store the value into the correct address
+		frag.append(new LLVM.Store(
+			new LLVM.Argument(this.type.toLLVM(), id.reference(), ref),
+			val
+		));
 
 		let latent = new LLVM.Latent(
 			frag
 		);
 
-		this.probability = new Probability(latent, register, ref);
+		this.probability = new Probability(
+			latent,
+			register
+		);
 		this.type = type;
 
 		return latent;
@@ -821,43 +845,45 @@ class Variable extends Value {
 
 			frag.merge(res.preamble);
 		} else {                       // Run destruct behaviour
-			let res = this.resolveProbability(ref, true);
-			if (res !== null) {
-				return res;
-			}
+			// The value has not been consumed and will fall out of scope
+			if (!this.isUndefined(ref)) {
+				let del = this.type.type.getDestructor();
+				if (del) {
+					let res = this.read(ref);
 
-			if (
-				this.type.type.meta == "CLASS" &&
-				!this.isUndefined(ref)
-			) {
-				return {
-					error: true,
-					msg: `Variable "${this.name}" is still defined. All classes must be consumed`,
-					ref: ref
-				};
+					frag.merge(res.preamble);
+					frag.append(new LLVM.Call(
+						new LLVM.Type("void", 0, ref),
+						new LLVM.Name(del.represent, true, ref),
+						[res.register]
+					));
+				} else {
+					if (this.type.type instanceof Structure) {
+						let names = this.type.type.terms
+							.filter(x => x.typeRef.type instanceof Structure)
+							.map(x => x.name);
+
+						for (let name of names) {
+							let res = this.access(name, ref);
+							if (res.error) {
+								return res;
+							}
+							frag.append(res.preamble);
+
+							res = res.variable.cleanup(ref);
+							if (res.error) {
+								return res;
+							}
+							frag.append(res);
+						}
+
+						this.makeUndefined(ref);
+					}
+				}
 			}
 		}
 
 		return frag;
-	}
-
-	delete (ref) {
-		if (this.isUndefined()) {
-			return {
-				error: true,
-				msg: "Cannot delete an already undefined value",
-				ref: ref
-			};
-		} else if (this.type.constant) {
-			return {
-				error: true,
-				msg: "Cannot delete a constant value",
-				ref: ref
-			};
-		}
-
-		this.makeUndefined(ref);
-		return new LLVM.Fragment();
 	}
 }
 

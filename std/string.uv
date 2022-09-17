@@ -1,21 +1,46 @@
 include llvm "./string.ll";
 import "memory.uv" as Memory;
 
-import "io.uv";
-
 external assume {
 	fn "qupa.cstring.size" (str: cstring): u64 as sizeof;
 }
 
-class String {
+struct String {
 	data: unsafe_blob;
 	size: u64;
+}
 
+
+impl Drop for String {
+	fn drop(this: @String) {
+		Memory.Free(this.data);
+	}
+}
+
+impl Clone for String {
+	fn clone(this: @String): String {
+		// Initiliase the data structure
+		let data = Memory.Alloc(this.size);
+
+		let out = String {
+			data: data,
+			size: this.size
+		};
+
+		// Copy the blob data to the new allocation
+		Memory.Copy($out.data, $this.data, this.size, false);
+
+		return out;
+	}
+}
+
+impl String {
 	fn New(str: cstring): String {
-		let out = Blank#[String]();
-		out.size = sizeof($str);
-
-		out.data = Memory.Alloc(out.size);
+		let size = sizeof($str);
+		let out = String {
+			data: Memory.Alloc(size),
+			size: size
+		};
 
 		let other = bitcast#[unsafe_blob](str);
 		Memory.Move($out.data, $other, out.size, false);
@@ -31,7 +56,6 @@ class String {
 		Memory.Move(insert, $other.data, other.size, false);
 
 		this.size = nx_len;
-		String.Delete(other);
 	}
 
 
@@ -48,10 +72,12 @@ class String {
 		}
 
 		// Create a space for the new data
-		let sub = Blank#[String]();
 		let length = end - begin;
-		sub.size = length + cast#[u64](1);
-		sub.data = Memory.Alloc(sub.size);
+		let size = length + cast#[u64](1);
+		let sub = String {
+			size: size,
+			data: Memory.Alloc(size)
+		};
 
 		// Move the taken slice to the new string
 		let sect_start = Memory.Offset($this.data, cast#[i64](begin));
@@ -86,10 +112,12 @@ class String {
 		}
 
 		// Create a space for the new data
-		let sub = Blank#[String]();
 		let length = end - begin;
-		sub.size = length + cast#[u64](1);
-		sub.data = Memory.Alloc(sub.size);
+		let size = length + cast#[u64](1);
+		let sub = String {
+			size: size,
+			data: Memory.Alloc(size)
+		};
 
 		// Move the taken slice to the new string
 		let sect_start = Memory.Offset($this.data, cast#[i64](begin));
@@ -98,38 +126,20 @@ class String {
 		// Add the null terminator
 		let terminator = Memory.Offset($sub.data, cast#[i64](sub.size) -1);
 		Memory.Set(terminator, cast#[i8](0), cast#[u64](1), false);
-
-		String.Delete(this);
 		return sub;
 	}
 
 
-	fn Length(this: #String): u64 {
+	fn Length(this: &String): u64 {
 		return this.size - cast#[u64](1);
-	}
-
-
-	fn Clone(this: @String): String {
-		// Initiliase the data structure
-		let out = Blank#[String]();
-		out.data = Memory.Alloc(this.size);
-		out.size = this.size;
-
-		// Copy the blob data to the new allocation
-		Memory.Copy($out.data, $this.data, this.size, false);
-
-		return out;
-	}
-
-
-	fn Delete(this: String) {
-		Memory.Free(this.data);
-		delete this.data;
-		delete this.size;
 	}
 }
 
 
-fn puts(str: #String) {
-	puts(cast#[cstring](str.data));
+fn puts(str: @String) {
+	printf("%s", bitcast#[cstring](str.data));
+}
+
+fn puts(str: String) {
+	printf("%s", bitcast#[cstring](str.data));
 }

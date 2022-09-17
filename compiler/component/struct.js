@@ -40,6 +40,9 @@ class Structure extends TypeDef {
 		this.linked = false;
 		this.size = -1;
 		this.alignment = 0;
+
+		this.defaultImpl = null;
+		this.impls = [];
 	}
 
 	/**
@@ -53,7 +56,7 @@ class Structure extends TypeDef {
 		if (typeof(name) == "number") {
 			found = i < this.terms.length;
 			i = name;
-		} else{
+		} else {
 			for (; i<this.terms.length && !found; i++) {
 				if (this.terms[i].name == name) {
 					found = true;
@@ -70,6 +73,38 @@ class Structure extends TypeDef {
 			index: i,
 			type: type
 		};
+	}
+
+	getFunction(access, signature, template) {
+		if (this.defaultImpl) {
+			return this.defaultImpl.getFunction(access, signature, template);
+		}
+
+		return null;
+	}
+
+	getDestructor () {
+		let res = this.impls
+			.filter(x => x.trait.name == "Drop")
+			.map(x => x.names["drop"].instances[0]);
+
+		if (res.length == 1) {
+			return res[0];
+		}
+
+		return null;
+	}
+
+	getCloner () {
+		let res = this.impls
+			.filter(x => x.trait.name == "Clone")
+			.map(x => x.names["clone"].instances[0]);
+
+		if (res.length == 1) {
+			return res[0];
+		}
+
+		return null;
 	}
 
 	indexOfTerm (name) {
@@ -252,6 +287,30 @@ class Structure extends TypeDef {
 		return true;
 	}
 
+	bindImplementation (impl) {
+		if (impl.trait == null) {
+			if (this.defaultImpl) {
+				this.ctx.getFile().throw(
+					`Error: Struct ${this.name} already has a default implementation, however a new one is attempting to be assigned`,
+					this.defaultImpl.ref,
+					impl.ref
+				)
+			}
+
+			this.defaultImpl = impl;
+		} else {
+			if (this.impls.filter(x => x.trait == impl.trait).length > 0) {
+				this.ctx.getFile().throw(
+					`Error: Struct ${this.name} already has an implementation for trait ${impl.trait.name}, however a new one is attempting to be assigned`,
+					this.defaultImpl.ref,
+					impl.ref
+				);
+			}
+
+			this.impls.push(impl);
+		}
+	}
+
 	compile () {
 		let types = [];
 		for (let name in this.terms) {
@@ -276,37 +335,67 @@ class Structure extends TypeDef {
 	 */
 	cloneInstance(argument, ref) {
 		let preamble = new LLVM.Fragment();
+		let irType = new TypeRef(1, this, false);
+		let instruction;
 
-		let type = new TypeRef(1, this);
+		let cloner = this.getCloner();
+		if (cloner) {
+			let id = new LLVM.ID();
 
-		let storeID = new LLVM.ID();
-		preamble.append(new LLVM.Set(
-			new LLVM.Name(storeID, false),
-			new LLVM.Alloc(type.toLLVM())
-		));
-		let instruction = new LLVM.Argument(
-			type.toLLVM(),
-			new LLVM.Name(storeID.reference(), false)
-		);
+			preamble.append(new LLVM.Set(
+				new LLVM.Name(id),
+				new LLVM.Alloc(irType.toLLVM(ref, true))
+			));
 
-		let cacheID = new LLVM.ID();
-		preamble.append(new LLVM.Set(
-			new LLVM.Name(cacheID, false),
-			new LLVM.Load(
-				type.toLLVM(ref, true),
-				argument.name
-			),
-			ref
-		));
+			instruction = new LLVM.Argument (
+				irType.toLLVM(ref, false, true),
+				new LLVM.Name(id.reference())
+			);
 
-		preamble.append(new LLVM.Store(
-			instruction,
-			new LLVM.Argument(
-				type.toLLVM(ref, true),
-				new LLVM.Name(cacheID.reference(ref), false, ref)
-			),
-			ref
-		));
+			// Call the clone opperation
+			preamble.append(new LLVM.Call(
+				new LLVM.Type("void", 0),
+				new LLVM.Name(cloner.represent, true, ref),
+				[
+					instruction,
+					argument
+				], ref
+			));
+
+			return {
+				preamble,
+				instruction
+			};
+		} else {
+			let storeID = new LLVM.ID();
+			preamble.append(new LLVM.Set(
+				new LLVM.Name(storeID, false),
+				new LLVM.Alloc(irType.toLLVM())
+			));
+			instruction = new LLVM.Argument(
+				irType.toLLVM(),
+				new LLVM.Name(storeID.reference(), false)
+			);
+
+			let cacheID = new LLVM.ID();
+			preamble.append(new LLVM.Set(
+				new LLVM.Name(cacheID, false),
+				new LLVM.Load(
+					irType.toLLVM(ref, true),
+					argument.name
+				),
+				ref
+			));
+
+			preamble.append(new LLVM.Store(
+				instruction,
+				new LLVM.Argument(
+					irType.toLLVM(ref, true),
+					new LLVM.Name(cacheID.reference(ref), false, ref)
+				),
+				ref
+			));
+		}
 
 		return {
 			preamble,

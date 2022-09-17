@@ -20,14 +20,16 @@ class Project {
 			caching: config.caching === undefined ? true : config.caching
 		};
 
-		Primative.Generate(this);
-
 		this.exports = [];
 		this.error = false;
 
 		this.includes = [];
 
-		this.import (path.resolve(__dirname, "../../std/uniview.uv"), false);
+		this.primatives = [];
+		Primative.Generate(this); // self imports
+		this.primatives.push(this.files[0]);
+		this.import(path.resolve(__dirname, "../../std/uniview.uv"), false);
+		this.primatives.push(this.files[1]);
 	}
 
 	import (path, entry = false, relation = this.rootPath) {
@@ -102,8 +104,8 @@ class Project {
 	/**
 	 * Returns the primative library
 	 */
-	getPrimative () {
-		return this.files[0];
+	getPrimatives () {
+		return this.primatives;
 	}
 
 	/**
