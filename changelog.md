@@ -10,6 +10,9 @@
  - [x] `struct {key: value}` syntax now available for creating structures
  - [x] Intrinsic `Drop` trait which automatically gets executed on structs with this type when the value falls out of scope
  - [x] Intrinsic `Clone` trait which automatically gets called when cloning a struct with the Clone trait implemented
+ - [] A value can be lent to a new variable within the same scope
+ - [] A lent value can be returned only if the lent value is from a non locally defined value
+ - [] A value can have multiple immutable lends
 
 ## Fixes
  - [x] Lent normal values are now treated as non-lent values within a function, however, the final values are stored back in the original location upon function cleanup
