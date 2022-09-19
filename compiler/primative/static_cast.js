@@ -61,13 +61,8 @@ class Template_Primative_Static_Cast extends Template {
 		let func = new Function_Instance(this, "static_cast", outputType, [inputType]);
 		func.isInline = false;
 
-		// Invalid value cast as one value is a pointer
-		if (inputType.pointer != outputType.pointer) {
-			return false;
-		}
-
 		// If both types are primaives
-		if (types[inputType.type.name] && types[outputType.type.name]) {
+		if (inputType.type.native && outputType.type.native) {
 			// Same type of data (i.e. float float, or int int)
 			if (inputType.type.cat == outputType.type.cat) {
 				let mode = inputType.type.cat == "float" ? 2 :

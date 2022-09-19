@@ -9,11 +9,12 @@ class TypeRef {
 	 * @param {Number} pointerLvl
 	 * @param {Type} type
 	 */
-	constructor (pointerLvl, type, lent = false, constant = false) {
-		this.pointer = pointerLvl;
+	constructor (type, lent = false, constant = false, local = false) {
+		this.native = type.native;
 		this.type = type;
 		this.lent = lent;
 		this.constant = constant;
+		this.local = false;
 	}
 
 	getName () {
@@ -37,18 +38,10 @@ class TypeRef {
 			return false;
 		}
 
-		return this.pointer == other.pointer &&
-			this.type == other.type &&
-			this.lent == other.lent;
-	}
-
-	/**
-	 * Increases/decreases the pointer reference level
-	 * @param {Number} inc
-	 */
-	offsetPointer (inc) {
-		this.pointer += inc;
-		return this;
+		return this.lent == other.lent &&
+			this.native == other.native &&
+			this.type == other.type;
+			// ignore constant/local as they don't impact use for computation
 	}
 
 
@@ -56,7 +49,7 @@ class TypeRef {
 	 * Creates a clone of this reference
 	 */
 	duplicate () {
-		return new TypeRef(this.pointer, this.type, this.lent, this.constant);
+		return new TypeRef(this.type, this.native, this.lent, this.constant, this.local);
 	}
 
 
@@ -64,15 +57,22 @@ class TypeRef {
 	 * @returns {String}
 	 */
 	toString () {
-		return ( this.lent ? "@" : "$" ) + this.type.name;
+		return ( this.lent ? (this.constant ? "&" : "@") : "" ) + this.type.name;
 	}
 
 	toLLVM (ref = null, flat = false, pointer = false) {
+		if (flat) {
+			console.log("Flat used", new Error().stack)
+		}
+		if (pointer) {
+			console.log("Flat used", new Error().stack)
+		}
+
 		return new LLVM.Type(
 			this.type.represent,
 			flat ? 0 :
 				pointer ? 1 :
-					this.lent || this.type.typeSystem == "linear" ? 1 : 0,
+					this.lent || !this.native ? 1 : 0,
 			ref
 		);
 	}

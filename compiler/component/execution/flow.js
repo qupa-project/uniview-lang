@@ -33,7 +33,7 @@ class ExecutionFlow extends ExecutionExpr {
 		===================================*/
 		let cond = this.compile_expr(
 			ast.tokens[0].tokens[0],
-			new TypeRef(0, Primative.types.bool),
+			new TypeRef(Primative.types.bool),
 			true
 		);
 		if (cond == null) {

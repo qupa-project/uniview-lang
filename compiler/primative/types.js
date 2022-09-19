@@ -158,15 +158,15 @@ types.uint  = types.u64;
 
 // Update primative types correct type system
 for (let key in types) {
-	types[key].primative = true;
+	types[key].native = true;
 	types[key].typeSystem = 'normal';
 }
 types.cstring.name = "cstring";
 types.cstring.typeSystem = "linear";
-types.cstring.primative = true;
+types.cstring.native = false;
 types.unsafe_blob.name = "unsafe_blob";
 types.unsafe_blob.typeSystem = "normal";
-types.unsafe_blob.primative = true;
+types.unsafe_blob.native = false;
 
 
 for (let key in types) {

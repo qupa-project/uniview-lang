@@ -90,7 +90,7 @@ class ExecutionBase {
 				case "constant":
 					let cnst = this.compile_constant(arg);
 					if (cnst.type.type == Primative.types.void) {
-						template.push(new TypeRef(0, Primative.types.void, false, false));
+						template.push(new TypeRef(Primative.types.void));
 					} else {
 						template.push(cnst);
 					}

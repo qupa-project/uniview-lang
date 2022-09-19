@@ -18,7 +18,7 @@ class Template_Primative_Printf extends Template {
 					new LLVM.Name("printf", true),
 					ir_args
 				),
-				type: new TypeRef(0, types.i32, false, false)
+				type: new TypeRef(types.i32)
 			};
 		};
 		this.func.compile();
@@ -38,7 +38,7 @@ class Template_Primative_Printf extends Template {
 		}
 
 		if (signature
-			.map(x => !x.type.primative)
+			.map(x => !x.type.native && x.type.name != "cstring")
 			.reduce((state, curr) => state || curr, false)
 		) {
 			return false;

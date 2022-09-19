@@ -280,7 +280,7 @@ class Structure extends TypeDef {
 
 		let term = new Struct_Term(
 			name,
-			new TypeRef(0, typeRef.type),
+			new TypeRef(typeRef.type),
 			node.ref.start
 		);
 		this.terms.push(term);
@@ -335,7 +335,7 @@ class Structure extends TypeDef {
 	 */
 	cloneInstance(argument, ref) {
 		let preamble = new LLVM.Fragment();
-		let irType = new TypeRef(1, this, false);
+		let irType = new TypeRef(this);
 		let instruction;
 
 		let cloner = this.getCloner();
@@ -409,7 +409,7 @@ class Structure extends TypeDef {
 			this.alignment = Math.max.apply(null,
 				this.terms
 					.map(x => x.typeRef.type)
-					.map(x => x.primative ? x.size : x.alignment)
+					.map(x => x.native ? x.size : x.alignment)
 			);
 
 			this.size = this.terms

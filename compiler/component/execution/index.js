@@ -373,7 +373,7 @@ class Execution extends ExecutionFlow {
 		let returnType = null;
 		if (ast.tokens.length == 0){
 			inner = new LLVM.Type("void", false);
-			returnType = new TypeRef(0, Primative.types.void);
+			returnType = new TypeRef(Primative.types.void);
 		} else {
 			let res = this.compile_expr(ast.tokens[0], this.returnType, true);
 			if (res === null) {

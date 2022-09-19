@@ -16,7 +16,7 @@ class Either extends Template {
 	findMatch (inputType) {
 		for (let child of this.children) {
 			if (child.match(inputType)) {
-				return new TypeRef(0, child, false, false);
+				return new TypeRef(child);
 			}
 		}
 
@@ -58,7 +58,7 @@ class Either extends Template {
 		let child = new Either_Instance(this.ctx, template, this.children.length);
 		this.children.push(child);
 
-		return new TypeRef(0, child, false, false);
+		return new TypeRef(child);
 	}
 
 	toLLVM(ref) {
@@ -115,7 +115,7 @@ class Either_Instance {
 		let func = new Function_Instance(
 			this,
 			"Either.New",
-			new TypeRef(0, this, false, false)
+			new TypeRef(this)
 		);
 
 		func.generate = (regs, ir_args) => {
@@ -212,7 +212,7 @@ class Either_Instance {
 					new LLVM.Type(this.represent, 1),
 					new LLVM.Name(val.reference(), false)
 				),
-				type: new TypeRef(0, this, false, false)
+				type: new TypeRef(this)
 			};
 		};
 		func.compile();

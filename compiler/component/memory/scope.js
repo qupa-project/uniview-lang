@@ -196,7 +196,7 @@ class Scope {
 			};
 		}
 
-		return new TypeRef (target.pointer - ast.tokens[0], target.type);
+		return new TypeRef(target.type);
 	}
 
 	/**

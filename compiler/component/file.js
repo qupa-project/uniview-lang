@@ -188,7 +188,7 @@ class File {
 				if (res instanceof Template || typeList.length > 1) {
 					return res.getType(typeList.slice(1), template);
 				} else {
-					return new TypeRef(0, res);
+					return new TypeRef(res);
 				}
 			}
 		} else {

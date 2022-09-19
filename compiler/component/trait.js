@@ -4,6 +4,10 @@ const TypeRef = require('./typeRef.js');
 
 const Function = require('./function.js');
 
+const Primative = {
+	types: require('./../primative/types.js')
+};
+
 
 class Trait {
 	constructor (ctx, ast) {
@@ -49,7 +53,7 @@ class Trait {
 			template.length == 0 &&
 			node[0][1] == "Self"
 		) {
-			return new TypeRef(0, this.struct);
+			return new TypeRef(Primative.types.int);
 		}
 
 		return this.ctx.getType(node, template);

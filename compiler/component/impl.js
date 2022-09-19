@@ -30,7 +30,7 @@ class Implement {
 			template.length == 0 &&
 			node[0][1] == "Self"
 		) {
-			return new TypeRef(0, this.struct);
+			return new TypeRef(this.struct);
 		}
 
 		return this.ctx.getType(node, template);

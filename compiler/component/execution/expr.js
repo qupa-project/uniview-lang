@@ -24,28 +24,28 @@ class ExecutionExpr extends ExecutionBase {
 		let val = null;
 		switch (ast.tokens[0].type) {
 			case "float":
-				type = new TypeRef(0, Primative.types.double);
+				type = new TypeRef(Primative.types.double);
 				val = new LLVM.Constant(
 					ast.tokens[0].tokens,
 					ast.ref.start
 				);
 				break;
 			case "boolean":
-				type = new TypeRef(0, Primative.types.bool);
+				type = new TypeRef(Primative.types.bool);
 				val = new LLVM.Constant(
 					ast.tokens[0].tokens == "true" ? 1 : 0,
 					ast.ref.start
 				);
 				break;
 			case "void":
-				type = new TypeRef(0, Primative.types.void);
+				type = new TypeRef(Primative.types.void);
 				val = new LLVM.Constant(
 					"null",
 					ast.ref.start
 				);
 				break;
 			case "integer":
-				type = new TypeRef(0, Primative.types.i64);
+				type = new TypeRef(Primative.types.i64);
 				val = new LLVM.Constant(
 					ast.tokens[0].tokens,
 					ast.ref.start
@@ -55,7 +55,7 @@ class ExecutionExpr extends ExecutionBase {
 				let bytes = ast.tokens[0].tokens[1].length + 1;
 				let str = ast.tokens[0].tokens[1].replace(/\"/g, "\\22").replace(/\n/g, '\\0A') + "\\00";
 
-				type = new TypeRef(0, Primative.types.cstring);
+				type = new TypeRef(Primative.types.cstring);
 
 				let ir_t1 = new LLVM.Type(`[ ${bytes} x i8 ]`, 0, ast.ref);
 				let ir_t2 = type.toLLVM();
@@ -187,14 +187,14 @@ class ExecutionExpr extends ExecutionBase {
 
 
 		// Check opperands are primatives
-		if (!opperands[0].type.type.primative) {
+		if (!opperands[0].type.type.native) {
 			this.getFile().throw(
 				`Error: Cannot run arithmetic opperation on non-primative type`,
 				ast.tokens[0].ref.start, ast.tokens[0].ref.end
 			);
 			return null;
 		}
-		if (!opperands[1].type.type.primative) {
+		if (!opperands[1].type.type.native) {
 			this.getFile().throw(
 				`Error: Cannot run arithmetic opperation on non-primative type`,
 				ast.tokens[1].ref.start, ast.tokens[1].ref.end
@@ -259,7 +259,7 @@ class ExecutionExpr extends ExecutionBase {
 
 
 		// Check opperands are primatives
-		if (!opperand.type.type.primative) {
+		if (!opperand.type.type.native) {
 			this.getFile().throw(
 				`Error: Cannot run arithmetic opperation on non-primative type`,
 				ast.tokens[0].ref.start, ast.tokens[0].ref.end
@@ -331,14 +331,14 @@ class ExecutionExpr extends ExecutionBase {
 
 
 		// Check opperands are primatives
-		if (!opperands[0].type.type.primative) {
+		if (!opperands[0].type.type.native) {
 			this.getFile().throw(
 				`Error: Cannot perform comparison opperation on non-primative type`,
 				ast.tokens[0].ref.start, ast.tokens[0].ref.end
 			);
 			return null;
 		}
-		if (!opperands[1].type.type.primative) {
+		if (!opperands[1].type.type.native) {
 			this.getFile().throw(
 				`Error: Cannot perform comparison opperation on non-primative type`,
 				ast.tokens[1].ref.start, ast.tokens[1].ref.end
@@ -427,7 +427,7 @@ class ExecutionExpr extends ExecutionBase {
 				opperands[0].instruction.name,
 				opperands[1].instruction.name
 			),
-			type: new TypeRef(0, Primative.types.bool)
+			type: new TypeRef(Primative.types.bool)
 		};
 	}
 
@@ -438,7 +438,7 @@ class ExecutionExpr extends ExecutionBase {
 
 		let opperands = [];
 		let action = null;
-		let type = new TypeRef(0, Primative.types.bool);
+		let type = new TypeRef(Primative.types.bool);
 		switch (ast.type) {
 			case "expr_and":
 			case "expr_or":
