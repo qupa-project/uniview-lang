@@ -14,7 +14,7 @@ class TypeRef {
 		this.type = type;
 		this.lent = lent;
 		this.constant = constant;
-		this.local = false;
+		this.local = local;
 	}
 
 	getName () {
@@ -49,7 +49,7 @@ class TypeRef {
 	 * Creates a clone of this reference
 	 */
 	duplicate () {
-		return new TypeRef(this.type, this.native, this.lent, this.constant, this.local);
+		return new TypeRef(this.type, this.lent, this.constant, this.local);
 	}
 
 
@@ -62,10 +62,10 @@ class TypeRef {
 
 	toLLVM (ref = null, flat = false, pointer = false) {
 		if (flat) {
-			console.log("Flat used", new Error().stack)
+			console.warn("Flat used", new Error().stack);
 		}
 		if (pointer) {
-			console.log("Flat used", new Error().stack)
+			console.warn("Pointer used", new Error().stack);
 		}
 
 		return new LLVM.Type(

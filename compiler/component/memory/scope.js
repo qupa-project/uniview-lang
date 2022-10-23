@@ -63,7 +63,7 @@ class Scope {
 			let id = new LLVM.ID();
 			let type = arg.type;
 			let reg = new LLVM.Name(id.reference(), false);
-			if (type.lent && type.type.typeSystem == "normal") {
+			if (type.lent && type.native) {
 				resolvedNormal = true;
 
 				let nxtType = type.duplicate();

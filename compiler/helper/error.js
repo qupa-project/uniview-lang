@@ -24,7 +24,7 @@ function CodeSection (string, refStart, refEnd) {
 			.map(elm => elm == -1 ? refStart.col : elm),
 		refStart.col
 	);
-	let maxLen = Math.max(...string.map(elm => elm[1].length));
+	let maxLen = Math.max([0, ...string.map(elm => elm[1].length)]);
 
 	if (string.length > 5) {
 		string = [

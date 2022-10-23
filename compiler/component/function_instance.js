@@ -102,10 +102,8 @@ class Function_Instance {
 					);
 				}
 
-				search.pointer  = type.tokens[0]; // Copy the pointer level across
 				search.lent     = borrows[i];
 				search.constant = consts[i];
-
 				this.signature.push(search);
 			} else {
 				file.throw(
