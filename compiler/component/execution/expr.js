@@ -184,17 +184,15 @@ class ExecutionExpr extends ExecutionBase {
 		epilog.merge(opperands[0].epilog);
 		epilog.merge(opperands[1].epilog);
 
-
-
 		// Check opperands are primatives
-		if (!opperands[0].type.type.native) {
+		if (!opperands[0].type.native) {
 			this.getFile().throw(
 				`Error: Cannot run arithmetic opperation on non-primative type`,
 				ast.tokens[0].ref.start, ast.tokens[0].ref.end
 			);
 			return null;
 		}
-		if (!opperands[1].type.type.native) {
+		if (!opperands[1].type.native) {
 			this.getFile().throw(
 				`Error: Cannot run arithmetic opperation on non-primative type`,
 				ast.tokens[1].ref.start, ast.tokens[1].ref.end
@@ -204,7 +202,7 @@ class ExecutionExpr extends ExecutionBase {
 
 
 		// Check opperands are the same type
-		if (!opperands[0].type.match(opperands[1].type)) {
+		if (!opperands[0].type.matchApprox(opperands[1].type)) {
 			this.getFile().throw(
 				`Error: Cannot perform arithmetic opperation on unequal types. ${opperands[0].type} != ${opperands[1].type}`,
 				ast.tokens[0].ref.start, ast.tokens[1].ref.end
@@ -228,6 +226,9 @@ class ExecutionExpr extends ExecutionBase {
 			return null;
 		}
 
+		let type = opperands[0].type.duplicate();
+		type.lent = false;
+
 		return {
 			preamble, epilog,
 			instruction: new LLVM[action](
@@ -236,7 +237,7 @@ class ExecutionExpr extends ExecutionBase {
 				opperands[0].instruction.name,
 				opperands[1].instruction.name
 			),
-			type: opperands[0].type
+			type: type
 		};
 	}
 
@@ -708,7 +709,7 @@ class ExecutionExpr extends ExecutionBase {
 			return null;
 		}
 
-		if (expects instanceof TypeRef && !expects.match(res.type)) {
+		if (expects instanceof TypeRef && !expects.matchApprox(res.type)) {
 			this.getFile().throw(
 				`Error: Type miss-match, ` +
 					`expected ${expects.toString()}, ` +
@@ -730,15 +731,7 @@ class ExecutionExpr extends ExecutionBase {
 			!( res.instruction instanceof LLVM.Argument )
 		) {
 			let inner = res.instruction;
-			let irType = null;
-			if (expects) {
-				irType = expects.toLLVM();
-			} else {
-				if (!res.type) {
-					throw new Error("Error: Cannot simplify due to undeduceable type");
-				}
-				irType = res.type.toLLVM();
-			}
+			let irType = res.type.toLLVM();
 
 
 			let id = new LLVM.ID(ast.ref.start);

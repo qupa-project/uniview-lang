@@ -39,9 +39,17 @@ class TypeRef {
 		}
 
 		return this.lent == other.lent &&
-			this.native == other.native &&
+			this.constant == other.constant &&
 			this.type == other.type;
 			// ignore constant/local as they don't impact use for computation
+	}
+
+	matchApprox (other) {
+		if (!(other instanceof TypeRef)) {
+			return false;
+		}
+
+		return this.type == other.type;
 	}
 
 

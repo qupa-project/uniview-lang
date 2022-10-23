@@ -145,7 +145,23 @@ class Variable extends Value {
 			return out;
 		}
 
-		if (this.type.type.typeSystem == 'linear') {
+		if (this.type.native) {
+			if (this.type.lent) {
+				let loadID = new LLVM.ID();
+				let loadType = out.register.type.duplicate().offsetPointer(-1);
+				out.preamble.append(new LLVM.Set(
+					new LLVM.Name(loadID, false, ref),
+					new LLVM.Load(loadType, out.register.name, ref),
+					ref
+				));
+
+				out.type = loadType;
+				out.register = new LLVM.Argument(
+					loadType,
+					new LLVM.Name(loadID.reference(), false, ref),
+				ref);
+			}
+		} else {
 			if (this.type.lent) {
 				return {
 					error: true,
@@ -179,24 +195,51 @@ class Variable extends Value {
 	/**
 	 * Updated the variable to a new value
 	 * @param {LLVM.Argument} register
-	 * @param {Boolean} force apply the update even if the value is borrowed
+	 * @param {Boolean} force the update to apply with no execution taking place
 	 * @param {*} ref
 	 * @returns {Error?}
 	 */
 	markUpdated (register, force = false, ref) {
 		if (!force) {
+			if (this.type.constant) {
+				return {
+					error: true,
+					msg: "Cannot change a constant value",
+					ref
+				};
+			}
+
 			if (this.type.lent) {
-				return {
-					error: true,
-					msg: "Cannot overwite a lent value",
+				let res = this.cleanup(ref);
+				if (res.error) {
+					return res;
+				}
+				let frag = res;
+
+				let target = register;
+				if (register.pointer > 0) {
+					let frag = res;
+					let loadID = new LLVM.ID();
+					let loadType = register.type.duplicate().offsetPointer(-1);
+					frag.append(new LLVM.Set(
+						new LLVM.Name(loadID, false, ref),
+						new LLVM.Load(loadType, register, ref),
+						ref
+					));
+
+					target = new LLVM.Argument(
+						loadType,
+						new LLVM.Name(loadID.reference(), false, ref),
+					ref);
+				}
+
+				frag.append(new LLVM.Store(
+					this.store,
+					target,
 					ref
-				};
-			} else if (this.type.constant) {
-				return {
-					error: true,
-					msg: "Cannot overwite a constant value",
-					ref
-				};
+				));
+
+				return frag;
 			}
 		}
 
@@ -205,7 +248,7 @@ class Variable extends Value {
 		this.hasUpdated = true;
 		this.store = register;
 
-		return true;
+		return new LLVM.Fragment();
 	}
 
 		/**

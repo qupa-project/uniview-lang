@@ -28,7 +28,7 @@ class Struct_Term {
 	}
 
 	toLLVM() {
-		return this.typeRef.toLLVM(this.declared, true);
+		return this.typeRef.toLLVM(this.declared);
 	}
 }
 
@@ -163,7 +163,7 @@ class Structure extends TypeDef {
 		);
 
 		// Non-linear type - hence the value must be loaded
-		if (type.type.typeSystem == "normal") {
+		if (type.native) {
 			if (reading) {
 				let id = new LLVM.ID();
 				preamble.append(new LLVM.Set(

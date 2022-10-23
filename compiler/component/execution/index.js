@@ -41,16 +41,7 @@ class Execution extends ExecutionFlow {
 		}
 		frag.merge(expr.preamble);
 
-		let targetType = access.type;
-		if (!expr.type.match(targetType)) {
-			this.getFile().throw(
-				`Error: Assignment type mis-match` +
-				` cannot assign ${targetType.toString()}` +
-				` to ${expr.type.toString()}`,
-				ast.ref.start, ast.ref.end
-			);
-			return null;
-		}
+		// The expression compilation checks the type already
 
 		// If there is already a value in this variable, clear it first
 		if (!access.isUndefined() && access.type.type.getDestructor()) {
@@ -62,6 +53,7 @@ class Execution extends ExecutionFlow {
 			this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
 			return null;
 		}
+		frag.merge(chg);
 
 		frag.merge(expr.epilog);
 		return frag;
@@ -123,6 +115,7 @@ class Execution extends ExecutionFlow {
 		if (targetType === null) {
 			targetType = expr.type;
 		}
+		// The expression compilation checks the type already
 
 		// Declare the variable and assign it to the expression result
 		let variable = this.scope.register_Var(
@@ -135,6 +128,7 @@ class Execution extends ExecutionFlow {
 			this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
 			return null;
 		}
+		frag.merge(chg);
 
 
 		frag.merge(expr.epilog);

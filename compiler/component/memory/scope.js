@@ -59,25 +59,9 @@ class Scope {
 			}
 
 			// Load any lent normal types so they can be treated as normal variables
-			let resolvedNormal = false;
 			let id = new LLVM.ID();
 			let type = arg.type;
 			let reg = new LLVM.Name(id.reference(), false);
-			if (type.lent && type.native) {
-				resolvedNormal = true;
-
-				let nxtType = type.duplicate();
-				nxtType.lent = false;
-
-				let loadID = new LLVM.ID();
-				frag.append(new LLVM.Set(
-					new LLVM.Name(loadID, false),
-					new LLVM.Load(nxtType.toLLVM(), reg)
-				));
-
-				reg = new LLVM.Name(loadID.reference(), false);
-				type = nxtType;
-			}
 
 			// Creation of namespace
 			this.variables[arg.name] = new Variable(
@@ -108,15 +92,9 @@ class Scope {
 				this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
 				return null;
 			}
-			this.variables[arg.name].hasUpdated = false;
 
-			// Cache details so the final value can be stored back at the original address
-			if (resolvedNormal) {
-				this.lentNormals.push([
-					this.variables[arg.name],
-					new LLVM.Name(id.reference(), false)
-				]);
-			}
+			// force will never generate a code fragment
+			this.variables[arg.name].hasUpdated = false;
 		}
 
 		return {frag, registers};

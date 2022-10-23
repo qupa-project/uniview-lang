@@ -1,6 +1,7 @@
 const Flattern = require('../../parser/flattern.js');
 const LLVM     = require("../../middle/llvm.js");
 const TypeRef = require('../typeRef.js');
+const { load } = require('npm/lib/config/core.js');
 
 const Primative = {
 	types: require('./../../primative/types.js')
