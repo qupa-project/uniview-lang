@@ -39,7 +39,7 @@ jobs:
 
       - name: Build UVC tools
         run: |
-          cmake . -B Build
+          cmake . -B build
           cmake --build build
 
       - name: Compiler Setup
