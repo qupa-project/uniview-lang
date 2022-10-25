@@ -20,6 +20,9 @@ jobs:
         with:
           node-version: 16
 
+      - name: Install NPM Dependencies
+        run: npm install --ignore-scripts
+
       - name: Cache LLVM and Clang
         id: cache-llvm
         uses: actions/cache@v2
@@ -43,9 +46,7 @@ jobs:
           cmake --build build
 
       - name: Compiler Setup
-        run: |
-          npm install --ignore-scripts
-          npm run build-syntax
+        run: npm run build-syntax
 
       - name: Compiler test
         run: node ./compiler/test.js --action
