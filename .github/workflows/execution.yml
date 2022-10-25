@@ -34,18 +34,21 @@ jobs:
           directory: "./lib/install"
 
       - name: Symlink libclang.so (Linux)
-        if: contains(matrix.os, 'ubuntu')
         run: sudo ln -s libclang-14.so.1 /lib/x86_64-linux-gnu/libclang.so
         working-directory: ${{ env.LLVM_PATH }}/lib
 
       - name: Build UVC tools
-      - run: cmake . -B build
-      - run: cmake --build build
+        run: |
+          cmake . -B Build
+          cmake --build build
+
+      - name: Compiler Setup
+        run: |
+          npm install --ignore-scripts
+          npm run build-syntax
 
       - name: Compiler test
-      - run: npm install --ignore-scripts
-      - run: npm run build-syntax
-      - run: node ./compiler/test.js --action
+        run: node ./compiler/test.js --action
 
   build-win:
     if: ${{ false }}  # disable for now
