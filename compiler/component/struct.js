@@ -14,7 +14,6 @@ class Struct_Term {
 		this.typeRef = typeRef;
 		this.declared = ref;
 		this.size = -1;
-		this.typeSystem = "linear";
 
 		this.ir = new LLVM.Fragment();
 	}
@@ -28,7 +27,11 @@ class Struct_Term {
 	}
 
 	toLLVM() {
-		return this.typeRef.toLLVM(this.declared);
+		let type = this.typeRef.toLLVM(this.declared);
+		if (!this.typeRef.native) {
+			type.offsetPointer(-1);
+		}
+		return type;
 	}
 }
 
@@ -182,7 +185,7 @@ class Structure extends TypeDef {
 					ref
 				);
 			} else {
-				val.type = type.toLLVM(ref, false, true);
+				val.type = type.toLLVM(ref).offsetPointer(1);
 			}
 		}
 
@@ -259,16 +262,6 @@ class Structure extends TypeDef {
 				`Error: Structures cannot include void type as an attribute`,
 				typeNode.ref.start,
 				typeNode.ref.end
-			);
-			return false;
-		}
-
-		// Check a structure is not including a class attribute
-		if (this.meta != "CLASS" && typeRef.type.meta == "CLASS") {
-			this.ctx.getFile().throw(
-				`Error: Structures cannot include classes as attributes`,
-				this.ref,
-				node.ref.end
 			);
 			return false;
 		}

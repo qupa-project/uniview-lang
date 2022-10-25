@@ -37,7 +37,7 @@ fn init(ofAge: bool): Person {
 	return Person {
 		id: 0,
 		age: age,
-		finger: FingerPrint {
+			finger: FingerPrint {
 			id: 1,
 		}
 	};
@@ -72,46 +72,46 @@ fn main(): int {
 	}
 
 
-	// p = init(true);
-	// if (check(@p, 0, 21, 1) == 1) {
-	// 	printf("%s", "Failed init test\n");
-	// 	print(p);
-	// 	printf("%s", " != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }\n");
-	// 	return 1;
-	// }
+	p = init(true);
+	if (check(@p, 0, 21, 1) == 1) {
+		printf("%s", "Failed init test\n");
+		print(p);
+		printf("%s", " != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }\n");
+		return 1;
+	}
 
-	// let q = $p;
-	// if (check(@q, 0, 21, 1) == 1) {
-	// 	printf("%s", "Failed clone test\n");
-	// 	print(q);
-	// 	printf("%s", " != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }\n");
-	// 	return 1;
-	// }
+	let q = $p;
+	if (check(@q, 0, 21, 1) == 1) {
+		printf("%s", "Failed clone test\n");
+		print(q);
+		printf("%s", " != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }\n");
+		return 1;
+	}
 
-	// age(@p);
-	// if (check(@p, 0, 22, 1) == 1) {
-	// 	printf("%s", "Failed clone independence test\n");
-	// 	print(p);
-	// 	printf("%s", " != Person { id: 0, age: 22, finger: Finger Print { id: 1 } }\n");
-	// 	return 1;
-	// }
-	// if (check(@q, 0, 21, 1) == 1) {
-	// 	printf("%s", "Failed clone independence test\n");
-	// 	print(q);
-	// 	printf("%s", " != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }\n");
-	// 	return 1;
-	// }
+	age(@p);
+	if (check(@p, 0, 22, 1) == 1) {
+		printf("%s", "Failed clone independence test\n");
+		print(p);
+		printf("%s", " != Person { id: 0, age: 22, finger: Finger Print { id: 1 } }\n");
+		return 1;
+	}
+	if (check(@q, 0, 21, 1) == 1) {
+		printf("%s", "Failed clone independence test\n");
+		print(q);
+		printf("%s", " != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }\n");
+		return 1;
+	}
 
 
-	// p.finger = FingerPrint {
-	// 	id: 12345
-	// };
-	// if (check(@p, 0, 22, 1) != 1) {
-	// 	printf("%s", "Failed changing sub structure\n");
-	// 	print(p);
-	// 	printf("%s", " != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }\n");
-	// 	return 1;
-	// }
+	p.finger = FingerPrint {
+		id: 12345
+	};
+	if (check(@p, 0, 22, 1) != 1) {
+		printf("%s", "Failed changing sub structure\n");
+		print(p);
+		printf("%s", " != Person { id: 0, age: 21, finger: Finger Print { id: 1 } }\n");
+		return 1;
+	}
 
 	return 0;
 }
