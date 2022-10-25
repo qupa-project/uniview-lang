@@ -14,9 +14,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 14
       - name: Cache LLVM and Clang
         id: cache-llvm
         uses: actions/cache@v2
@@ -32,9 +29,14 @@ jobs:
         if: contains(matrix.os, 'ubuntu')
         run: sudo ln -s libclang-14.so.1 /lib/x86_64-linux-gnu/libclang.so
         working-directory: ${{ env.LLVM_PATH }}/lib
-      - run: npm install --ignore-scripts
+      - name: Build UVC tools
       - run: cmake . -B build
       - run: cmake --build build
+      - name: Compiler test
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
+      - run: npm install --ignore-scripts
       - run: npm run build-syntax
       - run: node ./compiler/test.js --action
 
