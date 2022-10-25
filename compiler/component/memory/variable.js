@@ -498,7 +498,11 @@ class Variable extends Value {
 			let store = res.register;
 			let isLinear = elm[1].type.type.typeSystem == "linear";
 			if (isLinear) {
-				let type = elm[1].type.duplicate().toLLVM(ref, true);
+				let type = elm[1].type.toLLVM(ref);
+				if (!elm[1].type.native) {
+					type.offsetPointer(-1);
+				}
+
 				let id = new LLVM.ID(ref);
 				frag.append(new LLVM.Set(
 					new LLVM.Name(id, false, ref),

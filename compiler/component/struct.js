@@ -337,11 +337,11 @@ class Structure extends TypeDef {
 
 			preamble.append(new LLVM.Set(
 				new LLVM.Name(id),
-				new LLVM.Alloc(irType.toLLVM(ref, true))
+				new LLVM.Alloc(irType.toLLVM(ref).offsetPointer(-1))
 			));
 
 			instruction = new LLVM.Argument (
-				irType.toLLVM(ref, false, true),
+				irType.toLLVM(ref),
 				new LLVM.Name(id.reference())
 			);
 
@@ -374,7 +374,7 @@ class Structure extends TypeDef {
 			preamble.append(new LLVM.Set(
 				new LLVM.Name(cacheID, false),
 				new LLVM.Load(
-					irType.toLLVM(ref, true),
+					irType.toLLVM(ref).offsetPointer(-1),
 					argument.name
 				),
 				ref
@@ -383,7 +383,7 @@ class Structure extends TypeDef {
 			preamble.append(new LLVM.Store(
 				instruction,
 				new LLVM.Argument(
-					irType.toLLVM(ref, true),
+					irType.toLLVM(ref).offsetPointer(-1),
 					new LLVM.Name(cacheID.reference(ref), false, ref)
 				),
 				ref
