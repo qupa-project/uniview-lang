@@ -25,6 +25,8 @@ let completed = 0;
 let fails = 0;
 let totalDuration = 0;
 
+let failed_files = [];
+
 function Compile(filename, id) {
 	let target = path.relative(root, filename);
 
@@ -56,6 +58,8 @@ function Compile(filename, id) {
 				msg += "\n\n" + log; // only include the log on failure
 				failed = true;
 				fails++;
+
+				failed_files.push(target);
 			}
 
 			let duration = (end-start)/1000;
@@ -100,8 +104,13 @@ async function Test () {
 
 	await Promise.all(tasks);
 
-	console.info(`\nFailed ${fails} of ${tests.length}`);
-	console.info(` Total Compute Time: ${totalDuration.toFixed(3)}s`);
+	console.info('\nSummary:');
+	if (fails > 0) {
+		console.info(`  Failed Tests:\n    ${failed_files.join("\n    ")}`);
+	}
+
+	console.info(`  Failed ${fails} of ${tests.length}`);
+	console.info(`  Total Compute Time: ${totalDuration.toFixed(3)}s`);
 
 	if (fails > 0) {
 		process.exit(1);
