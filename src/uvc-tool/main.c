@@ -6,8 +6,9 @@
 #include <llvm-c/BitWriter.h>
 #include <llvm-c/Linker.h>
 
-#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "verbose.h"
 
