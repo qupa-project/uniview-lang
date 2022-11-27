@@ -40,5 +40,6 @@
 		"xtr1common": "cpp",
 		"xutility": "cpp"
 	},
-	"esbonio.server.enabled": true
+	"esbonio.server.enabled": true,
+	"cmake.configureOnOpen": false
 }

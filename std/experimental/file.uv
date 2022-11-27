@@ -1,16 +1,16 @@
 external assume {
 	fn fopen_s (fd: @File, path: cstring, access: cstring);
-	fn fgetc (fd: unsafe_blob): i8;
-	fn fclose (fd: unsafe_blob): int;
-	fn feof(fd: unsafe_blob): int;
-	fn fflush(fd: unsafe_blob);
-	fn fsetpos(fd: unsafe_blob, pos: int);
-	fn ftell(fd: unsafe_blob): int;
+	fn fgetc (fd: addr_space): i8;
+	fn fclose (fd: addr_space): int;
+	fn feof(fd: addr_space): int;
+	fn fflush(fd: addr_space);
+	fn fsetpos(fd: addr_space, pos: int);
+	fn ftell(fd: addr_space): int;
 }
 
 
 class File {
-	ptr: unsafe_blob;
+	ptr: addr_space;
 
 	fn New(path: cstring, access: cstring): File {
 		let this = Blank#[File]();

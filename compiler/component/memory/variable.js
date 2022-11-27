@@ -897,6 +897,9 @@ class Variable extends Value {
 				let del = this.type.type.getDestructor();
 				if (del) {
 					let res = this.read(ref);
+					if (res.error) {
+						return res;
+					}
 
 					frag.merge(res.preamble);
 					frag.append(new LLVM.Call(

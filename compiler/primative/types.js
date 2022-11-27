@@ -84,7 +84,7 @@ let types = {
 		}
 	}, true),
 
-	unsafe_blob: new TypeDef(null, {
+	addr_space: new TypeDef(null, {
 		tokens: [
 			{
 				type   : "name",
@@ -164,9 +164,10 @@ for (let key in types) {
 types.cstring.name = "cstring";
 types.cstring.typeSystem = "linear";
 types.cstring.native = false;
-types.unsafe_blob.name = "unsafe_blob";
-types.unsafe_blob.typeSystem = "normal";
-types.unsafe_blob.native = false;
+
+types.addr_space.name = "addr_space";
+// types.addr_space.typeSystem = "linear";
+types.addr_space.native = true;
 
 
 for (let key in types) {

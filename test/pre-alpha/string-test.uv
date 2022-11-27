@@ -4,19 +4,19 @@ fn main(): int {
 	let a = String.New("Hello");
 	let b = String.New(" World");
 	String.Append(@a, $b);
-	// puts($a);
+	puts($a);
 	String.Append(@a, b);
-	// puts($a);
+	puts($a);
 
 	let s = cast#[u64](0);
 	let e = cast#[u64](3);
 
 	let t = String.Slice($a, s, e);
-	// puts($a);
-	// puts($t);
+	puts($a);
+	puts($t);
 
 	t = String.Slice(@a, s, e);
-	// puts($a);
-	// puts($t);
+	puts($a);
+	puts($t);
 	return 0;
 }

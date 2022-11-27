@@ -1,3 +1,6 @@
+#!/usr/bin/env node
+"use strict";
+
 const Getopt = require('node-getopt');
 const path = require('path');
 const fs = require('fs');

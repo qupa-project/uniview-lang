@@ -416,6 +416,7 @@ class Execution extends ExecutionFlow {
 				`Return type miss-match, expected ${this.returnType.toString()} but got ${returnType.toString()}`,
 				ast.ref.start, ast.ref.end
 			);
+			console.log(this.returnType, returnType, this.returnType.match(returnType), this.returnType == returnType);
 		}
 
 
@@ -445,7 +446,7 @@ class Execution extends ExecutionFlow {
 		for (let token of ast.tokens) {
 			if (this.returned && !returnWarned) {
 				this.getFile().throw(
-					`Warn: This function has already returned, this line and preceeding lines will not execute`,
+					`Warn: This function has already returned, this line and preceding lines will not execute`,
 					token.ref.start, token.ref.end
 				);
 				returnWarned = true;
