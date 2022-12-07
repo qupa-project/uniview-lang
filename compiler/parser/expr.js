@@ -1,5 +1,4 @@
-const BNF = require('bnf-parser');
-const BNF_SytaxNode = BNF.types.BNF_SyntaxNode;
+const { SyntaxNode } = require('bnf-parser');
 
 
 
@@ -60,10 +59,10 @@ function GetPrecedence (a, b) {
 
 /**
  *
- * @param {BNF_SytaxNode} lhs
- * @param {BNF_SytaxNode} opperation
- * @param {BNF_SytaxNode} rhs
- * @returns {BNF_SytaxNode}
+ * @param {SyntaxNode} lhs
+ * @param {SyntaxNode} opperation
+ * @param {SyntaxNode} rhs
+ * @returns {SyntaxNode}
  */
 function Construct_Operation(lhs, opperation, rhs) {
 	let base;
@@ -131,10 +130,10 @@ function Construct_Operation(lhs, opperation, rhs) {
 			throw new Error(`Unexpected expression opperation ${opperation.tokens}`);
 	}
 
-	let node = new BNF_SytaxNode(
+	let node = new SyntaxNode(
 		base,
 		[
-			new BNF_SytaxNode(
+			new SyntaxNode(
 				sub,
 				[],
 				0,
@@ -171,7 +170,7 @@ function Construct_Operation(lhs, opperation, rhs) {
 
 /**
  *
- * @param {BNF_SytaxNode[]} queue
+ * @param {SyntaxNode[]} queue
  * @returns {BNF_SyntaxNode}
  */
 function ApplyPrecedence (queue) {

@@ -1,30 +1,29 @@
 const { ApplyPrecedence } = require('./expr.js');
 
-const BNF = require('bnf-parser');
+const { CodeSection } = require('../helper/error.js');
+
+const { Parser, ParseError } = require('bnf-parser');
 const fs = require('fs');
 
-const BNF_SyntaxNode = BNF.types.BNF_SyntaxNode;
-
-const syntax = BNF.types.BNF_Tree.fromJSON(
-	JSON.parse(fs.readFileSync(__dirname+"/syntax.json", 'utf8'))
+const syntax = new Parser(
+	JSON.parse(
+		fs.readFileSync(__dirname+"/syntax.json", 'utf8')
+	),
+	"Uniview.bnf"
 );
 
 
 function Simplify_Program (node) {
-	let out = [];
-	for (let inner of node.tokens[1]) {
-		out.push(Simplify_Stmt_Top(inner.tokens[0][0]));
-	}
-	node.tokens = out;
+	node.tokens = node.value[0].value
+		.map(x => Simplify_Stmt_Top(x.value[0]));
 
-	// Remove irrelevant internal data
-	node.reached = null;
 	return node;
 }
 
 function Simplify_Stmt_Top (node) {
 	let inner;
-	switch (node.tokens[0].type) {
+	console.log(30, node.value[0].type);
+	switch (node.value[0].type) {
 		case "external":
 			inner = Simplify_External(node.tokens[0]);
 			break;
@@ -58,7 +57,7 @@ function Simplify_Stmt_Top (node) {
 
 
 
-
+// Out of Date
 function Simplify_Library (node) {
 	switch (node.tokens[0].type) {
 		case "import":
@@ -73,6 +72,8 @@ function Simplify_Library (node) {
 	node.reached = null;
 	return node;
 }
+
+// Out of Date
 function Simplify_Library_Import (node) {
 	let out = [null, "*"];
 	switch (node.tokens[0].type) {
@@ -89,6 +90,8 @@ function Simplify_Library_Import (node) {
 	node.reached = null;
 	return node;
 }
+
+// Out of Date
 function Simplify_Library_Expose (node) {
 	let match = "";
 	if (typeof(node.tokens[2][0].tokens) == "string") {
@@ -103,7 +106,7 @@ function Simplify_Library_Expose (node) {
 }
 
 
-
+// Out of Date
 function Simplify_String (node) {
 	// Merge the segments together
 	let data = "";
@@ -156,6 +159,7 @@ function Simplify_String (node) {
 
 
 
+// Out of Date
 function Simplify_Impl (node) {
 	let out = [
 		Simplify_Data_Type(node.tokens[2][0]),
@@ -174,15 +178,18 @@ function Simplify_Impl (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Impl_For (node) {
 	return Simplify_Data_Type(node.tokens[3][0]);
 }
+// Out of Date
 function Simplify_Impl_Body (node) {
 	node.tokens = node.tokens[0]
 		.map( x => Simplify_Impl_Stmt(x.tokens[1][0]).tokens[0] );
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Impl_Stmt (node) {
 	switch (node.tokens[0].type) {
 		case "struct_attribute":
@@ -199,6 +206,7 @@ function Simplify_Impl_Stmt (node) {
 	return node;
 }
 
+// Out of Date
 function Simplify_Trait (node) {
 	let out = [
 		Simplify_Name(node.tokens[2][0]),
@@ -217,6 +225,7 @@ function Simplify_Trait (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Trait_Reliance (node) {
 	let out = [
 		node.tokens[2][0],
@@ -225,12 +234,14 @@ function Simplify_Trait_Reliance (node) {
 
 	return out;
 }
+// Out of Date
 function Simplify_Trait_Body (node) {
 	node.tokens = node.tokens[0]
 		.map( x => Simplify_Trait_Stmt(x.tokens[1][0]).tokens[0] );
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Trait_Stmt (node) {
 	switch (node.tokens[0].type) {
 		case "struct_attribute":
@@ -248,13 +259,14 @@ function Simplify_Trait_Stmt (node) {
 }
 
 
-
+// Out of Date
 function Simplify_Template (node) {
 	node.tokens = Simplify_Template_Args(node.tokens[2][0]).tokens;
 	node.reached = null;
 	return node;
 }
 
+// Out of Date
 function Simplify_Template_Args (node) {
 	let out = [ Simplify_Template_Arg(node.tokens[0][0]) ];
 	for (let inner of node.tokens[1]) {
@@ -266,6 +278,7 @@ function Simplify_Template_Args (node) {
 	return node;
 }
 
+// Out of Date
 function Simplify_Template_Arg (node) {
 	switch (node.tokens[0].type) {
 		case "data_type":
@@ -277,7 +290,7 @@ function Simplify_Template_Arg (node) {
 	}
 }
 
-
+// Out of Date
 function Simplify_External (node) {
 	node.tokens = [
 		node.tokens[2][0].tokens,                        // mode
@@ -286,6 +299,7 @@ function Simplify_External (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_External_Body (node) {
 	let out = [];
 	for (let inner of node.tokens[0]) {
@@ -299,6 +313,7 @@ function Simplify_External_Body (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_External_Term (node) {
 	let inner = null;
 	switch (node.tokens[0].type) {
@@ -324,6 +339,7 @@ function Simplify_External_Term (node) {
 	return inner;
 }
 
+// Out of Date
 function Simplify_Type_Def (node) {
 	node.tokens = [
 		Simplify_Name(node.tokens[2][0]),   // name
@@ -332,7 +348,7 @@ function Simplify_Type_Def (node) {
 	node.reached = null;
 	return node;
 }
-
+// Out of Date
 function Simplify_Include (node) {
 	node.tokens = [
 		node.tokens[2][0].tokens,                    // mode
@@ -343,7 +359,7 @@ function Simplify_Include (node) {
 }
 
 
-
+// Out of Date
 function Simplify_Struct (node) {
 	let out = [
 		Simplify_Name(node.tokens[2][0]),
@@ -353,12 +369,14 @@ function Simplify_Struct (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Struct_Body (node) {
 	node.tokens = node.tokens[0]
 		.map( x => Simplify_Struct_Stmt(x.tokens[1][0]).tokens[0] );
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Struct_Stmt (node) {
 	switch (node.tokens[0].type) {
 		case "struct_attribute":
@@ -371,6 +389,7 @@ function Simplify_Struct_Stmt (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Struct_Attribute (node) {
 	let out = [
 		Simplify_Data_Type(node.tokens[4][0]),
@@ -383,7 +402,7 @@ function Simplify_Struct_Attribute (node) {
 }
 
 
-
+// Out of Date
 function Simplify_Variable (node) {
 	let inner = [
 		0,
@@ -397,7 +416,7 @@ function Simplify_Variable (node) {
 	node.tokens = inner;
 	return node;
 }
-
+// Out of Date
 function Simplify_Variable_Access (node) {
 	let out = [];
 	switch (node.tokens[0].type) {
@@ -418,7 +437,7 @@ function Simplify_Variable_Access (node) {
 	node.reached = null;
 	return node;
 }
-
+// Out of Date
 function Simplify_Variable_Args (node) {
 	let out = [ Simplify_Variable_Arg(node.tokens[0][0]) ];
 	for (let inner of node.tokens[1]) {
@@ -430,6 +449,7 @@ function Simplify_Variable_Args (node) {
 	return node;
 }
 
+// Out of Date
 function Simplify_Variable_Arg (node) {
 	switch (node.tokens[0].type) {
 		case "data_type":
@@ -444,7 +464,7 @@ function Simplify_Variable_Arg (node) {
 }
 
 
-
+// Out of Date
 function Simplify_Name (node) {
 	let out = node.tokens[0][0].tokens[0].tokens;
 	for (let inner of node.tokens[1]) {
@@ -466,7 +486,7 @@ function Simplify_Name (node) {
 
 
 
-
+// Out of Date
 function Simplify_Data_Type (node) {
 	let inner = [
 		0,
@@ -485,6 +505,7 @@ function Simplify_Data_Type (node) {
 	node.tokens = inner;
 	return node;
 }
+// Out of Date
 function Simplify_Data_Type_Access (node) {
 	node.tokens = [ ".", Simplify_Name(node.tokens[1][0]) ];
 	node.reached = null;
@@ -494,7 +515,7 @@ function Simplify_Data_Type_Access (node) {
 
 
 
-
+// Out of Date
 function Simplify_Constant (node) {
 	switch (node.tokens[0].type) {
 		case "boolean":
@@ -519,12 +540,14 @@ function Simplify_Constant (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Integer(node) {
 	node.tokens = ( node.tokens[0].length != 0 ? "-" : "" ) +
 		( Simplify_Integer_U( node.tokens[1][0] ).tokens );
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Integer_U (node) {
 	if (node.tokens[0].type == "zero") {
 		node.tokens = "0";
@@ -540,6 +563,7 @@ function Simplify_Integer_U (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Float (node) {
 	let out = Simplify_Integer(node.tokens[0][0]).tokens;  // base
 	out += ".";
@@ -555,10 +579,12 @@ function Simplify_Float (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Boolean (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Void (node) {
 	node.reached = null;
 	return node;
@@ -569,7 +595,7 @@ function Simplify_Void (node) {
 
 
 
-
+// Out of Date
 function Simplify_Function (node) {
 	node.tokens = [
 		Simplify_Function_Head(node.tokens[0][0]), // head
@@ -579,6 +605,7 @@ function Simplify_Function (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Function_Outline (node) {
 	node.tokens = [
 		Simplify_Function_Head(node.tokens[0][0])  // head
@@ -586,6 +613,7 @@ function Simplify_Function_Outline (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Function_Redirect (node) {
 	node.tokens = [
 		new BNF_SyntaxNode (
@@ -632,6 +660,7 @@ function Simplify_Function_Redirect (node) {
 
 	return node;
 }
+// Out of Date
 function Simplify_Function_Head (node) {
 	node.tokens = [
 		node.tokens[6][0] ?                      // Return type
@@ -669,6 +698,7 @@ function Simplify_Function_Head (node) {
 
 	return node;
 }
+// Out of Date
 function Simplify_Function_Body (node) {
 	let out = [];
 	for (let inner of node.tokens[2]) {
@@ -682,6 +712,7 @@ function Simplify_Function_Body (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Function_Stmt (node) {
 	let inner;
 	switch (node.tokens[0].type) {
@@ -714,11 +745,13 @@ function Simplify_Function_Stmt (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Func_Args (node) {
 	node.tokens = node.tokens[2].length > 0 ? Simplify_Func_Args_List(node.tokens[2][0]).tokens : [];
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Func_Args_List (node) {
 	let ittr = node.tokens[0].concat(node.tokens[2].map(x => x.tokens[2][0]));
 
@@ -732,6 +765,7 @@ function Simplify_Func_Args_List (node) {
 	return node;
 }
 
+// Out of Date
 function Simplify_Call (node) {
 	let out = [
 		Simplify_Variable(node.tokens[0][0]),                                  // Call name
@@ -746,6 +780,7 @@ function Simplify_Call (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Call_Args (node) {
 
 	if (node.tokens[2].length > 0) {
@@ -762,6 +797,7 @@ function Simplify_Call_Args (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Call_Arg(node) {
 	if (node.tokens[0].type == "expr_lend") {
 		return Simplify_Expr_Lend(node.tokens[0]);
@@ -771,7 +807,7 @@ function Simplify_Call_Arg(node) {
 }
 
 
-
+// Out of Date
 function Simplify_If (node) {
 	let head = Simplify_If_Stmt(node.tokens[0][0]);
 	let elif = node.tokens[1].map(x => Simplify_If_Stmt(x.tokens[1][0]));
@@ -816,6 +852,7 @@ function Simplify_If (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_If_Stmt (node) {
 	let out = [
 		Simplify_Expr(node.tokens[4][0]),
@@ -826,6 +863,7 @@ function Simplify_If_Stmt (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_If_Else (node) {
 	let out = [
 		Simplify_Function_Body(node.tokens[2][0])
@@ -837,7 +875,7 @@ function Simplify_If_Else (node) {
 }
 
 
-
+// Out of Date
 function Simplify_When (node) {
 	node.tokens = [
 		Simplify_Variable(node.tokens[2][0]),
@@ -847,6 +885,7 @@ function Simplify_When (node) {
 
 	return node;
 }
+// Out of Date
 function Simplify_When_Stmt (node) {
 	node.tokens = [
 		node.tokens[1][0].tokens == "default" ?
@@ -860,7 +899,7 @@ function Simplify_When_Stmt (node) {
 }
 
 
-
+// Out of Date
 function Simplify_Return (node) {
 	let inner = [];
 	if (node.tokens[1].length == 1) {
@@ -873,7 +912,7 @@ function Simplify_Return (node) {
 }
 
 
-
+// Out of Date
 function Simplify_Declare (node) {
 	let out = [
 		Simplify_Data_Type(node.tokens[6][0]),
@@ -884,6 +923,7 @@ function Simplify_Declare (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Declare_Assign (node) {
 	let out = [
 		node.tokens[4][0] ?
@@ -897,6 +937,7 @@ function Simplify_Declare_Assign (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Assign  (node) {
 	node.tokens = [
 		Simplify_Variable (node.tokens[0][0]), // target variable
@@ -907,7 +948,7 @@ function Simplify_Assign  (node) {
 }
 
 
-
+// Out of Date
 function Simplify_Expr (node) {
 	let queue = [
 		Simplify_Expr_Arg(node.tokens[1][0])
@@ -919,6 +960,7 @@ function Simplify_Expr (node) {
 
 	return ApplyPrecedence(queue);
 }
+// Out of Date
 function Simplify_Expr_Arg (node) {
 	switch (node.tokens[0].type) {
 		case "expr_val":
@@ -931,6 +973,7 @@ function Simplify_Expr_Arg (node) {
 			throw new Error(`Unexpected expression argument ${node.tokens[0].type}`);
 	}
 }
+// Out of Date
 function Simplify_Expr_Val (node) {
 	let subject = node.tokens[2][0].tokens[0];
 	let isNameSpace = false;
@@ -962,6 +1005,7 @@ function Simplify_Expr_Val (node) {
 
 	return subject;
 }
+// Out of Date
 function Simplify_Expr_Unary (opperation, node) {
 	switch (opperation.tokens) {
 		case "-":
@@ -1010,6 +1054,7 @@ function Simplify_Expr_Unary (opperation, node) {
 			throw new Error(`Unexpected unary operation "${opperation.tokens}"`);
 	}
 }
+// Out of Date
 function Simplify_Expr_Call (name, node, ref) {
 	return new BNF_SyntaxNode(
 		"call",
@@ -1032,6 +1077,7 @@ function Simplify_Expr_Call (name, node, ref) {
 		null
 	);
 }
+// Out of Date
 function Simplify_Expr_Brackets (node) {
 	node.tokens = [
 		Simplify_Expr(node.tokens[2][0])
@@ -1039,6 +1085,7 @@ function Simplify_Expr_Brackets (node) {
 	node.reached = null;
 	return node;
 }
+// Out of Date
 function Simplify_Expr_Lend (node) {
 	node.tokens = [
 		Simplify_Variable(node.tokens[1][0])
@@ -1048,6 +1095,7 @@ function Simplify_Expr_Lend (node) {
 	return node;
 }
 
+// Out of Date
 function Simplify_Expr_Struct (node) {
 	node.tokens = [
 		Simplify_Data_Type(node.tokens[0][0]),
@@ -1057,6 +1105,7 @@ function Simplify_Expr_Struct (node) {
 
 	return node;
 }
+// Out of Date
 function Simplify_Expr_Struct_Args (node) {
 	node.tokens = node.tokens[0]
 		.concat(node.tokens[2]
@@ -1066,6 +1115,7 @@ function Simplify_Expr_Struct_Args (node) {
 
 	return node;
 }
+// Out of Date
 function Simplify_Expr_Struct_Arg(node) {
 	node.tokens = [
 		Simplify_Name(node.tokens[0][0]),
@@ -1076,30 +1126,47 @@ function Simplify_Expr_Struct_Arg(node) {
 }
 
 
-
-
-
-function Parse (data, filename){
+module.exports = function (data, filename){
 	// Parse the file and check for errors
-	let result = BNF.Parse(data+"\n", syntax, "program");
-
-	if (result.hasError || result.isPartial) {
-		let ref = result.tree.ref.end;
-		let cause = "Unknown";
-		if (result.tree.ref.reached) {
-			ref = result.tree.ref.reached.getReach();
-			cause = result.tree.ref.reached.getCausation();
-		}
-
+	let res = syntax.parse(data, false, "program");
+	if (res instanceof ParseError) {
 		let msg = filename ? `${filename}: ` : "";
-		msg += `Syntax error at ${ref.toString()}\n`;
-		msg += `  ${BNF.Message.HighlightArea(data, ref).split('\n').join('\n  ')}\n\n`;
-		msg += `  Interpreted: ${cause}`;
+		msg += `Syntax error at ${res.ref.toString()}\n`;
+		msg += `  ${CodeSection(data, res.ref.start, res.ref.end).split('\n').join('\n  ')}\n\n`;
+		msg += `  Interpreted: ${res.msg}`;
+
 		console.error(msg);
 		process.exit(1);
 	}
 
-	return Simplify_Program(result.tree);
-}
+	// if (result.hasError || result.isPartial) {
+	// 	let ref = result.tree.ref.end;
+	// 	let cause = "Unknown";
+	// 	if (result.tree.ref.reached) {
+	// 		ref = result.tree.ref.reached.getReach();
+	// 		cause = result.tree.ref.reached.getCausation();
+	// 	}
 
-module.exports = Parse;
+	// 	let msg = filename ? `${filename}: ` : "";
+	// 	msg += `Syntax error at ${ref.toString()}\n`;
+		// msg += `  ${BNF.Message.HighlightArea(data, ref).split('\n').join('\n  ')}\n\n`;
+		// msg += `  Interpreted: ${cause}`;
+	// 	console.error(msg);
+	// 	process.exit(1);
+	// }
+
+	// return Simplify_Program(result.tree);
+
+	fs.writeFileSync('dump.json', JSON.stringify(res, (key, val)=>{
+		if (['ref'].includes(key)) {
+			return undefined;
+		} else {
+			return val;
+		}
+	}, 2));
+	console.log("SIMPLIFY");
+	Simplify_Program(res);
+
+	console.log("DONE");
+	process.exit(1);
+}
