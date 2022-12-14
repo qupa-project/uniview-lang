@@ -55,8 +55,8 @@ class Function_Instance {
 		return this;
 	}
 
-	getType(node, template) {
-		return this.ctx.getType(node, template);
+	getType(access, stack) {
+		return this.ctx.getType(access, stack);
 	}
 
 
@@ -80,26 +80,24 @@ class Function_Instance {
 		);
 
 		let head = this.ast.value[0];
-		this.signature = [ head.value[0], ...head.value[2].value ]
+		this.signature = [ head.value[0], ...head.value[2].value.map(x => x.value[0]) ]
 			.map(x => {
 				if (x.type == "blank") {
 					return new TypeRef(Primitive.types.void, false, false, false);
 				}
 
-				console.log(89, x);
-
 				let search = exec.getType(x);
 				if (search instanceof TypeRef) {
-					if (search.type == Primitive.type.void) {
+					if (search.type == Primitive.types.void) {
 						file.throw(
 							`Functions cannot include void type as argument`,
-							type.ref.start, type.ref.end
+							x.ref.start, x.ref.end
 						);
 					}
 				} else {
 					file.throw(
 						`Invalid type name "${Flatten.AccessToString(x)}"`,
-						type.ref.start, type.ref.end
+						x.ref.start, x.ref.end
 					);
 				}
 
@@ -109,7 +107,7 @@ class Function_Instance {
 				return search;
 			});
 
-		this.returnType = types.shift();
+		this.returnType = this.signature.shift();
 		this.linked = true;
 	}
 

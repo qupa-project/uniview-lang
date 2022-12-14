@@ -401,7 +401,6 @@ class Execution extends ExecutionFlow {
 				`Return type miss-match, expected ${this.returnType.toString()} but got ${returnType.toString()}`,
 				ast.ref.start, ast.ref.end
 			);
-			console.log(this.returnType, returnType, this.returnType.match(returnType), this.returnType == returnType);
 		}
 
 

@@ -41,16 +41,16 @@ class Function {
 		this.instances[0].markExport();
 	}
 
-	getFunction (variable, signature) {
-		if (variable.length != 0) {
+	getFunction (access, signature) {
+		if (access.length != 0) {
 			return null;
 		}
 
 		return this.matchSignature(signature);
 	}
 
-	getType(node, template) {
-		return this.ctx.getType(node, template);
+	getType(access, stack) {
+		return this.ctx.getType(access, stack);
 	}
 
 	matchSignature (sig) {

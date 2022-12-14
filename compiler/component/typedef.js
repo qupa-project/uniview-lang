@@ -1,5 +1,6 @@
 const { Generator_ID } = require('./generate.js');
 const LLVM = require('./../middle/llvm.js');
+const TypeRef = require('./typeRef.js');
 let typeIDGen = new Generator_ID();
 
 class TypeDef {
@@ -45,6 +46,10 @@ class TypeDef {
 
 	getFunction () {
 		return null;
+	}
+
+	getType(access) {
+		return access.length == 0 ? new TypeRef(this) : null;
 	}
 
 	getDestructor() {

@@ -1,4 +1,3 @@
-const Flattern = require("../parser/flatten.js");
 const LLVM = {
 	Type: require('./../middle/type.js')
 };
@@ -65,7 +64,7 @@ class TypeRef {
 	 * @returns {String}
 	 */
 	toString () {
-		return ( this.lent ? (this.constant ? "&" : "@") : "" ) + this.type.name;
+		return ( this.lent ? (this.constant ? "$" : "@") : "" ) + this.type.name;
 	}
 
 	toLLVM (ref = null, flat = false, pointer = false) {

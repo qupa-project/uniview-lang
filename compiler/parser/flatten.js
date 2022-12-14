@@ -3,14 +3,14 @@ function AccessToString(node) {
 	let frame = [];
 
 	if (node.type == "data_type") {
-		str += node.value[0];
+		str += node.value[0].flat();
 		frame = node.value.slice(1);
 	} else {
 		frame = node.value;
 	}
 
-	str += frame[0];
-	str += frame[1].map(x => {
+	str += frame[0].flat();
+	str += frame[1].value.map(x => {
 		switch (x.type) {
 			case "access_static":
 				return "." + x.flat();

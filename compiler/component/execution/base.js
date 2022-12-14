@@ -24,31 +24,6 @@ class ExecutionBase {
 		this.entryPoint = entryPoint.reference();
 	}
 
-	/**
-	 * Return the function this scope is within
-	 * @returns {Function_Instance}
-	 */
-	getFunction (access, signature, template) {
-		return this.getFile().getFunction(access, signature, template);
-	}
-
-	getType(node) {
-		let type = this.ctx.getType([
-			node.value[1],
-			...node.value[2].value.map(x => this.resolveTemplate(x))
-		]);
-
-		if (type.value[0].value == "@") {
-			type.constant = false;
-			type.lent = true;
-		} else if (type.value[0].value == "$") {
-			type.constant = true;
-			type.lent = true;
-		}
-
-		return type;
-	}
-
 
 	getFunctionGroup () {
 		return this.ctx.getFunctionGroup();
@@ -74,14 +49,53 @@ class ExecutionBase {
 		return null;
 	}
 
+	/**
+	 * Return the function this scope is within
+	 * @returns {Function_Instance}
+	 */
+	getFunction (access, signature) {
+		switch (node.type) {
+			case "data_type":
+			case "access":
+				break;
+			default:
+				throw new Error(`Unexpected syntax node with type "${node.type}"`);
+		}
+
+		return this.getFile().getFunction(access, signature);
+	}
+
+	getType(node) {
+		switch (node.type) {
+			case "data_type":
+			case "access":
+				break;
+			default:
+				throw new Error(`Unexpected syntax node with type "${node.type}"`);
+		}
+
+		let type = this.ctx.getType([
+			node.value[1],
+			...node.value[2].value.map(x => this.resolveTemplate(x))
+		]);
+
+		if (node.value[0].value == "@") {
+			type.constant = false;
+			type.lent = true;
+		} else if (node.value[0].value == "$") {
+			type.constant = true;
+			type.lent = true;
+		}
+
+		return type;
+	}
+
 
 	/**
 	 *
 	 * @param {BNF_Node} node type: access
 	 */
 	resolveTemplate (node) {
-		console.log(85, node);
-
 		switch (node.type) {
 			case "expr_access":
 			case "variable":

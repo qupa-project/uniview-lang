@@ -184,8 +184,10 @@ class File {
 			return null;
 		}
 
-		if (access.length > 1) {
+		if (access.length > 0) {
 			let term = access[0];
+
+
 			switch (term.type) {
 				case "name":
 				case "access_static":
@@ -194,9 +196,11 @@ class File {
 					return null;
 			}
 
-			let res = this.names[term.value].getType(access.slice(1), stack);
-			if (res) {
-				return res;
+			if (this.names[term.value]) {
+				let res = this.names[term.value].getType(access.slice(1), stack);
+				if (res) {
+					return res;
+				}
 			}
 		}
 
@@ -252,7 +256,7 @@ class File {
 		return null;
 	}
 
-	getType (access, stack = []) {
+	getTrait (access, stack = []) {
 		if (access.length == 0) {
 			return null;
 		}
