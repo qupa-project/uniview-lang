@@ -1,4 +1,4 @@
-const Flattern = require('../../parser/flattern.js');
+const Flattern = require('../../parser/flatten.js');
 const { Generator_ID } = require('../generate.js');
 const LLVM = require("../../middle/llvm.js");
 const TypeRef = require('./../typeRef.js');

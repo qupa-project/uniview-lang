@@ -5,7 +5,7 @@ const Structure = require('./struct.js');
 
 class Function {
 	constructor (ctx, ast, external = false, abstract = false) {
-		this.name = ast.tokens[0].tokens[1].tokens;
+		this.name = ast.value[0].value[1].value;
 		this.ctx = ctx;
 
 		this.ref = ast.ref.start;

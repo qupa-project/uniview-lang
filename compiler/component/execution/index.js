@@ -1,7 +1,7 @@
 const Register = require('../memory/variable.js');
 const Scope = require('../memory/scope.js');
 
-const Flattern = require('../../parser/flattern.js');
+const Flatten = require('../../parser/flatten.js');
 const LLVM     = require("../../middle/llvm.js");
 const TypeRef  = require('../typeRef.js');
 
@@ -65,7 +65,7 @@ class Execution extends ExecutionFlow {
 		let typeRef = this.resolveType(ast.tokens[0]);
 		if (!(typeRef instanceof TypeRef)) {
 			this.getFile().throw(
-				`Error: Invalid type name "${Flattern.DataTypeStr(ast.tokens[0])}"`,
+				`Error: Invalid type name "${Flatten.DataTypeStr(ast.tokens[0])}"`,
 				ast.ref.start,
 				ast.ref.end
 			);
@@ -96,7 +96,7 @@ class Execution extends ExecutionFlow {
 			targetType = this.resolveType(ast.tokens[0]);
 			if (!(targetType instanceof TypeRef)) {
 				this.getFile().throw(`Error: Invalid type name "${
-					Flattern.DataTypeStr(ast.tokens[0])
+					Flatten.DataTypeStr(ast.tokens[0])
 				}"`, ast.ref.start, ast.ref.end);
 				return null;
 			}
@@ -157,7 +157,7 @@ class Execution extends ExecutionFlow {
 		let signature = [];
 		let args = [];
 		let regs = [];
-		for (let arg of ast.tokens[2].tokens) {
+		for (let arg of ast.value[2].value) {
 			let expr = this.compile_expr(arg, null, true);
 			if (expr === null) {
 				return null;
@@ -178,23 +178,8 @@ class Execution extends ExecutionFlow {
 			}
 		}
 
-		// Link any [] accessors
-		let accesses = [ ast.tokens[0].tokens[1].tokens ];
-		for (let access of ast.tokens[0].tokens[2]) {
-			if (access[0] == "[]") {
-				file.throw (
-					`Error: Class base function execution is currently unsupported`,
-					inner.ref.start, inner.ref.end
-				);
-				return null;
-			} else {
-				accesses.push([access[0], access[1].tokens]);
-			}
-		}
-
-
 		// Link any template access
-		let template = this.resolveTemplate(ast.tokens[1]);
+		let template = this.resolveTemplate(ast.value[0]);
 		if (template === null) {
 			return null;
 		}
@@ -202,7 +187,7 @@ class Execution extends ExecutionFlow {
 		// Find a function with the given signature
 		let target = this.getFunction(accesses, signature, template);
 		if (!target) {
-			let funcName = Flattern.VariableStr(ast.tokens[0]);
+			let funcName = Flatten.AccessToString(ast.value[0]);
 			file.throw(
 				`Error: Unable to find function "${funcName}" with signature (${signature.join(", ")})`,
 				ast.ref.start, ast.ref.end

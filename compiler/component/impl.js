@@ -1,4 +1,4 @@
-const Flattern = require('../parser/flattern.js');
+const Flattern = require('../parser/flatten.js');
 
 const Function = require('./function.js');
 const LLVM = require('../middle/llvm.js');

@@ -2,7 +2,7 @@ const LLVM     = require("../../middle/llvm.js");
 const TypeRef  = require('../typeRef.js');
 const Structure = require('../struct.js');
 
-const Flattern = require('../../parser/flattern.js');
+const Flattern = require('../../parser/flatten.js');
 
 const Primative = {
 	types: require('../../primative/types.js')

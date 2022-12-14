@@ -131,9 +131,12 @@ function Simplify_Access (node) {
 		// Name
 		Simplify_Name(node.value[0]),
 
-		// Accessors
-		node.value[1].value
-			.map(x => Simplify_Access_Opt(x.value[0]))
+		// Access
+		new SyntaxNode(
+			"(...)*",
+			node.value[2].value.map(x => Simplify_Access_Opt(x.value[0])),
+			node.value[2].ref
+		)
 	];
 
 	return node;
@@ -210,8 +213,11 @@ function Simplify_Data_Type (node) {
 		Simplify_Name(node.value[1]),
 
 		// Access
-		node.value[2].value
-			.map(x => Simplify_Access_Opt(x.value[0]))
+		new SyntaxNode(
+			"(...)*",
+			node.value[2].value.map(x => Simplify_Access_Opt(x.value[0])),
+			node.value[2].ref
+		)
 	];
 
 	return node;

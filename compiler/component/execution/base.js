@@ -1,4 +1,4 @@
-const Flattern = require('../../parser/flattern.js');
+const Flatten = require('../../parser/flatten.js');
 const LLVM     = require("../../middle/llvm.js");
 const TypeRef = require('../typeRef.js');
 const { load } = require('npm/lib/config/core.js');
@@ -32,8 +32,21 @@ class ExecutionBase {
 		return this.getFile().getFunction(access, signature, template);
 	}
 
-	getType(node, template) {
-		return this.ctx.getType(node, template);
+	getType(node) {
+		let type = this.ctx.getType([
+			node.value[1],
+			...node.value[2].value.map(x => this.resolveTemplate(x))
+		]);
+
+		if (type.value[0].value == "@") {
+			type.constant = false;
+			type.lent = true;
+		} else if (type.value[0].value == "$") {
+			type.constant = true;
+			type.lent = true;
+		}
+
+		return type;
 	}
 
 
@@ -64,48 +77,70 @@ class ExecutionBase {
 
 	/**
 	 *
-	 * @param {BNF_Node} node
+	 * @param {BNF_Node} node type: access
 	 */
 	resolveTemplate (node) {
-		let template = [];
-		for (let arg of node.tokens) {
+		console.log(85, node);
+
+		switch (node.type) {
+			case "expr_access":
+			case "variable":
+			case "data_type":
+				break;
+			default:
+				throw new Error(`Cannot resolve templates for ${node.type}`);
+		}
+
+		return node.value.map(x => {
+			switch (x.type) {
+				case "name":
+				case "access_static":
+					return x;
+				case "access_template":
+					return this.resolveTemplate_Argument(x);
+				case "access_dynamic":
+					this.getFile().throw(
+						`Error: Dynamic access should not be present in a data type`,
+						node.ref.start, node.ref.end
+					);
+					return x;
+				default:
+					throw new Error(`Unexpected access type ${x.type}`);
+			}
+		});
+	}
+
+	resolveTemplate_Argument (node) {
+		node.value = node.value.map(arg => {
 			switch (arg.type) {
 				case "data_type":
-					let type = this.ctx.getType(
-						Flattern.DataTypeList(arg),
-						this.resolveTemplate(arg.tokens[3])
+					var type = this.ctx.getType(
+						Flatten.DataTypeList(arg)
 					);
 					if (type === null) {
 						this.getFile().throw(
-							`Error: Unknown data type ${Flattern.DataTypeStr(arg)}`,
+							`Error: Unknown data type ${Flatten.DataTypeStr(arg)}`,
 							arg.ref.start, arg.ref.end
 						);
 						return null;
 					}
 
-					// Update pointer size
-					type.pointer = arg.tokens[0];
-
 					template.push(type);
 					break;
 				case "constant":
-					let cnst = this.compile_constant(arg);
-					if (cnst.type.type == Primative.types.void) {
-						template.push(new TypeRef(Primative.types.void));
-					} else {
-						template.push(cnst);
-					}
+					var val = this.compile_constant(arg);
+					template.push(val);
 					break;
 				default:
 					this.getFile().throw(
 						`Error: ${arg.type} are currently unsupported in template arguments`,
 						arg.ref.start, arg.ref.end
 					);
-					return null;
+				return null;
 			}
-		}
+		});
 
-		return template;
+		return node;
 	}
 
 
@@ -175,26 +210,6 @@ class ExecutionBase {
 		};
 	}
 
-
-
-	/**
-	 *
-	 * @param {BNF_Node} node
-	 */
-	resolveType (node) {
-		let template = this.resolveTemplate(node.tokens[3]);
-		if (template === null) {
-			return null;
-		}
-
-		let type = this.ctx.getType(
-			Flattern.DataTypeList(node),
-			template
-		);
-
-		return type;
-	}
-
 	/**
 	 * Resolves any dynamic access for the variable
 	 * ALTERS original AST
@@ -208,7 +223,7 @@ class ExecutionBase {
 					if (res === null) {
 						return {
 							error: true,
-							msg: `Error: Unexpected dynamic access opperand type ${arg.type}`,
+							msg: `Error: Unexpected dynamic access operand type ${arg.type}`,
 							ref: arg.ref
 						};
 					}
