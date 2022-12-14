@@ -163,7 +163,7 @@ class Function_Instance {
 		let argsRegs = res.registers;
 
 		let id = new LLVM.ID();
-		let complex = this.returnType.native;
+		let complex = !this.returnType.native;
 		if (complex) {
 			argsRegs = [
 				new LLVM.Argument(

@@ -17,7 +17,7 @@ class ExecutionFlow extends ExecutionExpr {
 		let frag = new LLVM.Fragment(ast);
 
 		// Check for elif clause
-		if (ast.tokens[1].length > 0) {
+		if (ast.value[1].length > 0) {
 			this.getFile().throw(
 				`Error: Elif statements are currently unsupported`,
 				ast.ref.start, ast.ref.end
@@ -32,7 +32,7 @@ class ExecutionFlow extends ExecutionExpr {
 			Prepare condition value
 		===================================*/
 		let cond = this.compile_expr(
-			ast.tokens[0].tokens[0],
+			ast.value[0].value[0],
 			new TypeRef(Primative.types.bool),
 			true
 		);
@@ -51,10 +51,10 @@ class ExecutionFlow extends ExecutionExpr {
 		/*===================================
 			Prepare condition bodies
 		===================================*/
-		let branch_true = this.compile_branch(ast.tokens[0].tokens[1], ast.tokens[0].ref);
+		let branch_true = this.compile_branch(ast.value[0].value[1], ast.value[0].ref);
 		let branch_false = this.compile_branch(
-			ast.tokens[1].tokens[0],
-			ast.tokens[1].ref
+			ast.value[1].value[0],
+			ast.value[1].ref
 		);
 
 		if (branch_false == null || branch_true == null) {
@@ -156,7 +156,7 @@ class ExecutionFlow extends ExecutionExpr {
 		let frag = new LLVM.Fragment();
 
 		// Prepare the target variable for reading
-		let target = this.compile_loadVariable(ast.tokens[0]);
+		let target = this.compile_loadVariable(ast.value[0]);
 		if (target.error) {
 			this.getFile().throw(target.msg, target.ref.start, target.ref.end);
 			return null;
@@ -166,7 +166,7 @@ class ExecutionFlow extends ExecutionExpr {
 		// Check it is an either instance
 		if (!(target.type.type instanceof Primative.Either.Either_Instance)) {
 			this.getFile().throw(
-				`Invalid 'when' clause, target variable must be a 'Either' instance.\nInstead '${Flattern.VariableStr(ast.tokens[0])}' is of type ${target.type.type.name}`,
+				`Invalid 'when' clause, target variable must be a 'Either' instance.\nInstead '${Flattern.VariableStr(ast.value[0])}' is of type ${target.type.type.name}`,
 			ast.ref.start, ast.ref.end);
 			return null;
 		}
@@ -177,12 +177,12 @@ class ExecutionFlow extends ExecutionExpr {
 		let spare = null;
 
 		// Process each branch of the when statement
-		for (let select of ast.tokens[1]) {
-			if (select.tokens[0].type == "data_type") {
-				let typeRef = this.resolveType(select.tokens[0]);
+		for (let select of ast.value[1]) {
+			if (select.value[0].type == "data_type") {
+				let typeRef = this.resolveType(select.value[0]);
 				if (!(typeRef instanceof TypeRef)) {
 					this.getFile().throw(
-						`Error: Invalid type name "${Flattern.DataTypeStr(select.tokens[0])}"`,
+						`Error: Invalid type name "${Flattern.DataTypeStr(select.value[0])}"`,
 						select.ref.start,
 						select.ref.end
 					);
@@ -209,10 +209,10 @@ class ExecutionFlow extends ExecutionExpr {
 
 
 				let scope = this.scope.clone();
-				let variable = scope.getVar(ast.tokens[0]);
+				let variable = scope.getVar(ast.value[0]);
 				let latent = variable.induceType(typeRef, target.instruction, select.ref);
 
-				let branch = this.compile_branch(select.tokens[1], select.ref, scope);
+				let branch = this.compile_branch(select.value[1], select.ref, scope);
 				if (branch === null) {
 					return null;
 				}
@@ -238,7 +238,7 @@ class ExecutionFlow extends ExecutionExpr {
 				seen.push(index);
 
 			} else {
-				spare = this.compile_branch(select.tokens[1], select.ref);
+				spare = this.compile_branch(select.value[1], select.ref);
 				if (spare === null) {
 					return null;
 				}

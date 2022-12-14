@@ -180,10 +180,10 @@ class ExecutionBase {
 			return res;
 		}
 
-		let accesses = ast.tokens[2];
+		let accesses = ast.value[2];
 		for (let access of accesses) {
 			res.hasUpdated = res.hasUpdated || !read;
-			res = res.access(access[1].tokens, access[1].ref);
+			res = res.access(access[1].value, access[1].ref);
 			if (res.error) {
 				return res;
 			}
@@ -230,7 +230,7 @@ class ExecutionBase {
 	 * @param {*} ast
 	 */
 	resolveAccess (ast) {
-		for (let access of ast.tokens[2]) {
+		for (let access of ast.value[2]) {
 			if (access[0] == "[]") {
 				for (let i in access[1]) {
 					let res = this.compile_expr(access[1][i], null, true);

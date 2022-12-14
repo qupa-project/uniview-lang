@@ -5,7 +5,7 @@ const Flatten = require('../../parser/flatten.js');
 const LLVM     = require("../../middle/llvm.js");
 const TypeRef  = require('../typeRef.js');
 
-const Primative = {
+const Primitive = {
 	types: require('../../primative/types.js')
 };
 
@@ -26,7 +26,7 @@ class Execution extends ExecutionFlow {
 		//   This must occur after the expression is resolve
 		//   because this variable now needs to be accessed for writing
 		//   after any reads that might have taken place in the expresion
-		let access = this.getVar(ast.tokens[0], false);
+		let access = this.getVar(ast.value[0], false);
 		if (access.error) {
 			this.getFile().throw( access.msg, access.ref.start, access.ref.start);
 			return null;
@@ -35,7 +35,7 @@ class Execution extends ExecutionFlow {
 		access = access.variable;
 
 		// Resolve the expression
-		let expr = this.compile_expr(ast.tokens[1], access.type, true);
+		let expr = this.compile_expr(ast.value[1], access.type, true);
 		if (expr === null) {
 			return null;
 		}
@@ -60,12 +60,12 @@ class Execution extends ExecutionFlow {
 	}
 
 	compile_declare (ast) {
-		let	name = ast.tokens[1].tokens;
+		let	name = ast.value[1].value;
 
-		let typeRef = this.resolveType(ast.tokens[0]);
+		let typeRef = this.resolveType(ast.value[0]);
 		if (!(typeRef instanceof TypeRef)) {
 			this.getFile().throw(
-				`Error: Invalid type name "${Flatten.DataTypeStr(ast.tokens[0])}"`,
+				`Error: Invalid type name "${Flatten.DataTypeStr(ast.value[0])}"`,
 				ast.ref.start,
 				ast.ref.end
 			);
@@ -92,11 +92,11 @@ class Execution extends ExecutionFlow {
 		// If there is a goal type
 		//   Get the goal type
 		let targetType = null;
-		if (ast.tokens[0] !== null) {
-			targetType = this.resolveType(ast.tokens[0]);
+		if (ast.value[0] !== null) {
+			targetType = this.resolveType(ast.value[0]);
 			if (!(targetType instanceof TypeRef)) {
 				this.getFile().throw(`Error: Invalid type name "${
-					Flatten.DataTypeStr(ast.tokens[0])
+					Flatten.DataTypeStr(ast.value[0])
 				}"`, ast.ref.start, ast.ref.end);
 				return null;
 			}
@@ -105,7 +105,7 @@ class Execution extends ExecutionFlow {
 
 
 		// Compile the expression
-		let expr = this.compile_expr(ast.tokens[2], targetType, true);
+		let expr = this.compile_expr(ast.value[2], targetType, true);
 		if (expr === null) {
 			return null;
 		}
@@ -120,7 +120,7 @@ class Execution extends ExecutionFlow {
 		// Declare the variable and assign it to the expression result
 		let variable = this.scope.register_Var(
 			targetType,             // type
-			ast.tokens[1].tokens,   // name
+			ast.value[1].value,   // name
 			ast.ref.start           // ref
 		);
 		let chg = variable.markUpdated(expr.instruction, false, ast.ref);
@@ -228,7 +228,7 @@ class Execution extends ExecutionFlow {
 				complex ?
 					new LLVM.Type("void", 0, ast.ref) :
 					target.returnType.toLLVM(ast.ref),
-				new LLVM.Name(target.represent, true, ast.tokens[0].ref),
+				new LLVM.Name(target.represent, true, ast.value[0].ref),
 				args,
 				ast.ref.start
 			);
@@ -300,7 +300,7 @@ class Execution extends ExecutionFlow {
 	compile_decompose (ast) {
 		let frag = new LLVM.Fragment();
 
-		let target = this.getVar(ast.tokens[0], true);
+		let target = this.getVar(ast.value[0], true);
 		if (target.error) {
 			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
 			return null;
@@ -321,7 +321,7 @@ class Execution extends ExecutionFlow {
 	compile_compose (ast) {
 		let frag = new LLVM.Fragment();
 
-		let target = this.getVar(ast.tokens[0], true);
+		let target = this.getVar(ast.value[0], true);
 		if (target.error) {
 			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
 			return null;
@@ -350,11 +350,11 @@ class Execution extends ExecutionFlow {
 
 		// Get the return result in LLVM.Argument form
 		let returnType = null;
-		if (ast.tokens.length == 0){
+		if (ast.value.length == 0){
 			inner = new LLVM.Type("void", false);
-			returnType = new TypeRef(Primative.types.void);
+			returnType = new TypeRef(Primitive.types.void);
 		} else {
-			let res = this.compile_expr(ast.tokens[0], this.returnType, true);
+			let res = this.compile_expr(ast.value[0], this.returnType, true);
 			if (res === null) {
 				return null;
 			}
@@ -424,16 +424,15 @@ class Execution extends ExecutionFlow {
 
 	compile (ast) {
 		let fragment = new LLVM.Fragment();
-		let returnWarned = false;
 		let failed = false;
 		let inner = null;
-		for (let token of ast.tokens) {
-			if (this.returned && !returnWarned) {
+
+		for (let token of ast.value) {
+			if (this.returned) {
 				this.getFile().throw(
 					`Warn: This function has already returned, this line and preceding lines will not execute`,
 					token.ref.start, token.ref.end
 				);
-				returnWarned = true;
 				break;
 			}
 
@@ -483,31 +482,12 @@ class Execution extends ExecutionFlow {
 		if (failed) {
 			return null;
 		} else if (this.returned == false && !this.isChild) {
-			if (this.returnType.type == Primative.types.void) {
-				// Auto generate return and cleanup for void functions
+			this.getFile().throw(
+				`Function does not return`,
+				ast.ref.start, ast.ref.end
+			);
 
-				// Clean up the scope
-				let res = this.scope.cleanup(ast.ref);
-				if (res.error) {
-					this.getFile().throw(res.msg, res.ref.start, res.ref.end);
-				} else {
-					fragment.append(res);
-				}
-
-				fragment.append(new LLVM.Return(
-					new LLVM.Type("void", 0),
-					ast.ref
-				));
-
-				return fragment;
-			} else {
-				this.getFile().throw(
-					`Function does not return`,
-					ast.ref.start, ast.ref.end
-				);
-
-				return null;
-			}
+			return null;
 		}
 
 		return fragment;

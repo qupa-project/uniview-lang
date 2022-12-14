@@ -64,7 +64,7 @@ function Simplify_Constant (node) {
 		case "void":
 		case "integer":
 		case "float":
-			node.value[0] = node.value[0].flat();
+			node.value[0].value = node.value[0].flat();
 			break;
 		case "string":
 			node.value[0] = Simplify_String(node.value[0]);
@@ -306,8 +306,7 @@ function Simplify_Function_Stmt (node) {
 	let func = STMT_MAP[node.value[0].type];
 
 	if (func instanceof Function) {
-		node.value = [ func(node.value[0]) ];
-		return node;
+		return func(node.value[0]);
 	} else {
 		throw new TypeError(`Unexpected function statement ${node.value[0].type}`);
 	}
