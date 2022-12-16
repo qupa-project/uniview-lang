@@ -134,8 +134,8 @@ function Simplify_Access (node) {
 		// Access
 		new SyntaxNode(
 			"(...)*",
-			node.value[2].value.map(x => Simplify_Access_Opt(x.value[0])),
-			node.value[2].ref
+			node.value[1].value.map(x => Simplify_Access_Opt(x.value[0])),
+			node.value[1].ref
 		)
 	];
 
@@ -144,11 +144,11 @@ function Simplify_Access (node) {
 function Simplify_Access_Opt (node) {
 	switch (node.type) {
 		case "access_static":
-			return Simplify_Access_Static(node.value);
+			return Simplify_Access_Static(node);
 		case "access_dynamic":
-			return Simplify_Access_Dynamic(node.value);
+			return Simplify_Access_Dynamic(node);
 		case "access_template":
-			return Simplify_Access_Template(node.value);
+			return Simplify_Access_Template(node);
 		default:
 			throw new TypeError(`Unexpected accessor type ${node.type}`);
 	}
@@ -165,23 +165,23 @@ function Simplify_Access_Dynamic (node) {
 }
 
 function Simplify_Access_Template (node) {
-	node.value = Simplify_Template_Args(node.value[1]).value;
+	node.value = Simplify_Access_Template_Args(node.value[0]).value;
 	return node;
 }
-function Simplify_Template_Args (node) {
+function Simplify_Access_Template_Args (node) {
 	node.value = [
-		node.value[1],
-		...node.value[2].value
-	].map(Simplify_Template_Arg);
+		node.value[0],
+		...node.value[1].value
+	].map(Simplify_Access_Template_Arg);
 
 	return node;
 }
-function Simplify_Template_Arg (node) {
-	switch (node.type) {
+function Simplify_Access_Template_Arg (node) {
+	switch (node.value[0].type) {
 		case "constant":
-			return Simplify_Constant(node);
+			return Simplify_Constant(node.value[0]);
 		case "data_type":
-			return Simplify_Data_Type(node);
+			return Simplify_Data_Type(node.value[0]);
 		default:
 			throw new Error(`Unknown template argument syntax type ${node.type}`);
 	}
@@ -243,7 +243,7 @@ function Simplify_Declare (node) {
 function Simplify_Assign  (node) {
 	node.value = [
 		Simplify_Variable (node.value[0]), // target variable
-		Simplify_Expr     (node.value[2])  // value
+		Simplify_Expr     (node.value[1])  // value
 	];
 	return node;
 }
@@ -356,7 +356,7 @@ function Simplify_Function_Redirect (node) {
 function Simplify_Call (node) {
 	node.value = [
 		// Function Name
-		Simplify_Data_Type(node.value[0]),
+		Simplify_Access(node.value[0]),
 
 		// Args
 		Simplify_Call_Body(node.value[1])
@@ -365,13 +365,13 @@ function Simplify_Call (node) {
 }
 function Simplify_Call_Body (node) {
 	return node.value[0].value[0] ?
-			Simplify_Call_Args(node.value[1].value[0]) :
+			Simplify_Call_Args(node.value[0].value[0]) :
 			new SyntaxNode('call_args', [], node.ref.clone());
 }
 function Simplify_Call_Args (node) {
 	node.value = [
 		node.value[0],
-		...node.value[1].map(x => x.value[0])
+		...node.value[1].value.map(x => x.value[0])
 	].map(Simplify_Expr);
 
 	return node;
