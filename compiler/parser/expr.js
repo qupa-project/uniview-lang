@@ -6,6 +6,7 @@ let precedence = {
 	expr_arithmetic: 0,
 	expr_compare: 2,
 	expr_bool: 4,
+	expr_tuple: 5,
 
 	expr_invert: 0,
 	expr_lend: 0,
@@ -25,7 +26,9 @@ let precedence = {
 	expr_and : 5,
 	expr_or  : 6,
 
-	expr_brackets: 6
+	expr_comma: 7,
+
+	expr_brackets: 8
 };
 
 function GetPrecedence (a, b) {
@@ -117,6 +120,12 @@ const OPERATION_DICT = {
 	"||": {
 		base: "expr_bool",
 		sub: "expr_or"
+	},
+
+	// tuple
+	",": {
+		base: "expr_tuple",
+		sub: "expr_comma"
 	}
 };
 
