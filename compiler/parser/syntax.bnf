@@ -61,13 +61,13 @@ program ::= %w* ( stmt_top %w* )* ;
 #=============================
 #  Accessors
 #=============================
-	access ::= ...name %w* ( access_static | access_dynamic | access_template )* ;
+	access ::= ...name %w* ( ( access_static | access_dynamic | access_template ) %w* )* ;
 
-	access_static  ::= %("." ) ...name %w* ;
+	access_static  ::= %(".") ...name %w* ;
 
 	access_dynamic ::= %("[" w* ) call_args %( w* "]" ) %w* ;
 
-	access_template ::= %( "#[" w* ) access_template_args %( w* "]" ) %w* ;
+	access_template ::= %( "#[" w* ) access_template_args %( w* "]" w* ) ;
 		access_template_args ::= access_template_arg %w* ( %( "," w* ) access_template_arg %w* )* %","? ;
 		access_template_arg  ::= constant | data_type ;
 
@@ -76,9 +76,9 @@ program ::= %w* ( stmt_top %w* )* ;
 #  Variables
 #=============================
 	name ::= ( letter | "_" )* ( letter | digit | "_" )* ;
-	variable ::= ...name %w* ( access_static | access_dynamic )* ;
+	variable ::= ...name %w* ( ( access_static | access_dynamic ) %w* )* ;
 
-	data_type ::= ...("@" | "$")? ...name %w* ( access_static | access_template )* ;
+	data_type ::= ...("@" | "$")? ...name %w* ( ( access_static | access_template ) %w* )* ;
 		data_type_access ::= %"." ...name ;
 
 	declare ::= %( "let" %w+ ) ...name %w* ( %( ":" w* ) data_type %w* )? ( %( "=" w* ) expr )? %( w* ";" ) ;
