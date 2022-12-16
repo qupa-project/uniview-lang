@@ -653,7 +653,7 @@ function Simplify_Expr_Val (node) {
 				],
 				node.ref
 			);
-		case "expr_call_body":
+		case "call_body":
 			return new SyntaxNode(
 				"call",
 				[

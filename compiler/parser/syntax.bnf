@@ -61,15 +61,15 @@ program ::= %w* ( stmt_top %w* )* ;
 #=============================
 #  Accessors
 #=============================
-access ::= ...name %w* ( access_static | access_dynamic | access_template )* ;
+	access ::= ...name %w* ( access_static | access_dynamic | access_template )* ;
 
-access_static  ::= %( w* "." ) ...name ;
+	access_static  ::= %("." ) ...name %w* ;
 
-access_dynamic ::= %( w* "[" w* ) call_args %( w* "]" ) ;
+	access_dynamic ::= %("[" w* ) call_args %( w* "]" ) %w* ;
 
-access_template ::= %( w* "#[" w* ) template_args %( w* "]" ) ;
-	access_template_args ::= template_arg %w* ( %( "," w* ) template_arg %w* )* %","? ;
-	access_template_arg  ::= constant | data_type ;
+	access_template ::= %( "#[" w* ) access_template_args %( w* "]" ) %w* ;
+		access_template_args ::= access_template_arg %w* ( %( "," w* ) access_template_arg %w* )* %","? ;
+		access_template_arg  ::= constant | data_type ;
 
 
 #=============================
@@ -145,7 +145,7 @@ access_template ::= %( w* "#[" w* ) template_args %( w* "]" ) ;
 		expr_left_oper ::= "!" | "$" | "@" | "-" ;
 		expr_middle_oper ::= "," | "?" | ":" | "&&" | "||" | "==" | "!=" | "<=" | ">=" | "<" | ">" | "%" | "*" | "/" | "+" | "-" | "->" ;
 		expr_arg ::= expr_left_oper? %w* ( constant | expr_brackets | expr_val ) ;
-			expr_val ::= access ( expr_struct_body | expr_call_body )? ;
+			expr_val ::= access ( expr_struct_body | call_body )? ;
 		expr_brackets ::= %( "(" w* ) expr %( w* ")" ) ;
 
 
