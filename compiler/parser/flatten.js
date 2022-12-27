@@ -1,17 +1,8 @@
-function AccessToString(node) {
-	let str = "";
-	let frame = [];
-
-	if (node.type == "data_type") {
-		str += node.value[0].flat();
-		frame = node.value.slice(1);
-	} else {
-		frame = node.value;
-	}
-
-	str += frame[0].flat();
-	str += frame[1].value.map(x => {
+function AccessToString(access) {
+	return access.map(x => {
 		switch (x.type) {
+			case "name":
+				return x.flat();
 			case "access_static":
 				return "." + x.flat();
 			case "access_dynamic":
@@ -21,9 +12,7 @@ function AccessToString(node) {
 			default:
 				throw new Error(`Unexpected access syntax type ${x.type}`);
 		}
-	});
-
-	return str;
+	}).join("");
 }
 
 

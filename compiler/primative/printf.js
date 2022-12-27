@@ -24,7 +24,7 @@ class Template_Primative_Printf extends Template {
 		this.func.compile();
 	}
 
-	getFunction (access, signature, template) {
+	getFunction (access, signature) {
 		if (access.length != 0) {
 			return false;
 		}

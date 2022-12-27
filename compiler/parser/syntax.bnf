@@ -143,7 +143,7 @@ program ::= %w* ( stmt_top %w* )* ;
 #=============================
 	expr ::= expr_arg %w* ( ...expr_middle_oper %w* expr_arg %w* )* ;
 		expr_left_oper ::= "!" | "$" | "@" | "-" ;
-		expr_middle_oper ::= "," | "?" | ":" | "&&" | "||" | "==" | "!=" | "<=" | ">=" | "<" | ">" | "%" | "*" | "/" | "+" | "-" | "->" ;
+		expr_middle_oper ::= "?" | ":" | "&&" | "||" | "==" | "!=" | "<=" | ">=" | "<" | ">" | "%" | "*" | "/" | "+" | "-" | "->" ;
 		expr_arg ::= expr_left_oper? %w* ( constant | expr_brackets | expr_val ) ;
 			expr_val ::= access ( expr_struct_body | call_body )? ;
 		expr_brackets ::= %( "(" w* ) expr %( w* ")" ) ;

@@ -6,7 +6,6 @@ let precedence = {
 	expr_arithmetic: 0,
 	expr_compare: 2,
 	expr_bool: 4,
-	expr_tuple: 5,
 
 	expr_invert: 0,
 	expr_lend: 0,
@@ -120,12 +119,6 @@ const OPERATION_DICT = {
 	"||": {
 		base: "expr_bool",
 		sub: "expr_or"
-	},
-
-	// tuple
-	",": {
-		base: "expr_tuple",
-		sub: "expr_comma"
 	}
 };
 

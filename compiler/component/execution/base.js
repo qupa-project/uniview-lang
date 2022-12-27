@@ -2,6 +2,7 @@ const Flatten = require('../../parser/flatten.js');
 const LLVM     = require("../../middle/llvm.js");
 const TypeRef = require('../typeRef.js');
 const { load } = require('npm/lib/config/core.js');
+const { SyntaxNode } = require('bnf-parser');
 
 const Primative = {
 	types: require('./../../primative/types.js')
@@ -51,15 +52,13 @@ class ExecutionBase {
 
 	/**
 	 * Return the function this scope is within
+	 * @param {SyntaxNode[]}
+	 * @param {TypeRef[]}
 	 * @returns {Function_Instance}
 	 */
 	getFunction (access, signature) {
-		switch (node.type) {
-			case "data_type":
-			case "access":
-				break;
-			default:
-				throw new Error(`Unexpected syntax node with type "${node.type}"`);
+		if (!Array.isArray(access)) {
+			throw new Error(`Unexpected access type`);
 		}
 
 		return this.getFile().getFunction(access, signature);
@@ -97,7 +96,7 @@ class ExecutionBase {
 	 */
 	resolveTemplate (node) {
 		switch (node.type) {
-			case "expr_access":
+			case "access":
 			case "variable":
 			case "data_type":
 				break;

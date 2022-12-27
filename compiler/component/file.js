@@ -3,7 +3,7 @@ const BNF = require('bnf-parser');
 
 const helper = require('../helper/error.js');
 
-const LLVM = require('./../middle/llvm.js');
+const LLVM = require('../middle/llvm.js');
 const Function = require('./function.js');
 const TypeDef  = require('./typedef.js');
 const Structure = require('./struct.js');
@@ -13,7 +13,7 @@ const TypeRef = require('./typeRef.js');
 const Import  = require('./import.js');
 
 // const { Namespace, Namespace_Type } = require('./namespace.js');
-const Parse = require('./../parser/parse.js');
+const Parse = require('../parser/parse.js');
 const fs = require('fs');
 const Template = require('./template.js');
 
@@ -225,7 +225,7 @@ class File {
 			return null;
 		}
 
-		if (access.length > 1) {
+		if (access.length > 0) {
 			let term = access[0];
 			switch (term.type) {
 				case "name":
@@ -235,9 +235,11 @@ class File {
 					return null;
 			}
 
-			let res = this.names[term.value].getFunction(access.slice(1), signature, stack);
-			if (res) {
-				return res;
+			if (this.names[term.value]) {
+				let res = this.names[term.value].getFunction(access.slice(1), signature, stack);
+				if (res) {
+					return res;
+				}
 			}
 		}
 

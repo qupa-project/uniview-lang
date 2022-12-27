@@ -132,11 +132,7 @@ function Simplify_Access (node) {
 		Simplify_Name(node.value[0]),
 
 		// Access
-		new SyntaxNode(
-			"(...)*",
-			node.value[1].value.map(x => Simplify_Access_Opt(x.value[0])),
-			node.value[1].ref
-		)
+		...node.value[1].value.map(x => Simplify_Access_Opt(x.value[0]))
 	];
 
 	return node;

@@ -22,6 +22,7 @@
 
 ## Tweaks
  - [x] Now uses the LLVM tool chain (instead of clang) to generated the platform specific assembly, then clang does the final mile to make the executable binary.
+ - [x] String constants are now stored globally as constants in the application instead of being allocated each time.
 
 ## Version 0.1.0
 

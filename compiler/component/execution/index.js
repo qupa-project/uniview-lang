@@ -157,7 +157,8 @@ class Execution extends ExecutionFlow {
 		let signature = [];
 		let args = [];
 		let regs = [];
-		for (let arg of ast.value[2].value) {
+
+		for (let arg of ast.value[1].value) {
 			let expr = this.compile_expr(arg, null, true);
 			if (expr === null) {
 				return null;
@@ -179,15 +180,15 @@ class Execution extends ExecutionFlow {
 		}
 
 		// Link any template access
-		let template = this.resolveTemplate(ast.value[0]);
-		if (template === null) {
+		let access = this.resolveTemplate(ast.value[0]);
+		if (access === null) {
 			return null;
 		}
 
 		// Find a function with the given signature
-		let target = this.getFunction(accesses, signature, template);
+		let target = this.getFunction(access, signature);
 		if (!target) {
-			let funcName = Flatten.AccessToString(ast.value[0]);
+			let funcName = ast.value[0].flat();
 			file.throw(
 				`Error: Unable to find function "${funcName}" with signature (${signature.join(", ")})`,
 				ast.ref.start, ast.ref.end

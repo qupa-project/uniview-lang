@@ -19,7 +19,6 @@ class Function_Instance {
 		this.name = name;
 		this.represent = `${this.name}.${this.id.toString(36)}.${this.ctx.getFile().getID().toString(36)}`;
 
-
 		this.ir = new LLVM.Procedure (
 			returnType.toLLVM(),
 			new LLVM.Name(this.represent, true),
