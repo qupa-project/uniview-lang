@@ -29,6 +29,8 @@ class Function_Instance {
 
 		this.id = funcIDGen.next();
 
+		this.constNum = 0;
+
 		this.name = ast.value[0].value[1].value;
 		this.represent = external ? `${this.name}` : `${this.ctx.represent}.${this.id.toString(36)}`;
 
@@ -57,6 +59,16 @@ class Function_Instance {
 
 	getType(access, stack) {
 		return this.ctx.getType(access, stack);
+	}
+
+	newContName() {
+		return new LLVM.Name(`${this.name}.const.${this.constNum++}`, true);
+	}
+
+	bindConst(val, ref = null) {
+		let term = this.newContName();
+		this.ir.append(new LLVM.Raw(`${term.flattern()} = ${val}`));
+		return term;
 	}
 
 
@@ -211,7 +223,7 @@ class Function_Instance {
 		let gen = new Generator_ID(0);
 		frag.assign_ID(gen);
 
-		this.ir = frag;
+		this.ir.append(frag);
 	}
 
 	toString() {

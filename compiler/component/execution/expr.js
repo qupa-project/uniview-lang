@@ -53,44 +53,22 @@ class ExecutionExpr extends ExecutionBase {
 				);
 				break;
 			case "string":
-				let bytes = ast.value[0].value[1].length + 1;
-				let str = ast.value[0].value[1].replace(/\"/g, "\\22").replace(/\n/g, '\\0A') + "\\00";
+				let bytes = ast.value[0].value.length + 1;
+				let str = ast.value[0].value.replace(/\"/g, "\\22").replace(/\n/g, '\\0A') + "\\00";
 
-				type = new TypeRef(Primative.types.cstring);
+				let global = this.getFunctionInstance()
+					.bindConst(`private unnamed_addr constant [ ${bytes} x i8 ] c"${str}"`, ast.value.ref);
 
-				let ir_t1 = new LLVM.Type(`[ ${bytes} x i8 ]`, 0, ast.ref);
-				let ir_t2 = type.toLLVM();
-
-				let str_id = new LLVM.ID();
+				type = new TypeRef(Primative.types.cstring, true, true);
 				let ptr_id = new LLVM.ID();
 
 				preamble.append(new LLVM.Set(
-					new LLVM.Name(str_id, false, ast.ref),
-					new LLVM.Alloc(
-						ir_t1,
-						ast.ref
-					),
-					ast.ref
-				));
-				preamble.append(new LLVM.Store(
-					new LLVM.Argument(
-						new LLVM.Type(`[ ${bytes} x i8 ]*`, 0, ast.ref),
-						new LLVM.Name(str_id.reference(), false, ast.ref),
-						ast.ref, "#str_const"
-					),
-					new LLVM.Argument(
-						ir_t1,
-						new LLVM.Constant(`c"${str}"`, ast.ref),
-						ast.ref
-					)
-				));
-				preamble.append(new LLVM.Set(
 					new LLVM.Name(ptr_id, false, ast.ref),
 					new LLVM.Bitcast(
-						ir_t2,
+						type.toLLVM(),
 						new LLVM.Argument(
 							new LLVM.Type(`[ ${bytes} x i8 ]*`, 0, ast.ref),
-							new LLVM.Name(str_id.reference(), false, ast.ref),
+							global,
 							ast.ref, "#str_const"
 						),
 						ast.ref
