@@ -31,6 +31,8 @@ class Function_Instance {
 
 		this.constNum = 0;
 
+		this.consts = [];
+
 		this.name = ast.value[0].value[1].value;
 		this.represent = external ? `${this.name}` : `${this.ctx.represent}.${this.id.toString(36)}`;
 
@@ -61,14 +63,14 @@ class Function_Instance {
 		return this.ctx.getType(access, stack);
 	}
 
-	newContName() {
-		return new LLVM.Name(`${this.name}.const.${this.constNum++}`, true);
-	}
-
 	bindConst(val, ref = null) {
-		let term = this.newContName();
-		this.ir.append(new LLVM.Raw(`${term.flattern()} = ${val}`));
-		return term;
+		let id = this.consts.indexOf(val);
+		if (id == -1) {
+			id = this.consts.length;
+			this.consts.push(val);
+		}
+
+		return new LLVM.Name(`${this.name}.const.${id}`, true);
 	}
 
 
@@ -231,6 +233,15 @@ class Function_Instance {
 	}
 
 	toLLVM() {
+		this.ir.stmts = [
+			...this.consts
+				.map((val, i) => new LLVM.Set(
+					new LLVM.Name(`${this.name}.const.${i}`, true),
+					new LLVM.Raw(val)
+				)),
+			...this.ir.stmts
+		];
+
 		return this.ir;
 	}
 }
