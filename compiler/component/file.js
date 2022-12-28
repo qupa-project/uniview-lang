@@ -180,6 +180,10 @@ class File {
 	}
 
 	getType (access, stack = []) {
+		if (access instanceof BNF.SyntaxNode) {
+			throw new TypeError("Internal error, unexpected SynatxNode");
+		}
+
 		if (access.length == 0) {
 			return null;
 		}
@@ -221,6 +225,10 @@ class File {
 
 
 	getFunction (access, signature, stack = []) {
+		if (access instanceof BNF.SyntaxNode) {
+			throw new TypeError("Internal error, unexpected SyntaxNode");
+		}
+
 		if (access.length == 0) {
 			return null;
 		}

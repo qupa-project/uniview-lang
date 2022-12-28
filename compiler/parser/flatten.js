@@ -1,6 +1,12 @@
+/**
+ *
+ * @param {SyntaxNode[]} access
+ * @returns
+ */
 function AccessToString(access) {
-	return access.map(x => {
+	return access.value.map(x => {
 		switch (x.type) {
+			case "data_type_lending?":
 			case "name":
 				return x.flat();
 			case "access_static":
@@ -9,6 +15,8 @@ function AccessToString(access) {
 				return `[${x.flat()}]`;
 			case "access_template":
 				return `#[${ x.value.map(AccessToString).join(", ") }]`;
+			case "(...)*":
+				return AccessToString(x);
 			default:
 				throw new Error(`Unexpected access syntax type ${x.type}`);
 		}

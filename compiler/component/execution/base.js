@@ -94,7 +94,7 @@ class ExecutionBase {
 	/**
 	 * Resolves any dynamic access for the variable
 	 * ALTERS original AST
-	 * @param {*} ast
+	 * @param {SyntaxNode} ast
 	 */
 	resolveAccess (ast) {
 		for (let access of ast.value) {
@@ -152,36 +152,36 @@ class ExecutionBase {
 	}
 
 	resolveTemplate_Argument (node) {
-		node.value = node.value.map(arg => {
-			switch (arg.type) {
-				case "data_type":
-					var type = this.ctx.getType(
-						Flatten.DataTypeList(arg)
-					);
-					if (type === null) {
+		return new SyntaxNode(
+			node.type,
+			node.value.map(arg => {
+				switch (arg.type) {
+					case "data_type":
+						var type = this.ctx.getType(arg);
+						if (type === null) {
+							this.getFile().throw(
+								`Error: Unknown data type ${arg.flat()}`,
+								arg.ref.start, arg.ref.end
+							);
+							return null;
+						}
+
+						template.push(type);
+						break;
+					case "constant":
+						var val = this.compile_constant(arg);
+						template.push(val);
+						break;
+					default:
 						this.getFile().throw(
-							`Error: Unknown data type ${Flatten.DataTypeStr(arg)}`,
+							`Error: ${arg.type} are currently unsupported in template arguments`,
 							arg.ref.start, arg.ref.end
 						);
-						return null;
-					}
-
-					template.push(type);
-					break;
-				case "constant":
-					var val = this.compile_constant(arg);
-					template.push(val);
-					break;
-				default:
-					this.getFile().throw(
-						`Error: ${arg.type} are currently unsupported in template arguments`,
-						arg.ref.start, arg.ref.end
-					);
-				return null;
-			}
-		});
-
-		return node;
+					return null;
+				}
+			}),
+			node.ref.clone()
+		);
 	}
 
 
@@ -191,7 +191,7 @@ class ExecutionBase {
 
 	/**
 	 * Get a register
-	 * @param {*} ast
+	 * @param {SyntaxNode} ast
 	 * @param {Boolean} read
 	 */
 	getVar (ast, read = true) {

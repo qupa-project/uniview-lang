@@ -25,7 +25,7 @@ class Execution extends ExecutionFlow {
 		// Load the target variable
 		//   This must occur after the expression is resolve
 		//   because this variable now needs to be accessed for writing
-		//   after any reads that might have taken place in the expresion
+		//   after any reads that might have taken place in the expression
 		let access = this.getVar(ast.value[0], false);
 		if (access.error) {
 			this.getFile().throw( access.msg, access.ref.start, access.ref.start);
@@ -158,17 +158,16 @@ class Execution extends ExecutionFlow {
 		}
 
 		// Link any template access
-		let access = this.resolveTemplate(ast.value[0]);
+		let access = this.resolveAccess(ast.value[0]);
 		if (access === null) {
 			return null;
 		}
 
 		// Find a function with the given signature
-		let target = this.getFunction(access, signature);
+		let target = this.getFunction(access.value, signature);
 		if (!target) {
-			let funcName = ast.value[0].flat();
 			file.throw(
-				`Error: Unable to find function "${funcName}" with signature (${signature.join(", ")})`,
+				`Error: Unable to find function "${Flatten.AccessToString(ast.value[0])}" with signature (${signature.join(", ")})`,
 				ast.ref.start, ast.ref.end
 			);
 			return null;

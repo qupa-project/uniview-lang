@@ -78,8 +78,8 @@ program ::= %w* ( stmt_top %w* )* ;
 	name ::= ( letter | "_" )+ ( letter | digit | "_" )* ;
 	variable ::= ...name %w* ( ( access_static | access_dynamic ) %w* )* ;
 
-	data_type ::= ...("@" | "$")? ...name %w* ( ( access_static | access_template ) %w* )* ;
-		data_type_access ::= %"." ...name ;
+	data_type ::= ...data_type_lending? ...name %w* ( ( access_static | access_template ) %w* )* ;
+		data_type_lending ::= "@" | "$" ;
 
 	declare ::= %( "let" %w+ ) ...name %w* ( %( ":" w* ) data_type %w* )? ( %( "=" w* ) expr )? %( w* ";" ) ;
 	assign  ::= variable %( w* "=" w* ) expr %( w* ";" ) ;
