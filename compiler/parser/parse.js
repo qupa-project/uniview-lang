@@ -765,13 +765,14 @@ function Simplify_Type_Def (node) {
 function Simplify_If (node) {
 	let head = Simplify_If_Stmt(node.value[0]);
 	let elif = node.value[1].value.map(x => Simplify_If_Stmt(x.value[0]));
+
 	let other =
 		node.value[2].value[0] ?
 			Simplify_If_Else(node.value[2].value[0]) :
-			new BNF_SyntaxNode (
+			new SyntaxNode (
 				"else_stmt",
-				[ new BNF_SyntaxNode ("function_body", [], node.value[2].clone()) ],
-				node.value[2].clone()
+				[ new SyntaxNode ("function_body", [], node.value[2].ref.clone()) ],
+				node.value[2].ref.clone()
 			);
 
 
@@ -780,11 +781,11 @@ function Simplify_If (node) {
 		let last = elif.shift();
 		let ref = new ReferenceRange(last.ref.start.clone(), other.ref.end.clone());
 
-		other = new BNF_SyntaxNode(
+		other = new SyntaxNode(
 			"else_stmt",
-			[new BNF_SyntaxNode(
+			[new SyntaxNode(
 				"function_body",
-				[new BNF_SyntaxNode(
+				[new SyntaxNode(
 					"if",
 					[last, other],
 					ref.clone(),
@@ -805,7 +806,7 @@ function Simplify_If (node) {
 function Simplify_If_Stmt (node) {
 	node.value = [
 		Simplify_Expr(node.value[0]),
-		Simplify_Function_Body(node.value[2])
+		Simplify_Function_Body(node.value[1])
 	];
 	return node;
 }

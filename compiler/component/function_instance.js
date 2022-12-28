@@ -163,7 +163,7 @@ class Function_Instance {
 		let args = this.signature.map((x, i) => {
 			return {
 				type: x,
-				name: head.value[2].value[i].value[1],
+				name: head.value[2].value[i].value[1].value,
 				ref: head.value[2].value[i].ref
 			};
 		});
