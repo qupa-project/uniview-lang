@@ -142,8 +142,8 @@ class Scope {
 		if (!target) {
 			return {
 				error: true,
-				msg: `Unknown variable name ${ast.value[0].value}`,
-				ref: ast.tokens[1].ref
+				msg: `Unknown variable name "${ast.value[0].value}"`,
+				ref: ast.value[0].ref
 			};
 		}
 

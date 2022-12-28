@@ -435,7 +435,7 @@ class ExecutionExpr extends ExecutionBase {
 					{
 						preamble: new LLVM.Fragment(),
 						epilog: new LLVM.Fragment(),
-						instruction: new LLVM.Constant("true"),
+						instruction: new LLVM.Constant("1"),
 						type
 					}
 				];
@@ -460,14 +460,14 @@ class ExecutionExpr extends ExecutionBase {
 
 
 		// Check opperands are of boolean type
-		if (!opperands[0].type.match(type)) {
+		if (!opperands[0].type.weakMatch(type)) {
 			this.getFile().throw(
-				`Error: Cannot perform boolean opperation on non-boolean types`,
+				`Error: Cannot perform boolean opperation on a boolean and non-boolean type`,
 				ast.value[0].ref.start, ast.value[0].ref.end
 			);
 			return null;
 		}
-		if (!opperands[1].type.match(type)) {
+		if (!opperands[1].type.weakMatch(type)) {
 			this.getFile().throw(
 				`Error: Cannot perform boolean opperation on non-boolean types`,
 				ast.value[1].ref.start, ast.value[1].ref.end

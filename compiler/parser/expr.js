@@ -9,7 +9,7 @@ let precedence = {
 
 	expr_invert: 0,
 	expr_lend: 0,
-	expr_loan: 0,
+	expr_share: 0,
 	expr_mul : 1,
 	expr_div : 1,
 	expr_mod : 1,

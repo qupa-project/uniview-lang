@@ -75,7 +75,7 @@ program ::= %w* ( stmt_top %w* )* ;
 #=============================
 #  Variables
 #=============================
-	name ::= ( letter | "_" )* ( letter | digit | "_" )* ;
+	name ::= ( letter | "_" )+ ( letter | digit | "_" )* ;
 	variable ::= ...name %w* ( ( access_static | access_dynamic ) %w* )* ;
 
 	data_type ::= ...("@" | "$")? ...name %w* ( ( access_static | access_template ) %w* )* ;

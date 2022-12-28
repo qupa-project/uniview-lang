@@ -614,14 +614,14 @@ function Simplify_Expr_Unary (operation, node) {
 			outerRef);
 		case "$":
 			return new SyntaxNode(
-				"expr_lend",
+				"expr_share",
 				[
 					node
 				],
 			outerRef);
 		case "@":
 			return new SyntaxNode(
-				"expr_loan",
+				"expr_lend",
 				[
 					node
 				],

@@ -346,7 +346,7 @@ class Variable extends Value {
 		let type = this.type.duplicate();
 		type.lent = true;
 
-		if (this.type.type.typeSystem == "normal") {
+		if (!this.type.lent && this.type.native) {
 			let ptr = new LLVM.ID();
 
 			preamble.append(new LLVM.Set(

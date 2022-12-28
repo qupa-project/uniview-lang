@@ -65,8 +65,6 @@ class Execution extends ExecutionFlow {
 
 		let targetType = null;
 		if (ast.value[0].type != "blank") {
-			console.log(68, ast.value[0]);
-
 			targetType = this.getType(ast.value[0]);
 			if (!(targetType instanceof TypeRef)) {
 				this.getFile().throw(

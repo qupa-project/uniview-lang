@@ -29,18 +29,26 @@ class TypeRef {
 	}
 
 	/**
-	 *
+	 * Do the TypeRefs match approximately
 	 * @param {TypeRef} other
+	 * @returns
 	 */
-	match (other) {
+	weakMatch(other) {
 		if (!(other instanceof TypeRef)) {
 			return false;
 		}
 
-		return this.lent == other.lent &&
-			this.constant == other.constant &&
-			this.type == other.type;
-			// ignore constant/local as they don't impact use for computation
+		return this.type === other.type;
+	}
+
+	/**
+	 * Do the TypeRefs match including lent status
+	 * @param {TypeRef} other
+	 */
+	match (other) {
+		return this.weakMatch(other) && this.lent == other.lent &&
+			this.constant == other.constant;
+			// ignore local as they don't impact use for computation
 	}
 
 	matchApprox (other) {
