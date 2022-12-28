@@ -60,81 +60,61 @@ class Execution extends ExecutionFlow {
 	}
 
 	compile_declare (ast) {
+		let frag = new LLVM.Fragment();
 		let	name = ast.value[1].value;
 
-		let typeRef = this.resolveType(ast.value[0]);
-		if (!(typeRef instanceof TypeRef)) {
-			this.getFile().throw(
-				`Error: Invalid type name "${Flatten.DataTypeStr(ast.value[0])}"`,
-				ast.ref.start,
-				ast.ref.end
-			);
-			return null;
-		}
-
-		this.scope.register_Var(
-			typeRef,
-			name,
-			ast.ref.start
-		);
-
-		return new LLVM.Fragment();
-	}
-
-	/**
-	 * Generates the LLVM for the combined action of define + assign
-	 * @param {BNF_Node} ast
-	 * @returns {LLVM.Fragment}
-	 */
-	compile_declare_assign (ast) {
-		let frag = new LLVM.Fragment();
-
-		// If there is a goal type
-		//   Get the goal type
 		let targetType = null;
-		if (ast.value[0] !== null) {
-			targetType = this.resolveType(ast.value[0]);
+		if (ast.value[0].type != "blank") {
+			console.log(68, ast.value[0]);
+
+			targetType = this.getType(ast.value[0]);
 			if (!(targetType instanceof TypeRef)) {
-				this.getFile().throw(`Error: Invalid type name "${
-					Flatten.DataTypeStr(ast.value[0])
-				}"`, ast.ref.start, ast.ref.end);
+				this.getFile().throw(
+					`Error: Invalid type name "${Flatten.DataTypeStr(ast.value[0])}"`,
+					ast.ref.start,
+					ast.ref.end
+				);
 				return null;
 			}
 		}
 
-
-
-		// Compile the expression
-		let expr = this.compile_expr(ast.value[2], targetType, true);
-		if (expr === null) {
-			return null;
-		}
-		frag.merge(expr.preamble);
-
-		// If the type was not given, extract it from the expression
-		if (targetType === null) {
+		let expr = null;
+		if (ast.value[2].type != "blank") {
+			expr = this.compile_expr(ast.value[2], targetType, true);
+			if (expr === null) {
+				return null;
+			}
+			frag.merge(expr.preamble);
 			targetType = expr.type;
 		}
-		// The expression compilation checks the type already
 
-		// Declare the variable and assign it to the expression result
-		let variable = this.scope.register_Var(
-			targetType,             // type
-			ast.value[1].value,   // name
-			ast.ref.start           // ref
-		);
-		let chg = variable.markUpdated(expr.instruction, false, ast.ref);
-		if (chg.error) {
-			this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
+		if (targetType == null) {
+			this.getFile().throw(
+				`Error: No type information on declaration\n  Must either have explicit type or an assignment for inferred types`,
+				ast.ref.start,
+				ast.ref.end
+			);
+
 			return null;
 		}
-		frag.merge(chg);
 
+		let variable = this.scope.register_Var(
+			targetType,
+			name,
+			ast.ref.start
+		);
+		if (expr) {
+			let chg = variable.markUpdated(expr.instruction, false, ast.ref);
+			if (chg.error) {
+				this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
+				return null;
+			}
+			frag.merge(chg);
+			frag.merge(expr.epilog);
+		}
 
-		frag.merge(expr.epilog);
 		return frag;
 	}
-
 
 
 
@@ -443,9 +423,6 @@ class Execution extends ExecutionFlow {
 					break;
 				case "assign":
 					inner = this.compile_assign(token);
-					break;
-				case "declare_assign":
-					inner = this.compile_declare_assign(token);
 					break;
 				case "return":
 					inner = this.compile_return(token);

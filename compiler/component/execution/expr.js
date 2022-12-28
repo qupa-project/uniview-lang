@@ -655,6 +655,7 @@ class ExecutionExpr extends ExecutionBase {
 				res = this.compile_call(ast);
 				break;
 			case "variable":
+			case "access":
 				res = this.compile_loadVariable(ast);
 				break;
 			case "expr_arithmetic":

@@ -5,10 +5,25 @@ fn main (): int {
 	let d = 4.0;
 
 	let res_int = a + b;
+	// if (a + b != 3) {
+	// 	return 1;
+	// }
 	res_int = a - b;
+	// if (a + b != -1) {
+	// 	return 1;
+	// }
 	res_int = a * b;
+	// if (a * b != 2) {
+	// 	return 1;
+	// }
 	res_int = a / b;
+	// if (a / b != 0) {
+	// 	return 1;
+	// }
 	res_int = a % b;
+	// if (a % b != 0) {
+	// 	return 1;
+	// }
 
 	let res_float = c + d;
 	res_float = c - d;

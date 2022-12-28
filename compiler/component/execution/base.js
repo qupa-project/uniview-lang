@@ -90,6 +90,34 @@ class ExecutionBase {
 	}
 
 
+
+	/**
+	 * Resolves any dynamic access for the variable
+	 * ALTERS original AST
+	 * @param {*} ast
+	 */
+	resolveAccess (ast) {
+		for (let access of ast.value) {
+			if (access.type == "[]") {
+				for (let i in access.value) {
+					let res = this.compile_expr(access.value[i], null, true);
+					if (res === null) {
+						return {
+							error: true,
+							msg: `Error: Unexpected dynamic access operand type ${arg.type}`,
+							ref: arg.ref
+						};
+					}
+
+					access.value[i] = res;
+				}
+			}
+		}
+
+		return ast;
+	}
+
+
 	/**
 	 *
 	 * @param {BNF_Node} node type: access
@@ -170,8 +198,8 @@ class ExecutionBase {
 		let preamble = new LLVM.Fragment();
 
 		// Link dynamic access arguments
-		ast = this.resolveAccess (ast);
-		let res = this.scope.getVar (ast, read);
+		ast = this.resolveAccess(ast);
+		let res = this.scope.getVar(ast, read);
 
 		// Inject reference if it is missing
 		if (res.error) {
@@ -179,10 +207,10 @@ class ExecutionBase {
 			return res;
 		}
 
-		let accesses = ast.value[2];
+		let accesses = ast.value.slice(1);
 		for (let access of accesses) {
 			res.hasUpdated = res.hasUpdated || !read;
-			res = res.access(access[1].value, access[1].ref);
+			res = res.access(access);
 			if (res.error) {
 				return res;
 			}
@@ -222,33 +250,6 @@ class ExecutionBase {
 			instruction: out.register
 		};
 	}
-
-	/**
-	 * Resolves any dynamic access for the variable
-	 * ALTERS original AST
-	 * @param {*} ast
-	 */
-	resolveAccess (ast) {
-		for (let access of ast.value[2]) {
-			if (access[0] == "[]") {
-				for (let i in access[1]) {
-					let res = this.compile_expr(access[1][i], null, true);
-					if (res === null) {
-						return {
-							error: true,
-							msg: `Error: Unexpected dynamic access operand type ${arg.type}`,
-							ref: arg.ref
-						};
-					}
-
-					access[1][i] = res;
-				}
-			}
-		}
-
-		return ast;
-	}
-
 
 
 

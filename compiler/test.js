@@ -68,7 +68,7 @@ function Compile(filename, id) {
 
 			completed++;
 
-			console.info("\nTest", completed, ' of ', total);
+			console.info("\nTest", completed, 'of', total);
 			console.log(msg);
 			console.info(failed ? "  FAILED" : "  success");
 			res();
