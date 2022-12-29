@@ -73,10 +73,15 @@ class ExecutionBase {
 				throw new Error(`Unexpected syntax node with type "${node.type}"`);
 		}
 
-		let type = this.ctx.getType([
+		let access = [
 			node.value[1],
 			...node.value[2].value.map(x => this.resolveTemplate(x))
-		]);
+		];
+		if (access.includes(null)) {
+			return null;
+		}
+
+		let type = this.ctx.getType(access);
 
 		if (node.value[0].value == "@") {
 			type.constant = false;
@@ -132,7 +137,7 @@ class ExecutionBase {
 				throw new Error(`Cannot resolve templates for ${node.type}`);
 		}
 
-		return node.value.map(x => {
+		let access = node.value.map(x => {
 			switch (x.type) {
 				case "name":
 				case "access_static":
@@ -149,37 +154,47 @@ class ExecutionBase {
 					throw new Error(`Unexpected access type ${x.type}`);
 			}
 		});
+
+		if (access.includes(null)) {
+			return null;
+		}
+
+		return access;
 	}
 
 	resolveTemplate_Argument (node) {
-		return new SyntaxNode(
-			node.type,
-			node.value.map(arg => {
-				switch (arg.type) {
-					case "data_type":
-						var type = this.ctx.getType(arg);
-						if (type === null) {
-							this.getFile().throw(
-								`Error: Unknown data type ${arg.flat()}`,
-								arg.ref.start, arg.ref.end
-							);
-							return null;
-						}
-
-						template.push(type);
-						break;
-					case "constant":
-						var val = this.compile_constant(arg);
-						template.push(val);
-						break;
-					default:
+		let access = node.value.map(arg => {
+			switch (arg.type) {
+				case "data_type":
+					var type = this.getType(arg);
+					if (type === null) {
 						this.getFile().throw(
-							`Error: ${arg.type} are currently unsupported in template arguments`,
+							`Error: Unknown data type ${arg.flat()}`,
 							arg.ref.start, arg.ref.end
 						);
+						return null;
+					}
+
+					return type;
+				case "constant":
+					var val = this.compile_constant(arg);
+					return val;
+				default:
+					this.getFile().throw(
+						`Error: ${arg.type} are currently unsupported in template arguments`,
+						arg.ref.start, arg.ref.end
+					);
 					return null;
-				}
-			}),
+			}
+		});
+
+		if (access.includes(null)) {
+			return null;
+		}
+
+		return new SyntaxNode(
+			node.type,
+			access,
 			node.ref.clone()
 		);
 	}

@@ -158,13 +158,13 @@ class Execution extends ExecutionFlow {
 		}
 
 		// Link any template access
-		let access = this.resolveAccess(ast.value[0]);
+		let access = this.resolveTemplate(ast.value[0]);
 		if (access === null) {
 			return null;
 		}
 
 		// Find a function with the given signature
-		let target = this.getFunction(access.value, signature);
+		let target = this.getFunction(access, signature);
 		if (!target) {
 			file.throw(
 				`Error: Unable to find function "${Flatten.AccessToString(ast.value[0])}" with signature (${signature.join(", ")})`,

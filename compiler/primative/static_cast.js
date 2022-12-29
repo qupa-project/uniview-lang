@@ -22,18 +22,26 @@ class Template_Primative_Static_Cast extends Template {
 		return null;
 	}
 
-	getFunction (access, signature, template) {
-		if (access.length !== 0) {
+	getFunction (access, signature) {
+		if (access.length !== 1) {
 			return false;
 		}
 
 		// Check input lengths are correct
-		if (signature.length != 1 || template.length != 1) {
+		if (signature.length != 1 || access[0].value.length != 1) {
 			return false;
 		}
 
+		if (access[0].type != "access_template") {
+			return false;
+		}
+
+		if (!(access[0].value[0] instanceof TypeRef)) {
+			throw new Error("Internal Error: Template was not resolved before attempt call resolution");
+		}
+
 		let inputType = signature[0];
-		let outputType = template[0];
+		let outputType = access[0].value[0];
 		if (inputType == outputType) {
 			return false;
 		}
