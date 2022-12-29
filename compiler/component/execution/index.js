@@ -10,7 +10,8 @@ const Primitive = {
 };
 
 const ExecutionFlow = require('./flow.js');
-const Variable = require('../memory/variable.js');
+
+const Reserved = require('../../reserved.js');
 
 class Execution extends ExecutionFlow {
 
@@ -62,6 +63,15 @@ class Execution extends ExecutionFlow {
 	compile_declare (ast) {
 		let frag = new LLVM.Fragment();
 		let	name = ast.value[1].value;
+
+		if (Reserved.Check(name)) {
+			this.getFile().throw(
+				`Error: Attempted to define a variable with a reserved word`,
+				ast.value[1].ref.start,
+				ast.value[1].ref.end
+			);
+			// continue compilation to check for later errors as this is not a critical fault
+		}
 
 		let targetType = null;
 		if (ast.value[0].type != "blank") {
