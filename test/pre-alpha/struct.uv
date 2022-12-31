@@ -34,10 +34,10 @@ fn init(ofAge: bool): Person {
 		age = 21;
 	}
 
-	return Person {
+	return new Person {
 		id: 0,
 		age: age,
-			finger: FingerPrint {
+			finger: new FingerPrint {
 			id: 1,
 		}
 	};
@@ -103,7 +103,7 @@ fn main(): int {
 	}
 
 
-	p.finger = FingerPrint {
+	p.finger = new FingerPrint {
 		id: 12345
 	};
 	if (check(@p, 0, 22, 1) != 1) {

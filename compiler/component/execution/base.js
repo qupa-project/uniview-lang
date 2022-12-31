@@ -1,7 +1,5 @@
-const Flatten = require('../../parser/flatten.js');
 const LLVM     = require("../../middle/llvm.js");
 const TypeRef = require('../typeRef.js');
-const { load } = require('npm/lib/config/core.js');
 const { SyntaxNode } = require('bnf-parser');
 
 const Primative = {
@@ -65,61 +63,7 @@ class ExecutionBase {
 	}
 
 	getType(node) {
-		switch (node.type) {
-			case "data_type":
-			case "access":
-				break;
-			default:
-				throw new Error(`Unexpected syntax node with type "${node.type}"`);
-		}
-
-		let access = [
-			node.value[1],
-			...node.value[2].value.map(x => this.resolveTemplate(x))
-		];
-		if (access.includes(null)) {
-			return null;
-		}
-
-		let type = this.ctx.getType(access);
-
-		if (node.value[0].value == "@") {
-			type.constant = false;
-			type.lent = true;
-		} else if (node.value[0].value == "$") {
-			type.constant = true;
-			type.lent = true;
-		}
-
-		return type;
-	}
-
-
-
-	/**
-	 * Resolves any dynamic access for the variable
-	 * ALTERS original AST
-	 * @param {SyntaxNode} ast
-	 */
-	resolveAccess (ast) {
-		for (let access of ast.value) {
-			if (access.type == "[]") {
-				for (let i in access.value) {
-					let res = this.compile_expr(access.value[i], null, true);
-					if (res === null) {
-						return {
-							error: true,
-							msg: `Error: Unexpected dynamic access operand type ${arg.type}`,
-							ref: arg.ref
-						};
-					}
-
-					access.value[i] = res;
-				}
-			}
-		}
-
-		return ast;
+		return this.ctx.getType(node);
 	}
 
 
@@ -128,75 +72,7 @@ class ExecutionBase {
 	 * @param {BNF_Node} node type: access
 	 */
 	resolveTemplate (node) {
-		switch (node.type) {
-			case "access":
-			case "variable":
-			case "data_type":
-				break;
-			default:
-				throw new Error(`Cannot resolve templates for ${node.type}`);
-		}
-
-		let access = node.value.map(x => {
-			switch (x.type) {
-				case "name":
-				case "access_static":
-					return x;
-				case "access_template":
-					return this.resolveTemplate_Argument(x);
-				case "access_dynamic":
-					this.getFile().throw(
-						`Error: Dynamic access should not be present in a data type`,
-						node.ref.start, node.ref.end
-					);
-					return x;
-				default:
-					throw new Error(`Unexpected access type ${x.type}`);
-			}
-		});
-
-		if (access.includes(null)) {
-			return null;
-		}
-
-		return access;
-	}
-
-	resolveTemplate_Argument (node) {
-		let access = node.value.map(arg => {
-			switch (arg.type) {
-				case "data_type":
-					var type = this.getType(arg);
-					if (type === null) {
-						this.getFile().throw(
-							`Error: Unknown data type ${arg.flat()}`,
-							arg.ref.start, arg.ref.end
-						);
-						return null;
-					}
-
-					return type;
-				case "constant":
-					var val = this.compile_constant(arg);
-					return val;
-				default:
-					this.getFile().throw(
-						`Error: ${arg.type} are currently unsupported in template arguments`,
-						arg.ref.start, arg.ref.end
-					);
-					return null;
-			}
-		});
-
-		if (access.includes(null)) {
-			return null;
-		}
-
-		return new SyntaxNode(
-			node.type,
-			access,
-			node.ref.clone()
-		);
+		return this.getFile().resolveTemplate(node);
 	}
 
 
@@ -213,7 +89,6 @@ class ExecutionBase {
 		let preamble = new LLVM.Fragment();
 
 		// Link dynamic access arguments
-		ast = this.resolveAccess(ast);
 		let res = this.scope.getVar(ast, read);
 
 		// Inject reference if it is missing

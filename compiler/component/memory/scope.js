@@ -50,8 +50,6 @@ class Scope {
 		for (let arg of args) {
 			// Check if namespace is already in use
 			if (this.variables[arg.name]) {
-				console.log(52, arg.name, this.variables[arg.name]);
-
 				this.getFile().throw(
 					`Duplicate use of argument ${arg.name} function`,
 					this.variables[arg.name].ref.start, arg.ref.end

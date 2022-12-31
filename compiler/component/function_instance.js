@@ -86,13 +86,6 @@ class Function_Instance {
 
 		let file = this.getFile();
 
-		// Generate an execution instance for type resolving
-		let exec = new Execution(
-			this,
-			null,
-			new Scope(this, this.getFile().project.config.caching)
-		);
-
 		let head = this.ast.value[0];
 		this.signature = [ head.value[0], ...head.value[2].value.map(x => x.value[0]) ]
 			.map(x => {
@@ -100,7 +93,7 @@ class Function_Instance {
 					return new TypeRef(Primitive.types.void, false, false, false);
 				}
 
-				let search = exec.getType(x);
+				let search = this.getFile().getType(x);
 				if (search instanceof TypeRef) {
 					if (search.type == Primitive.types.void) {
 						file.throw(

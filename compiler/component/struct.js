@@ -197,7 +197,7 @@ class Structure extends TypeDef {
 	}
 
 	parse () {
-		this.name = this.ast.tokens[0].tokens;
+		this.name = this.ast.value[0].value;
 		this.represent = "%struct." + (
 			this.external ? this.name : `${this.name}.${this.ctx.getFileID().toString(36)}`
 		);
@@ -216,7 +216,7 @@ class Structure extends TypeDef {
 			return;
 		}
 
-		for (let node of this.ast.tokens[1].tokens) {
+		for (let node of this.ast.value[1].value) {
 			switch (node.type) {
 				case "comment":
 					break;
@@ -234,7 +234,7 @@ class Structure extends TypeDef {
 	}
 
 	linkTerm (node, stack = []) {
-		let name = node.tokens[1].tokens;
+		let name = node.value[1].value;
 		let index = this.indexOfTerm(name);
 		if (index != -1) {
 			this.ctx.getFile().throw(
@@ -246,11 +246,11 @@ class Structure extends TypeDef {
 		}
 
 		// Get attribute type
-		let typeNode = node.tokens[0];
-		let typeRef = this.ctx.getType(Flattern.DataTypeList(typeNode));
+		let typeNode = node.value[0];
+		let typeRef = this.getFile().getType(node.value[0]);
 		if (typeRef === null) {
 			this.ctx.getFile().throw(
-				`Error: Unknown type ${Flattern.DataTypeStr(typeNode)}`,
+				`Error: Unknown type ${Flattern.AccessToString(node.value[0])}`,
 				typeNode.ref.start,
 				typeNode.ref.end
 			);

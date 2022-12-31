@@ -181,7 +181,7 @@ class File {
 
 	getType (access, stack = []) {
 		if (access instanceof BNF.SyntaxNode) {
-			throw new TypeError("Internal error, unexpected SynatxNode");
+			return this.resolveAccess(access);
 		}
 
 		if (access.length == 0) {
@@ -190,7 +190,6 @@ class File {
 
 		if (access.length > 0) {
 			let term = access[0];
-
 
 			switch (term.type) {
 				case "name":
@@ -303,7 +302,7 @@ class File {
 	}
 
 	getMain () {
-		return this.names['main'];
+		return this.names['main'] || null;
 	}
 
 	getID () {
@@ -327,6 +326,114 @@ class File {
 	}
 	import (filename) {
 		return this.project.import(filename, false, this.path);
+	}
+
+
+
+	resolveAccess(node) {
+		switch (node.type) {
+			case "data_type":
+			case "access":
+				break;
+			default:
+				throw new Error(`Unexpected syntax node with type "${node.type}"`);
+		}
+
+		let access = [
+			node.value[1],
+			...node.value[2].value.map(x => this.resolveTemplate(x))
+		];
+		if (access.includes(null)) {
+			return null;
+		}
+
+		let type = this.getType(access);
+
+		if (node.value[0].value == "@") {
+			type.constant = false;
+			type.lent = true;
+		} else if (node.value[0].value == "$") {
+			type.constant = true;
+			type.lent = true;
+		}
+
+		return type;
+	}
+
+	/**
+	 *
+	 * @param {BNF_Node} node type: access
+	 */
+	resolveTemplate (node) {
+		switch (node.type) {
+			case "access":
+			case "variable":
+			case "data_type":
+				break;
+			default:
+				throw new Error(`Cannot resolve templates for ${node.type}`);
+		}
+
+		let access = node.value.map(x => {
+			switch (x.type) {
+				case "name":
+				case "access_static":
+					return x;
+				case "access_template":
+					return this.resolveTemplate_Argument(x);
+				case "access_dynamic":
+					this.throw(
+						`Error: Dynamic access should not be present in a data type`,
+						node.ref.start, node.ref.end
+					);
+					return x;
+				default:
+					throw new Error(`Unexpected access type ${x.type}`);
+			}
+		});
+
+		if (access.includes(null)) {
+			return null;
+		}
+
+		return access;
+	}
+
+	resolveTemplate_Argument (node) {
+		let access = node.value.map(arg => {
+			switch (arg.type) {
+				case "data_type":
+					var type = this.getType(arg);
+					if (type === null) {
+						this.throw(
+							`Error: Unknown data type ${arg.flat()}`,
+							arg.ref.start, arg.ref.end
+						);
+						return null;
+					}
+
+					return type;
+				case "constant":
+					var val = this.compile_constant(arg);
+					return val;
+				default:
+					this.throw(
+						`Error: ${arg.type} are currently unsupported in template arguments`,
+						arg.ref.start, arg.ref.end
+					);
+					return null;
+			}
+		});
+
+		if (access.includes(null)) {
+			return null;
+		}
+
+		return new BNF.SyntaxNode(
+			node.type,
+			access,
+			node.ref.clone()
+		);
 	}
 
 

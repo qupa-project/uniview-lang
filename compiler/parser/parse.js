@@ -397,7 +397,7 @@ function Simplify_Struct (node) {
 	return node;
 }
 function Simplify_Struct_Body (node) {
-	node.value = node.value[0]
+	node.value = node.value[0].value
 		.map( x => Simplify_Struct_Stmt(x.value[0]) );
 	return node;
 }
@@ -569,6 +569,8 @@ function Simplify_Expr_Arg (node) {
 			break;
 		case "expr_brackets":
 			return Simplify_Expr_Brackets(subject);
+		case "expr_struct":
+			return Simplify_Expr_Struct(subject);
 		default:
 			throw "Implementation error";
 	}

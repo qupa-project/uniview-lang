@@ -23,7 +23,7 @@ program ::= %w* ( stmt_top %w* )* ;
 #  Comments
 #=============================
 	comment ::= comment_single | comment_multi ;
-		comment_single ::= "//" !( nl )* nl ;
+		comment_single ::= "//" !( nl )* nl? ; # Optional as the comment might be on a EOF
 		comment_multi  ::= "/*" ( "\\*" | !( "*/" )+ )* "*/" ;
 
 
@@ -125,7 +125,7 @@ program ::= %w* ( stmt_top %w* )* ;
 		trait_body ::= ( %w* trait_stmt )* ;
 			trait_stmt ::= function | function ;
 
-	expr_struct ::= data_type expr_struct_body ;
+	expr_struct ::= %( "new" w+ ) data_type %w* expr_struct_body ;
 		expr_struct_body ::= %( w* "{" w* ) expr_struct_args? %( w* "}" ) ;
 		expr_struct_args ::= expr_struct_arg %w* ( %( "," w* ) expr_struct_arg )* %( w* ","? ) ;
 			expr_struct_arg ::= ...name %( w* ":" w* ) expr ;
@@ -144,8 +144,8 @@ program ::= %w* ( stmt_top %w* )* ;
 	expr ::= expr_arg %w* ( ...expr_middle_oper %w* expr_arg %w* )* ;
 		expr_left_oper ::= "!" | "$" | "@" | "-" ;
 		expr_middle_oper ::= "?" | ":" | "&&" | "||" | "==" | "!=" | "<=" | ">=" | "<" | ">" | "%" | "*" | "/" | "+" | "-" | "->" ;
-		expr_arg ::= expr_left_oper? %w* ( constant | expr_brackets | expr_val ) ;
-			expr_val ::= access ( expr_struct_body | call_body )? ;
+		expr_arg ::= expr_left_oper? %w* ( constant | expr_brackets | expr_struct | expr_val ) ;
+			expr_val ::= access call_body? ;
 		expr_brackets ::= %( "(" w* ) expr %( w* ")" ) ;
 
 
