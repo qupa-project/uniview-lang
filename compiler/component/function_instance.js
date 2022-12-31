@@ -70,7 +70,7 @@ class Function_Instance {
 			this.consts.push(val);
 		}
 
-		return new LLVM.Name(`${this.name}.const.${id}`, true);
+		return new LLVM.Name(`${this.represent}.const.${id}`, true);
 	}
 
 
@@ -229,7 +229,7 @@ class Function_Instance {
 		this.ir.stmts = [
 			...this.consts
 				.map((val, i) => new LLVM.Set(
-					new LLVM.Name(`${this.name}.const.${i}`, true),
+					new LLVM.Name(`${this.represent}.const.${i}`, true),
 					new LLVM.Raw(val)
 				)),
 			...this.ir.stmts
