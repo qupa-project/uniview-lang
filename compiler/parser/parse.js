@@ -499,8 +499,8 @@ function Simplify_Expr_Struct (node) {
 	return node;
 }
 function Simplify_Expr_Struct_Body(node) {
-	return node.value[0].value[1] ?
-		Simplify_Expr_Struct_Args(node.value[0].value[1]) :
+	return node.value[0].value[0] ?
+		Simplify_Expr_Struct_Args(node.value[0].value[0]) :
 		new SyntaxNode('expr_struct_args', [], node.ref);
 }
 function Simplify_Expr_Struct_Args (node) {

@@ -100,7 +100,7 @@ class ExecutionBase {
 		let accesses = ast.value.slice(1);
 		for (let access of accesses) {
 			res.hasUpdated = res.hasUpdated || !read;
-			res = res.access(access);
+			res = res.access(access.value, access.ref);
 			if (res.error) {
 				return res;
 			}

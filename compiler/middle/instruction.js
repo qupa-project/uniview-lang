@@ -8,12 +8,7 @@ class Instruction {
 	}
 
 	flattern(str = "", indent = 0) {
-		let out = "";
-		for (let i=0; i<indent; i++) {
-			out += " ";
-		}
-
-		return out+str;
+		return " ".repeat(indent)+str;
 	}
 }
 module.exports = Instruction;

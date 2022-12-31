@@ -5,6 +5,7 @@ const TypeRef = require('../typeRef.js');
 const Value = require('./value.js');
 
 const Probability = require('./probability.js');
+const { SyntaxNode } = require('bnf-parser');
 
 
 
@@ -258,6 +259,10 @@ class Variable extends Value {
 	 * @returns {Object[Variable, LLVM.Fragment]|Error}
 	 */
 	access (accessor, ref) {
+		if (accessor instanceof SyntaxNode) {
+			throw new Error("Unexpected syntax node");
+		}
+
 		let preamble = new LLVM.Fragment();
 
 		// Resolve any probabilities
@@ -271,7 +276,7 @@ class Variable extends Value {
 		// 	throw new Error("Invalid variable accessor");
 		// }
 
-		// Automatically decompoase the value if needed
+		// Automatically decompose the value if needed
 		if (!this.isDecomposed) {
 			let res = this.decompose(ref);
 			if (res.error) {

@@ -2,7 +2,7 @@ const LLVM     = require("../../middle/llvm.js");
 const TypeRef  = require('../typeRef.js');
 const Structure = require('../struct.js');
 
-const Flattern = require('../../parser/flatten.js');
+const Flatten = require('../../parser/flatten.js');
 
 const Primative = {
 	types: require('../../primative/types.js')
@@ -554,15 +554,24 @@ class ExecutionExpr extends ExecutionBase {
 	}
 
 	compile_expr_struct (ast) {
-		let typeRef = this.resolveType(ast.value[0]);
-		if (!(typeRef instanceof TypeRef) || !(typeRef.type instanceof Structure)) {
+		// Check the struct type is correct
+		let typeRef = this.getType(ast.value[0]);
+		if (!(typeRef instanceof TypeRef)) {
+			this.getFile().throw(`Error: Invalid type "${
+				Flatten.AccessToString(ast.value[0])
+			}"`, ast.ref.start, ast.ref.end);
+			return null;
+		}
+		if (!(typeRef.type instanceof Structure)) {
 			this.getFile().throw(`Error: Invalid struct type "${
-				Flattern.DataTypeStr(ast.value[0])
+				Flatten.AccessToString(ast.value[0])
 			}"`, ast.ref.start, ast.ref.end);
 			return null;
 		}
 		let type = typeRef.type;
 
+
+		// Allocate the new structure
 		let preamble = new LLVM.Fragment();
 		let epilog = new LLVM.Fragment();
 		let id = new LLVM.ID();
@@ -572,59 +581,92 @@ class ExecutionExpr extends ExecutionBase {
 		));
 		id = id.reference();
 
-		if (ast.value[1] != null) {
-			let failed = false;
-			for (let x of ast.value[1].value) {
-				// Find attribute name
-				let name = x.value[0].value;
-				let i = type.indexOfTerm(name);
-				if (i == -1) {
-					this.getFile().throw(
-						`Error: Invalid struct attribute name "${name}"`,
-					x.value[0].ref.start, x.value[0].ref.end);
-					failed = true;
-					return null;
-				}
 
-				// Resolve attribute address
-				let res = type.accessGEPByIndex(
-					i,
-					new LLVM.Argument(typeRef.toLLVM(), new LLVM.Name(id, false, x.ref), x.ref),
-					x.ref, false
-				);
-				preamble.merge(res.preamble);
-				let reg = res.instruction;
+		// Create a hit map for uninitialised struct attributes
+		let hits = new Array(type.getTermCount()).fill(false);
 
-				res = this.compile_expr(x.value[1], null, true);
-				if (res == null) {
-					return null;
-				}
-				preamble.merge(res.preamble);
-				epilog.merge(res.epilog);
-				let instruction = res.instruction;
 
-				if (res.type.type.typeSystem == "linear") {
-					let load = new LLVM.ID();
-					preamble.append(new LLVM.Set(
-						new LLVM.Name(load, false, x.ref),
-						new LLVM.Load(
-							new LLVM.Type(instruction.type.term, 0),
-							instruction.name, x.ref
-						)
-					));
-					instruction = new LLVM.Argument(
-						new LLVM.Type(instruction.type.term, 0, x.ref),
-						new LLVM.Name(load.reference(), false, x.ref),
-					x.ref);
-				}
+		for (let x of ast.value[1].value) {
 
-				preamble.append(new LLVM.Store(
-					reg,
-					instruction,
-					x.ref
-				));
+			// Find attribute name
+			let name = x.value[0].value;
+			let i = type.indexOfTerm(name);
+			if (i == -1) {
+				this.getFile().throw(
+					`Error: Invalid struct attribute name "${name}"`,
+				x.value[0].ref.start, x.value[0].ref.end);
+				return null;
 			}
+			if (hits[i]) {
+				this.getFile().throw(
+					`Error: Attempting to set "${name}" twice in one structure`,
+				x.value[0].ref.start, x.value[0].ref.end);
+				return null;
+			}
+			hits[i] = true;
+
+
+			// Resolve attribute address
+			let res = type.accessGEPByIndex(
+				i,
+				new LLVM.Argument(typeRef.toLLVM(), new LLVM.Name(id, false, x.ref), x.ref),
+				x.ref, false
+			);
+			preamble.merge(res.preamble);
+			let reg = res.instruction;
+
+			res = this.compile_expr(x.value[1], null, true);
+			if (res == null) {
+				return null;
+			}
+			preamble.merge(res.preamble);
+			epilog.merge(res.epilog);
+			let instruction = res.instruction;
+
+
+			// Load the value so it can be written
+			if (!res.type.native) {
+				let load = new LLVM.ID();
+				preamble.append(new LLVM.Set(
+					new LLVM.Name(load, false, x.ref),
+					new LLVM.Load(
+						new LLVM.Type(instruction.type.term, 0),
+						instruction.name, x.ref
+					)
+				));
+				instruction = new LLVM.Argument(
+					new LLVM.Type(instruction.type.term, 0, x.ref),
+					new LLVM.Name(load.reference(), false, x.ref),
+				x.ref);
+			}
+
+
+			// Write the value into the new struct
+			preamble.append(new LLVM.Store(
+				reg,
+				instruction,
+				x.ref
+			));
 		}
+
+
+		// Throw for uninitialised values
+		if (hits.includes(false)) {
+			hits = hits.map((val, i) => {
+				if (val == true) {
+					return null;
+				}
+
+				return type.terms[i].name;
+			}).filter(val => val != null);
+
+			this.getFile().throw(
+				`Error: Uninitialised value${hits.length > 1 ? "s" : ""} ` +
+					hits.join(", "),
+				ast.ref.start, ast.ref.end
+			);
+		}
+
 
 		return {
 			preamble,
@@ -677,7 +719,7 @@ class ExecutionExpr extends ExecutionBase {
 				res = this.compile_expr_struct(ast);
 				break;
 			default:
-				throw new Error(`Unexpected expression type ${ast.type}`);
+				throw new Error(`Unexpected expression type ${ast.type} at ${ast.ref.toString()}`);
 		}
 
 		if (res === null) {
