@@ -21,6 +21,7 @@
 
 ## Changes
  - [x] Comments are now able to be used anywhere whitespace can
+ - [x] Cloning now done via the `Clone()` function instead of via the `$` operator.
 
 ## Tweaks
  - [x] Now uses the LLVM tool chain (instead of clang) to generated the platform specific assembly, then clang does the final mile to make the executable binary.

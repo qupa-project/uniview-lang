@@ -64,9 +64,14 @@ class Import {
 		return null;
 	}
 
-	getFunction (access, signature, template, stack) {
+	getFunction (access, signature, stack) {
 		for (let lib of this.files) {
-			let opt = lib.file.getFunction(access, signature, template, stack);
+			if (stack.includes(lib.file.id)) {
+				continue;
+			}
+
+			let opt = lib.file.getFunction(access, signature, stack);
+			stack.push(lib.file.id);
 			if (opt) {
 				return opt;
 			}

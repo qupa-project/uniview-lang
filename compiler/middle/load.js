@@ -4,7 +4,7 @@ class Load extends Instruction {
 	/**
 	 *
 	 * @param {LLVM.Type} type The type of data
-	 * @param {LLVM.Argument} reg_address The register which holds the address of the data
+	 * @param {LLVM.Name} reg_address The register which holds the address of the data
 	 * @param {BNF_Reference?} ref
 	 */
 	constructor(type, reg_address, ref) {

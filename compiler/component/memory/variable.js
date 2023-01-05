@@ -397,37 +397,10 @@ class Variable extends Value {
 	}
 
 	cloneValue (ref) {
-		// Resolve to composed/probability state
-		let out = this.resolve(ref, false);
-		if (out.error) {
-			return out;
-		}
-
-		if (
-			this.type.type.typeSystem == "normal" ||
-			!this.type.type.cloneInstance
-		) {
-			return {
-				preamble: new LLVM.Fragment(),
-				instruction: this.store,
-				type: this.type.duplicate()
-			};
-		}
-
-		this.store = out.register;
-		let preamble = out.preamble;
-
-		// Clone the register
-		let clone = this.type.type.cloneInstance(out.register, ref);
-		preamble.merge(clone.preamble);
-
-		let type = this.type.duplicate();
-		type.lent = false;
-
 		return {
-			preamble: preamble,
-			instruction: clone.instruction,
-			type: type
+			error: true,
+			msg: "Old code path hit",
+			ref: ref
 		};
 	}
 

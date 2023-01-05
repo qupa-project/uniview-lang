@@ -44,6 +44,8 @@ class Structure extends TypeDef {
 		this.size = -1;
 		this.alignment = 0;
 
+		this.nestedCloner = null;
+
 		this.defaultImpl = null;
 		this.impls = [];
 	}
@@ -108,6 +110,20 @@ class Structure extends TypeDef {
 		}
 
 		return null;
+	}
+
+	hasNestedCloner() {
+		if (this.nestedCloner !== null) {
+			// Do nothing value already cached
+		} else if (this.getCloner() !== null) {
+			this.nestedCloner = true;
+		} else {
+			this.nestedCloner = this.terms
+				.map(x => x.typeRef.type.hasNestedCloner())
+				.reduce((prev, curr) => prev || curr, false);
+		}
+
+		return this.secondHandClone;
 	}
 
 	indexOfTerm (name) {
@@ -325,75 +341,10 @@ class Structure extends TypeDef {
 	/**
 	 *
 	 * @param {LLVM.Argument} argument
+	 * @param {LLVM.Argument} to
 	 */
-	cloneInstance(argument, ref) {
-		let preamble = new LLVM.Fragment();
-		let irType = new TypeRef(this);
-		let instruction;
-
-		let cloner = this.getCloner();
-		if (cloner) {
-			let id = new LLVM.ID();
-
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(id),
-				new LLVM.Alloc(irType.toLLVM(ref).offsetPointer(-1))
-			));
-
-			instruction = new LLVM.Argument (
-				irType.toLLVM(ref),
-				new LLVM.Name(id.reference())
-			);
-
-			// Call the clone opperation
-			preamble.append(new LLVM.Call(
-				new LLVM.Type("void", 0),
-				new LLVM.Name(cloner.represent, true, ref),
-				[
-					instruction,
-					argument
-				], ref
-			));
-
-			return {
-				preamble,
-				instruction
-			};
-		} else {
-			let storeID = new LLVM.ID();
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(storeID, false),
-				new LLVM.Alloc(irType.toLLVM())
-			));
-			instruction = new LLVM.Argument(
-				irType.toLLVM(),
-				new LLVM.Name(storeID.reference(), false)
-			);
-
-			let cacheID = new LLVM.ID();
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(cacheID, false),
-				new LLVM.Load(
-					irType.toLLVM(ref).offsetPointer(-1),
-					argument.name
-				),
-				ref
-			));
-
-			preamble.append(new LLVM.Store(
-				instruction,
-				new LLVM.Argument(
-					irType.toLLVM(ref).offsetPointer(-1),
-					new LLVM.Name(cacheID.reference(ref), false, ref)
-				),
-				ref
-			));
-		}
-
-		return {
-			preamble,
-			instruction
-		};
+	cloneInstance(argument, to, ref) {
+		throw new Error("Old code path");
 	}
 
 

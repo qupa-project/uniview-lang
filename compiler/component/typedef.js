@@ -58,6 +58,9 @@ class TypeDef {
 	getCloner() {
 		return false;
 	}
+	hasNestedCloner() {
+		return false;
+	}
 
 
 	parse () {
