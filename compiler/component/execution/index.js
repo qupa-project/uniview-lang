@@ -267,12 +267,17 @@ class Execution extends ExecutionFlow {
 
 				return null;
 			} else {
-				let id = new LLVM.ID();
-				frag.append(new LLVM.Set(
-					new LLVM.Name(id, false, ast.ref),
-					out.instruction,
-					ast.ref
-				));
+				if (out.instruction instanceof LLVM.Argument) {
+					// Don't save a constant evaluation to a register
+					// i.e. %2 = i32 is bad
+				} else {
+					let id = new LLVM.ID();
+					frag.append(new LLVM.Set(
+						new LLVM.Name(id, false, ast.ref),
+						out.instruction,
+						ast.ref
+					));
+				}
 			}
 		}
 

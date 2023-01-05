@@ -37,8 +37,8 @@ fn init(ofAge: bool): Person {
 	return new Person {
 		id: 0,
 		age: age,
-			finger: new FingerPrint {
-			id: 1,
+		finger: new FingerPrint {
+			id: 1
 		}
 	};
 }
@@ -67,7 +67,7 @@ fn main(): int {
 	if (check(@p, 0, 16, 1) == 1) {
 		printf("%s", "Failed init test\n");
 		print(p);
-		printf("%s", " != Person {\n  id: 0,\n  age: 16,\n  finger: Finger Print { id: 1 }\n  }\n");
+		printf("%s", " != Person {\n  id: 0,\n  age: 16,\n  finger: Finger Print { id: 1 }\n}\n");
 		return 1;
 	}
 
@@ -80,7 +80,9 @@ fn main(): int {
 		return 1;
 	}
 
-	let q = $p;
+	Clone(1);
+
+	let q = Clone#[Person](@p);
 	if (check(@q, 0, 21, 1) == 1) {
 		printf("%s", "Failed clone test\n");
 		print(q);
