@@ -20,35 +20,18 @@ function Simplify_Program (node) {
 	return node;
 }
 function Simplify_Stmt_Top (node) {
-	let inner;
-	switch (node.value[0].type) {
-		case "external":
-			inner = Simplify_External(node.value[0]);
-			break;
-		case "include":
-			inner = Simplify_Include(node.value[0]);
-			break;
-		case "function":
-			inner = Simplify_Function(node.value[0]);
-			break;
-		case "library":
-			inner = Simplify_Library(node.value[0]);
-			break;
-		case "struct":
-			inner = Simplify_Struct(node.value[0]);
-			break;
-		case "impl":
-			inner = Simplify_Impl(node.value[0]);
-			break;
-		case "trait":
-			inner = Simplify_Trait(node.value[0]);
-			break;
-		default:
-			throw new TypeError(`Unexpected top level statement ${node.value[0].type}`);
+
+	let func = STMT_TOP_MAP[node.value[0].type];
+	if (!func) {
+		throw new TypeError(`Unexpected top level statement ${node.value[0].type} at ${node.value[0].ref.toString()}`);
 	}
+
+	// Apply the correct simplification if present
+	let inner = func(node.value[0]);
 
 	// Remove irrelevant internal data
 	inner.reached = null;
+
 	return inner;
 }
 
@@ -423,7 +406,7 @@ function Simplify_Impl (node) {
 		Simplify_Data_Type(node.value[0]),
 		node.value[1].value[0] ?
 			Simplify_Impl_For(node.value[1].value[0]) :
-			null,
+			new SyntaxNode("blank", "", node.ref.clone()),
 		Simplify_Impl_Body(node.value[2])
 	];
 
@@ -441,7 +424,7 @@ function Simplify_Impl_For (node) {
 	return Simplify_Data_Type(node.value[0]);
 }
 function Simplify_Impl_Body (node) {
-	node.value = node.value[0]
+	node.value = node.value[0].value
 		.map( x => Simplify_Impl_Stmt(x.value[0]) );
 	return node;
 }
@@ -860,13 +843,23 @@ const STMT_MAP = {
 	"when": Simplify_When
 };
 
+const STMT_TOP_MAP = {
+	"external": Simplify_External,
+	"include": Simplify_Include,
+	"function": Simplify_Function,
+	"library": Simplify_Library,
+	"struct": Simplify_Struct,
+	"impl": Simplify_Impl,
+	"trait": Simplify_Trait
+};
+
 
 
 module.exports = function (data, filename){
 	// Parse the file and check for errors
 	let res = syntax.parse(data, false, "program");
 	if (res instanceof ParseError) {
-		let msg = filename ? `${filename}: ` : "";
+		let msg = filename ? `${filename}:\n  ` : "";
 		msg += `Syntax error at ${res.ref.toString()}\n`;
 		msg += `  ${CodeSection(data, res.ref.start, res.ref.end).split('\n').join('\n  ')}\n\n`;
 		msg += `  Interpreted: ${res.msg}`;
@@ -876,4 +869,4 @@ module.exports = function (data, filename){
 	}
 
 	return Simplify_Program(res);
-}
+};
