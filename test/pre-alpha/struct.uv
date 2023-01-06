@@ -35,11 +35,11 @@ fn init(ofAge: bool): Person {
 	}
 
 	return new Person {
-		id: 0,
-		age: age,
+		id: 0;
+		age: age;
 		finger: new FingerPrint {
-			id: 1
-		}
+			id: 1;
+		};
 	};
 }
 
@@ -70,7 +70,6 @@ fn main(): int {
 		printf("%s", " != Person {\n  id: 0,\n  age: 16,\n  finger: Finger Print { id: 1 }\n}\n");
 		return 1;
 	}
-
 
 	p = init(true);
 	if (check(@p, 0, 21, 1) == 1) {
@@ -106,8 +105,9 @@ fn main(): int {
 
 
 	p.finger = new FingerPrint {
-		id: 12345
+		id: 12345;
 	};
+
 	if (check(@p, 0, 22, 1) != 1) {
 		printf("%s", "Failed changing sub structure\n");
 		print(p);

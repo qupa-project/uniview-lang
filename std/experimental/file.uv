@@ -9,12 +9,15 @@ external assume {
 }
 
 
-class File {
+struct File {
 	ptr: addr_space;
+}
 
+impl File {
 	fn New(path: cstring, access: cstring): File {
-		let this = Blank#[File]();
-		fopen_s(@this, path, access);
+		let this = new File {
+			ptr: fopen_s(@this, path, access);
+		};
 
 		return this;
 	}

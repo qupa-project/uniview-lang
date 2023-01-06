@@ -89,7 +89,6 @@ fn GetDate(unixTime: i64): Date {
 	let y = yoe + era*400;
 	let doy = doe - (365*yoe + yoe/4 - yoe/100);
 	let mp = (5*doy + 2)/153;
-	let d = doy - (153*mp + 2)/5 + 1;
 
 	let t2: int;
 	if (mp < 10) {
@@ -105,15 +104,16 @@ fn GetDate(unixTime: i64): Date {
 
 	let totalDays = unixTime / (24*60*60);
 
-	let date = Date {
-		day: d,
-		month: m,
-		year: y,
-		weekDay: (totalDays + 4) % 7
+	let date = new Date {
+		day: doy - (153*mp + 2)/5 + 1;
+		month: m;
+		year: y;
+
+		weekDay: (totalDays + 4) % 7;
+		days: doy;
 	};
 
 	// const unsigned doy = (153*(m + (m > 2 ? -3 : 9)) + 2)/5 + d-1;  // [0, 365]
-	date.days = 0;
 
 	return date;
 }
@@ -121,17 +121,17 @@ fn GetDate(unixTime: i64): Date {
 fn GetTime(unixTime: i64): Time {
 	let unix = cast#[int] (unixTime);
 
-	return Time {
-		seconds: unix % 60,
-		minutes: unix / 60 % 60,
-		hours: unix / 3600 % 24
+	return new Time {
+		seconds: unix % 60;
+		minutes: unix / 60 % 60;
+		hours: unix / 3600 % 24;
 	};
 }
 
 
 fn GetDateTime(unixTime: i64): DateTime {
-	return DateTime {
-		time: GetTime(unixTime),
-		date: GetDate(unixTime)
+	return new DateTime {
+		time: GetTime(unixTime);
+		date: GetDate(unixTime);
 	};
 }

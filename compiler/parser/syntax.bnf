@@ -75,10 +75,10 @@ program ::= %w* ( stmt_top %w* )* ;
 #=============================
 #  Variables
 #=============================
-	name ::= ( letter | "_" )+ ( letter | digit | "_" )* ;
-	variable ::= ...name %w* ( ( access_static | access_dynamic ) %w* )* ;
+	variable ::= ...name ( %w* ( access_static | access_dynamic ) )* ;
+		name ::= ( letter | "_" )+ ( letter | digit | "_" )* ;
 
-	data_type ::= ...data_type_lending? ...name %w* ( ( access_static | access_template ) %w* )* ;
+	data_type ::= ...data_type_lending? ...name ( %w* ( access_static | access_template ) )* ;
 		data_type_lending ::= "@" | "$" ;
 
 	declare ::= %( "let" %w+ ) ...name %w* ( %( ":" w* ) data_type %w* )? ( %( "=" w* ) expr )? %( w* ";" ) ;
@@ -117,17 +117,17 @@ program ::= %w* ( stmt_top %w* )* ;
 
 	impl ::= %( "impl" w+ ) data_type impl_for? %( w* "{" w* ) impl_body %( w* "}" );
 		impl_for ::= %( w+ "for" w+ ) data_type ;
-		impl_body ::= ( %w* impl_stmt )* ;
-			impl_stmt ::= function | function ;
+		impl_body ::= ( impl_stmt %w* )* ;
+			impl_stmt ::= function | template ;
 
 	trait ::= %( "trait" w+ ) ...name %w* trait_reliance? %( w* "{" w* ) trait_body %( w* "}" ) ;
 		trait_reliance ::= %( ":" w* ) data_type ( %( w* "," w* ) data_type )* ;
 		trait_body ::= ( %w* trait_stmt )* ;
-			trait_stmt ::= function | function ;
+			trait_stmt ::= function | template ;
 
 	expr_struct ::= %( "new" w+ ) data_type %w* expr_struct_body ;
 		expr_struct_body ::= %( w* "{" w* ) expr_struct_args? %( w* "}" ) ;
-		expr_struct_args ::= expr_struct_arg %w* ( %( "," w* ) expr_struct_arg )* %( w* ","? ) ;
+		expr_struct_args ::= expr_struct_arg %w* ( %( ";" w* ) expr_struct_arg )* %( w* ";"? ) ;
 			expr_struct_arg ::= ...name %( w* ":" w* ) expr ;
 
 

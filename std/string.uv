@@ -13,9 +13,9 @@ struct String {
 impl String {
 	fn New(str: cstring): String {
 		let size = sizeof($str);
-		let out = String {
-			data: Memory.Alloc(size),
-			size: size
+		let out = new String {
+			data: Memory.Alloc(size);
+			size: size;
 		};
 
 		let other = bitcast#[addr_space](str);
@@ -43,6 +43,7 @@ impl String {
 		if (begin > this.size) {
 			begin = this.size;
 		}
+
 		if (end > this.size - cast#[u64](1)) {
 			end = this.size - cast#[u64](1);
 		}
@@ -50,9 +51,9 @@ impl String {
 		// Create a space for the new data
 		let length = end - begin;
 		let size = length + cast#[u64](1);
-		let sub = String {
-			size: size,
-			data: Memory.Alloc(size)
+		let sub = new String {
+			size: size;
+			data: Memory.Alloc(size);
 		};
 
 		// Move the taken slice to the new string
@@ -105,8 +106,7 @@ impl String {
 		return sub;
 	}
 
-
-	fn Length(this: &String): u64 {
+	fn Length(this: $String): u64 {
 		let out: u64 = this.size - cast#[u64](1);
 		return out;
 	}
@@ -118,9 +118,9 @@ impl Clone for String {
 		// Initiliase the data structure
 		let data = Memory.Alloc(this.size);
 
-		let out = String {
-			data: data,
-			size: this.size
+		let out = new String {
+			data: data;
+			size: this.size;
 		};
 
 		// Copy the blob data to the new allocation

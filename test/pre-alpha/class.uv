@@ -2,11 +2,12 @@ struct Cat {
 	id: int;
 }
 
-impl Cat{
+impl Cat {
 	fn new(id: int): Cat {
-		let out = Cat {
-			id: id
+		let out = new Cat {
+			id: id;
 		};
+
 		return out;
 	}
 
@@ -21,8 +22,8 @@ impl Cat{
 
 impl Clone for Cat {
 	fn clone(src: @Cat): Cat {
-		let out = Cat {
-			id: src.id + 1
+		let out = new Cat {
+			id: src.id + 1;
 		};
 		printf("%s", "Cloning cat\n");
 
@@ -45,8 +46,8 @@ fn Consume(o: CatCage){}
 
 impl CatCage {
 	fn new(cat: Cat): Self {
-		let o = CatCage {
-			inside: cat
+		let o = new CatCage {
+			inside: cat+2;
 		};
 
 		return o;
