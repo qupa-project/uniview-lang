@@ -42,7 +42,7 @@ function CodeSection (string, refStart, refEnd) {
 	if (refStart.line == refEnd.line) {
 		string.push(
 			` ${FixStringLength("*", digits)} │` +
-			" ".repeat(refStart.col-indent + 1) +
+			" ".repeat(refStart.col-indent) +
 			"^".repeat(refEnd.col-refStart.col)
 		);
 	}
