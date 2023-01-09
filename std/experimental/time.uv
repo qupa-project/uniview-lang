@@ -125,6 +125,7 @@ fn GetTime(unixTime: i64): Time {
 		seconds: unix % 60;
 		minutes: unix / 60 % 60;
 		hours: unix / 3600 % 24;
+		dayLightSavings: false;
 	};
 }
 
