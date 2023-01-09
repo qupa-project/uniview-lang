@@ -2,12 +2,15 @@
 let words = [
 	"let",
 	"struct", "new",
+	"impl", "trait",
 	"fn",
 
 	"if", "elif", "else",
 	"return",
 
-	"false", "true"
+	"false", "true",
+
+	"Self"
 ];
 
 
