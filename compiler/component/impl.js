@@ -125,14 +125,14 @@ class Implement {
 		this.struct.bindImplementation(this);
 	}
 
-	getFunction (access, signature, template) {
+	getFunction (access, signature, stack) {
 		if (access.length != 1) {
 			return null;
 		}
 
-		let name = access[0][1];
+		let name = access[0].value;
 		if (this.names[name]) {
-			return this.names[name].getFunction([], signature, template);
+			return this.names[name].getFunction([], signature, stack);
 		}
 
 		return null;
