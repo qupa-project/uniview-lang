@@ -5,6 +5,7 @@ const TypeRef = require('../typeRef.js');
 const Value = require('./value.js');
 
 const Probability = require('./probability.js');
+const { SyntaxNode } = require('bnf-parser');
 
 
 
@@ -258,6 +259,10 @@ class Variable extends Value {
 	 * @returns {Object[Variable, LLVM.Fragment]|Error}
 	 */
 	access (accessor, ref) {
+		if (accessor instanceof SyntaxNode) {
+			throw new Error("Unexpected syntax node");
+		}
+
 		let preamble = new LLVM.Fragment();
 
 		// Resolve any probabilities
@@ -271,7 +276,7 @@ class Variable extends Value {
 		// 	throw new Error("Invalid variable accessor");
 		// }
 
-		// Automatically decompoase the value if needed
+		// Automatically decompose the value if needed
 		if (!this.isDecomposed) {
 			let res = this.decompose(ref);
 			if (res.error) {
@@ -346,7 +351,7 @@ class Variable extends Value {
 		let type = this.type.duplicate();
 		type.lent = true;
 
-		if (this.type.type.typeSystem == "normal") {
+		if (!this.type.lent && this.type.native) {
 			let ptr = new LLVM.ID();
 
 			preamble.append(new LLVM.Set(
@@ -392,37 +397,10 @@ class Variable extends Value {
 	}
 
 	cloneValue (ref) {
-		// Resolve to composed/probability state
-		let out = this.resolve(ref, false);
-		if (out.error) {
-			return out;
-		}
-
-		if (
-			this.type.type.typeSystem == "normal" ||
-			!this.type.type.cloneInstance
-		) {
-			return {
-				preamble: new LLVM.Fragment(),
-				instruction: this.store,
-				type: this.type.duplicate()
-			};
-		}
-
-		this.store = out.register;
-		let preamble = out.preamble;
-
-		// Clone the register
-		let clone = this.type.type.cloneInstance(out.register, ref);
-		preamble.merge(clone.preamble);
-
-		let type = this.type.duplicate();
-		type.lent = false;
-
 		return {
-			preamble: preamble,
-			instruction: clone.instruction,
-			type: type
+			error: true,
+			msg: "Old code path hit",
+			ref: ref
 		};
 	}
 

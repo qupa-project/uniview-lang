@@ -1,5 +1,5 @@
 const LLVM = require('./../middle/llvm.js');
-const Flattern = require('../parser/flattern.js');
+const Flattern = require('../parser/flatten.js');
 const TypeDef = require('./typedef.js');
 const TypeRef = require('./typeRef.js');
 
@@ -43,6 +43,8 @@ class Structure extends TypeDef {
 		this.linked = false;
 		this.size = -1;
 		this.alignment = 0;
+
+		this.nestedCloner = null;
 
 		this.defaultImpl = null;
 		this.impls = [];
@@ -108,6 +110,20 @@ class Structure extends TypeDef {
 		}
 
 		return null;
+	}
+
+	hasNestedCloner() {
+		if (this.nestedCloner !== null) {
+			// Do nothing value already cached
+		} else if (this.getCloner() !== null) {
+			this.nestedCloner = true;
+		} else {
+			this.nestedCloner = this.terms
+				.map(x => x.typeRef.type.hasNestedCloner())
+				.reduce((prev, curr) => prev || curr, false);
+		}
+
+		return this.secondHandClone;
 	}
 
 	indexOfTerm (name) {
@@ -197,7 +213,7 @@ class Structure extends TypeDef {
 	}
 
 	parse () {
-		this.name = this.ast.tokens[0].tokens;
+		this.name = this.ast.value[0].value;
 		this.represent = "%struct." + (
 			this.external ? this.name : `${this.name}.${this.ctx.getFileID().toString(36)}`
 		);
@@ -216,7 +232,7 @@ class Structure extends TypeDef {
 			return;
 		}
 
-		for (let node of this.ast.tokens[1].tokens) {
+		for (let node of this.ast.value[1].value) {
 			switch (node.type) {
 				case "comment":
 					break;
@@ -234,7 +250,7 @@ class Structure extends TypeDef {
 	}
 
 	linkTerm (node, stack = []) {
-		let name = node.tokens[1].tokens;
+		let name = node.value[1].value;
 		let index = this.indexOfTerm(name);
 		if (index != -1) {
 			this.ctx.getFile().throw(
@@ -246,11 +262,11 @@ class Structure extends TypeDef {
 		}
 
 		// Get attribute type
-		let typeNode = node.tokens[0];
-		let typeRef = this.ctx.getType(Flattern.DataTypeList(typeNode));
+		let typeNode = node.value[0];
+		let typeRef = this.getFile().getType(node.value[0]);
 		if (typeRef === null) {
 			this.ctx.getFile().throw(
-				`Error: Unknown type ${Flattern.DataTypeStr(typeNode)}`,
+				`Error: Unknown type ${Flattern.AccessToString(node.value[0])}`,
 				typeNode.ref.start,
 				typeNode.ref.end
 			);
@@ -325,75 +341,10 @@ class Structure extends TypeDef {
 	/**
 	 *
 	 * @param {LLVM.Argument} argument
+	 * @param {LLVM.Argument} to
 	 */
-	cloneInstance(argument, ref) {
-		let preamble = new LLVM.Fragment();
-		let irType = new TypeRef(this);
-		let instruction;
-
-		let cloner = this.getCloner();
-		if (cloner) {
-			let id = new LLVM.ID();
-
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(id),
-				new LLVM.Alloc(irType.toLLVM(ref).offsetPointer(-1))
-			));
-
-			instruction = new LLVM.Argument (
-				irType.toLLVM(ref),
-				new LLVM.Name(id.reference())
-			);
-
-			// Call the clone opperation
-			preamble.append(new LLVM.Call(
-				new LLVM.Type("void", 0),
-				new LLVM.Name(cloner.represent, true, ref),
-				[
-					instruction,
-					argument
-				], ref
-			));
-
-			return {
-				preamble,
-				instruction
-			};
-		} else {
-			let storeID = new LLVM.ID();
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(storeID, false),
-				new LLVM.Alloc(irType.toLLVM())
-			));
-			instruction = new LLVM.Argument(
-				irType.toLLVM(),
-				new LLVM.Name(storeID.reference(), false)
-			);
-
-			let cacheID = new LLVM.ID();
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(cacheID, false),
-				new LLVM.Load(
-					irType.toLLVM(ref).offsetPointer(-1),
-					argument.name
-				),
-				ref
-			));
-
-			preamble.append(new LLVM.Store(
-				instruction,
-				new LLVM.Argument(
-					irType.toLLVM(ref).offsetPointer(-1),
-					new LLVM.Name(cacheID.reference(ref), false, ref)
-				),
-				ref
-			));
-		}
-
-		return {
-			preamble,
-			instruction
-		};
+	cloneInstance(argument, to, ref) {
+		throw new Error("Old code path");
 	}
 
 

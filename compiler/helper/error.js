@@ -6,9 +6,8 @@ function FixStringLength (string, count, filler = " ") {
 function CodeSection (string, refStart, refEnd) {
 	string = string.replace(/\t/g, "  ");
 
-	if (refStart.index == refEnd.index) {
-		refEnd.index = string.length;
-		refEnd.line = refStart.line + string.split('\n').length;
+	if ( refStart.index == refEnd.index ) {
+		refEnd.col = string.split('\n')[refEnd.line-1].length;
 	}
 
 	let offset = refStart.line;
@@ -21,10 +20,10 @@ function CodeSection (string, refStart, refEnd) {
 	let indent = Math.min(
 		...string
 			.map(elm => elm[1].search(/[^ ]/g))
-			.map(elm => elm == -1 ? refStart.col : elm),
+			.map(elm => elm == -1 ? 0 : elm),
 		refStart.col
 	);
-	let maxLen = Math.max([0, ...string.map(elm => elm[1].length)]);
+	let maxLen = Math.max(0, ...string.map(elm => elm[1].length));
 
 	if (string.length > 5) {
 		string = [
@@ -42,7 +41,7 @@ function CodeSection (string, refStart, refEnd) {
 
 	if (refStart.line == refEnd.line) {
 		string.push(
-			` ${FixStringLength("*", digits)} │ ` +
+			` ${FixStringLength("*", digits)} │` +
 			" ".repeat(refStart.col-indent) +
 			"^".repeat(refEnd.col-refStart.col)
 		);

@@ -3,7 +3,7 @@ const BNF = require('bnf-parser');
 
 const helper = require('../helper/error.js');
 
-const LLVM = require('./../middle/llvm.js');
+const LLVM = require('../middle/llvm.js');
 const Function = require('./function.js');
 const TypeDef  = require('./typedef.js');
 const Structure = require('./struct.js');
@@ -11,9 +11,10 @@ const Trait = require('./trait.js');
 const Implement = require('./impl.js');
 const TypeRef = require('./typeRef.js');
 const Import  = require('./import.js');
+const { ResolveAccess } = require("./resolve.js");
 
 // const { Namespace, Namespace_Type } = require('./namespace.js');
-const Parse = require('./../parser/parse.js');
+const Parse = require('../parser/parse.js');
 const fs = require('fs');
 const Template = require('./template.js');
 
@@ -35,7 +36,7 @@ class File {
 		let prims = this.project.getPrimatives();
 		let lib = new Import(this, null);
 		this.names["*"] = lib;
-		prims.map(x => lib.inject(x))
+		prims.map(x => lib.inject(x));
 
 		this.exports = [];
 		this.imports = [];
@@ -50,33 +51,30 @@ class File {
 		let syntax = Parse(this.data, this.path);
 
 		// read in imports, templates, functions
-		for (let element of syntax.tokens) {
+		for (let element of syntax.value) {
 			// Ignore comments
 			switch (element.type) {
-				case "comment":
-					break;
 				case "external":
-					if (element.tokens[0] == "assume") {
-						for (let inner of element.tokens[1]){
-							this.register(inner, true);
-						}
-					} else if (element.tokens[0] == "export") {
-						for (let inner of element.tokens[1]){
-							this.exports.push(inner);
-						}
-					} else {
-						console.error(`Error: Unknown external type "${element.tokens[0]}"`);
-						this.project.markError();
-						return false;
+					switch (element.value[0].value) {
+						case "assume":
+							for (let inner of element.value[1].value){
+								this.register(inner, true);
+							}
+							break;
+						case "export":
+							for (let inner of element.value[1].value){
+								this.exports.push(inner);
+							}
+							break;
+						default:
+							console.error(`Error: Unknown external type "${element.value[0].value}"`);
+							this.project.markError();
+							return false;
 					}
 					break;
 				case "library":
-					let inner = element.tokens[0];
+					let inner = element.value[0];
 					if (inner.type == "import") {
-						inner.tokens = [
-							inner.tokens[0].tokens[1],
-							inner.tokens[1]
-						];
 						this.register(inner);
 					} else {
 						console.error(`  Parse Error: Unknown library action "${inner.type}"`);
@@ -85,7 +83,7 @@ class File {
 					}
 					break;
 				case "include":
-					this.include(element.tokens[0], element.tokens[1], element.ref);
+					this.include(element.value[0].value, element.value[1].value, element.ref);
 					break;
 				default:
 					this.register(element);
@@ -115,7 +113,7 @@ class File {
 				break;
 			case "function_redirect":
 				space = new Function(this, element, external, false);
-				space.instances[0].represent = element.tokens[1];
+				space.instances[0].represent = element.value[1];
 				break;
 			case "import":
 				space = new Import(this, element);
@@ -178,114 +176,108 @@ class File {
 		}
 	}
 
-	getType (typeList, template = [], stack = []) {
-		let res = null;
-		// File access must be direct
-		if (typeList[0][0] == "." || Number.isInteger(typeList[0][0])) {
-			res = this.names[typeList[0][1]];
+	getType (access, stack = []) {
+		if (access instanceof BNF.SyntaxNode) {
+			let res = ResolveAccess(access, this);
+			if (res == null) {
+				return null;
+			}
 
-			if (res) {
-				if (res instanceof Template || typeList.length > 1) {
-					return res.getType(typeList.slice(1), template);
-				} else {
-					return new TypeRef(res);
+			let type = this.getType(res.access, stack);
+
+
+			if (type == null) {
+				return null;
+			}
+
+			type.constant = res.constant;
+			type.lent = res.lent;
+			return type;
+		}
+
+		// Circular loop check
+		if (stack.includes(this.id)) {
+			return null;
+		}
+		stack.push(this.id);
+
+		if (access.length == 0) {
+			return null;
+		}
+
+		if (access.length > 0) {
+			let term = access[0];
+
+			switch (term.type) {
+				case "name":
+				case "access_static":
+					break;
+				default:
+					return null;
+			}
+
+			if (this.names[term.value]) {
+				let res = this.names[term.value].getType(access.slice(1), stack);
+				if (res) {
+					return res;
 				}
 			}
-		} else {
-			return null;
 		}
-
-		// Circular loop
-		if (stack.includes(this)) {
-			return null;
-		}
-		stack.push(this);
 
 		// If the name isn't defined in this file
 		// Check other files
 		if (this.names["*"] instanceof Import) {
-			return this.names["*"].getType(typeList, template);
+			return this.names["*"].getType(access, stack);
 		}
 
 		return null;
 	}
 
-	getFunction (access, signature, template, stack = []) {
-		if (access.length < 1) {
+
+	getFunction (access, signature, stack = []) {
+		if (access instanceof BNF.SyntaxNode) {
+			throw new TypeError("Internal error, unexpected SyntaxNode");
+		}
+
+		if (access.length == 0) {
 			return null;
 		}
 
-		let first = access[0];
-		let forward = access.slice(1);
-		if (Array.isArray(first)) {
-			if (first[0] == ".") {
-				first = first[1];
-			} else {
-				return null;
+		if (access.length > 0) {
+			let term = access[0];
+			switch (term.type) {
+				case "name":
+				case "access_static":
+					break;
+				default:
+					return null;
 			}
-		}
 
-		if (this.names[first]) {
-			let res = this.names[first].getFunction(forward, signature, template);
-			if (res !== null) {
-				return res;
-			}
-		}
-
-		// Circular loop
-		if (stack.includes(this)) {
-			return null;
-		}
-		stack.push(this);
-
-		// If the name isn't defined in this file in a regular name space
-		//   Check namespace imports
-		if (this.names["*"] instanceof Import) {
-			return this.names["*"].getFunction(access, signature, template, stack);
-		}
-
-		return null;
-	}
-
-	getTrait (access, template, stack = []) {
-		if (access.length < 1) {
-			return null;
-		}
-
-		let first = access[0];
-		let forward = access.slice(1);
-		if (Array.isArray(first)) {
-			if (first[0] == "." || first[0] == 0) {
-				first = first[1];
-			} else {
-				return null;
-			}
-		}
-
-		if (this.names[first]) {
-			let res = this.names[first].getTrait(forward, template);
-			if (res !== null) {
-				return res;
+			if (this.names[term.value]) {
+				let res = this.names[term.value].getFunction(access.slice(1), signature, stack);
+				if (res) {
+					return res;
+				}
 			}
 		}
 
 		// Circular loop
-		if (stack.includes(this)) {
+		if (stack.includes(this.id)) {
 			return null;
 		}
-		stack.push(this);
+		stack.push(this.id);
 
-		// If the name isn't defined in this file in a regular name space
-		//   Check namespace imports
+		// If the name isn't defined in this file
+		// Check other files
 		if (this.names["*"] instanceof Import) {
-			return this.names["*"].getTrait(access, template, stack);
+			return this.names["*"].getFunction(access, signature, stack);
 		}
 
 		return null;
 	}
 
 	getMain () {
-		return this.names['main'];
+		return this.names['main'] || null;
 	}
 
 	getID () {

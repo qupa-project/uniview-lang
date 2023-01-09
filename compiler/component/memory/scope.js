@@ -1,4 +1,4 @@
-const Flattern = require('../../parser/flattern.js');
+const Flattern = require('../../parser/flatten.js');
 const { Generator_ID } = require('../generate.js');
 const LLVM = require("../../middle/llvm.js");
 const TypeRef = require('./../typeRef.js');
@@ -52,7 +52,7 @@ class Scope {
 			if (this.variables[arg.name]) {
 				this.getFile().throw(
 					`Duplicate use of argument ${arg.name} function`,
-					this.variables[arg.name].declared, arg.ref
+					this.variables[arg.name].ref.start, arg.ref.end
 				);
 
 				return null;
@@ -128,16 +128,20 @@ class Scope {
 	 * @returns {Variable}
 	 */
 	getVar (ast, read = true) {
-		if (ast.type != "variable") {
-			throw new TypeError(`Parsed AST must be a branch of type variable, not "${ast.type}"`);
+		switch (ast.type) {
+			case "variable":
+			case "access":
+				break;
+			default:
+				throw new TypeError(`Parsed AST must be a branch of type variable, not "${ast.type}"`);
 		}
 
-		let target = this.variables[ast.tokens[1].tokens];
+		let target = this.variables[ast.value[0].value];
 		if (!target) {
 			return {
 				error: true,
-				msg: `Unknown variable name ${ast.tokens[1].tokens}`,
-				ref: ast.tokens[1].ref
+				msg: `Unknown variable name "${ast.value[0].value}"`,
+				ref: ast.value[0].ref
 			};
 		}
 

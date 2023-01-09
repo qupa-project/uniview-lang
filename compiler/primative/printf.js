@@ -9,22 +9,22 @@ class Template_Primative_Printf extends Template {
 	constructor (ctx) {
 		super(ctx, null);
 
-		this.func = new Function_Instance(this, "printf", types.i32, []);
+		this.func = new Function_Instance(this, "printf", types.void, []);
 		this.func.generate = (regs, ir_args) => {
 			return {
 				preamble: new LLVM.Fragment(),
 				instruction: new LLVM.Call(
-					new LLVM.Type("i32 (i8*, ...)", 0),
+					new LLVM.Type("void (i8*, ...)", 0),
 					new LLVM.Name("printf", true),
 					ir_args
 				),
-				type: new TypeRef(types.i32)
+				type: new TypeRef(types.void)
 			};
 		};
 		this.func.compile();
 	}
 
-	getFunction (access, signature, template) {
+	getFunction (access, signature) {
 		if (access.length != 0) {
 			return false;
 		}
@@ -49,7 +49,7 @@ class Template_Primative_Printf extends Template {
 
 	toLLVM() {
 		let frag = new LLVM.Fragment();
-		frag.append(new LLVM.Raw("declare dso_local i32 @printf(i8*, ...)"));
+		frag.append(new LLVM.Raw("declare dso_local void @printf(i8*, ...)"));
 		return frag;
 	}
 }

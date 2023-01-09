@@ -1,10 +1,12 @@
+const { SyntaxNode } = require('bnf-parser');
+
 const LLVM = require('../middle/llvm.js');
-const Flattern = require('../parser/flattern.js');
+const Flattern = require('../parser/flatten.js');
 const TypeRef = require('./typeRef.js');
 
 const Function = require('./function.js');
 
-const Primative = {
+const Primitive = {
 	types: require('./../primative/types.js')
 };
 
@@ -12,7 +14,7 @@ const Primative = {
 class Trait {
 	constructor (ctx, ast) {
 		this.ctx = ctx;
-		this.name = ast.tokens[0].tokens;
+		this.name = ast.value[0].value;
 		this.ast = ast;
 		this.ref = ast.ref.start;
 
@@ -36,27 +38,24 @@ class Trait {
 		return this.ctx.getFile();
 	}
 
-	getTrait(access, template) {
-		if (access.length != 0) {
-			return null;
-		}
-		if (template.length != 0) {
-			return null;
+	getType(access, stack) {
+		if ( access.length == 0 ) {
+			return new TypeRef(this);
 		}
 
-		return this;
-	}
+		if (access instanceof SyntaxNode && access.value[1].value == "Self") {
+			if (access.value[2].value.length != 0) {
+				return null;
+			}
 
-	getType(node, template) {
-		if (
-			node.length == 1 &&
-			template.length == 0 &&
-			node[0][1] == "Self"
-		) {
-			return new TypeRef(Primative.types.int);
+			return new TypeRef(
+				this,
+				["@", "$"].includes(access.value[0].value),
+				access.value[0].value == "$"
+			);
 		}
 
-		return this.ctx.getType(node, template);
+		return this.ctx.getType(access, stack);
 	}
 
 	bindImplementation(impl) {
@@ -100,7 +99,7 @@ class Trait {
 			return;
 		}
 
-		for (let node of this.ast.tokens[2].tokens) {
+		for (let node of this.ast.value[2].value) {
 			switch (node.type) {
 				case "comment":
 					break;

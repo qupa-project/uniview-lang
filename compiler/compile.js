@@ -24,6 +24,7 @@ let getopt = new Getopt([
 	['m', 'mode=ARG', `compilation mode (${validModes.join("|")})`],
 	['', 'opt=ARG', 'optimisation level'],
 	['o', 'output=ARG', 'output name'],
+	['', 'profile', 'Enable profile timings'],
 	['', 'version', 'show version'],
 	['', 'verbose', 'verbose logs']
 ]).bindHelp();
@@ -58,33 +59,47 @@ if (opt.argv.length > 1) {
 }
 
 
+let Timers = require('./timers.js');
+if (opt.options.profile) {
+	Timers.Enable(["read", "link", "compile", "assemble"])
+}
+
+
 
 /*------------------------------------------
 	Compilation to LLVM
 ------------------------------------------*/
 // Load required files
+Timers.Checkpoint("read", true);
 let origin = path.resolve(root, opt.argv[0]);
 let project = new Project(root, {
 	caching: false
 });
 project.import(origin, true);
+Timers.Checkpoint("read", false);
+
 
 // Link elements
 console.info("Linking...");
+Timers.Checkpoint("link", true);
 project.link();
 if (project.error) {
 	console.error("\nLinker error");
 	process.exit(1);
 }
+Timers.Checkpoint("link", false);
+
 
 // Compile to LLVM
 console.info("Processing...");
+Timers.Checkpoint("compile", true);
 project.compile();
 if (project.error) {
 	console.error("\nUncompilable errors");
 	process.exit(1);
 }
 let asm = project.toLLVM();
+Timers.Checkpoint("compile", false);
 
 
 if (opt.options.mode == "preprocess") {
@@ -139,6 +154,7 @@ if (!fs.existsSync(tool_path)) {
 
 
 console.info(`\n${tool_path} ${args.join(" ")}\n`);
+Timers.Checkpoint("assemble", true);
 let tool = spawn(tool_path, args, {
 	cwd: project.rootPath
 });
@@ -147,6 +163,8 @@ tool.stdout.pipe(process.stdout);
 tool.stderr.pipe(process.stderr);
 
 tool.on('close', (code) => {
+	Timers.Checkpoint("assemble", false);
 	console.info(`\nStatus Code: ${code}`);
+	Timers.Print();
 	process.exit(code);
 });

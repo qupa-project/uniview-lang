@@ -5,7 +5,7 @@ const Structure = require('./struct.js');
 
 class Function {
 	constructor (ctx, ast, external = false, abstract = false) {
-		this.name = ast.tokens[0].tokens[1].tokens;
+		this.name = ast.value[0].value[1].value;
 		this.ctx = ctx;
 
 		this.ref = ast.ref.start;
@@ -41,16 +41,16 @@ class Function {
 		this.instances[0].markExport();
 	}
 
-	getFunction (variable, signature) {
-		if (variable.length != 0) {
+	getFunction (access, signature) {
+		if (access.length != 0) {
 			return null;
 		}
 
 		return this.matchSignature(signature);
 	}
 
-	getType(node, template) {
-		return this.ctx.getType(node, template);
+	getType(access, stack) {
+		return this.ctx.getType(access, stack);
 	}
 
 	matchSignature (sig) {
@@ -79,7 +79,7 @@ class Function {
 			}
 
 			this.ctx.getFile().throw(
-				`Error: Unable to find implementation of ${instA.toString()} for trait ${this.ctx.trait.name} in implementation`,
+				`Error: Unable to find implementation of "${instA.toString()}" for trait "${this.ctx.trait.name}" in implementation`,
 				this.ctx.ref,
 				this.ctx.endRef
 			);
@@ -93,7 +93,7 @@ class Function {
 			}
 
 			this.ctx.getFile().throw(
-				`Error: Implementation has an extra function instance ${instA.toString()} for trait ${this.ctx.trait.name} in implementation`,
+				`Error: Implementation has an extra function instance "${instA.toString()}" for trait "${this.ctx.trait.name}" in implementation`,
 				this.ctx.ref,
 				instA.ref
 			);

@@ -9,7 +9,7 @@
 		"node": ">=14"
 	},
 	"dependencies": {
-		"bnf-parser": "^2.2.5",
+		"bnf-parser": "^3.1.1",
 		"dotenv": "^16.0.1",
 		"node-getopt": "^0.3.2",
 		"unzipper": "^0.10.11"
@@ -21,7 +21,7 @@
 		"test-execution": "node compiler/test.js --bin --exec",
 		"postinstall": "npm run build-syntax & npm run install-tools",
 		"install-tools": "node tools/install.js",
-		"build-all": "npm run build-syntax & npm run build-tools",
+		"build": "npm run build-syntax & npm run build-tools",
 		"build-syntax": "node compiler/parser/build.js",
 		"build-tools": "cmake . -B build & cmake --build build"
 	},

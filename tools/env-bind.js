@@ -10,7 +10,7 @@ const env_path = path.resolve(__dirname, "../.env");
 let config = require('dotenv').config({path: env_path}).parsed;
 
 function UpdateEnv(delta) {
-	for (key in delta) {
+	for (let key in delta) {
 		config[key] = delta[key];
 	}
 

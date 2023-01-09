@@ -1,4 +1,3 @@
-const Flattern = require("../parser/flattern.js");
 const LLVM = {
 	Type: require('./../middle/type.js')
 };
@@ -30,18 +29,26 @@ class TypeRef {
 	}
 
 	/**
-	 *
+	 * Do the TypeRefs match approximately
 	 * @param {TypeRef} other
+	 * @returns
 	 */
-	match (other) {
+	weakMatch(other) {
 		if (!(other instanceof TypeRef)) {
 			return false;
 		}
 
-		return this.lent == other.lent &&
-			this.constant == other.constant &&
-			this.type == other.type;
-			// ignore constant/local as they don't impact use for computation
+		return this.type === other.type;
+	}
+
+	/**
+	 * Do the TypeRefs match including lent status
+	 * @param {TypeRef} other
+	 */
+	match (other) {
+		return this.weakMatch(other) && this.lent == other.lent &&
+			this.constant == other.constant;
+			// ignore local as they don't impact use for computation
 	}
 
 	matchApprox (other) {
@@ -65,7 +72,7 @@ class TypeRef {
 	 * @returns {String}
 	 */
 	toString () {
-		return ( this.lent ? (this.constant ? "&" : "@") : "" ) + this.type.name;
+		return ( this.lent ? (this.constant ? "$" : "@") : "" ) + this.type.name;
 	}
 
 	toLLVM (ref = null, flat = false, pointer = false) {

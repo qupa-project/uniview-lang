@@ -11,11 +11,13 @@ fn BoolLending(): int {
 	}
 }
 fn FlipFlop(val: @bool) {
-	val = !val;
-	val = !val;
+	Flip(@val);
+	Flip(@val);
+	return;
 }
 fn Flip(val: @bool) {
 	val = !val;
+	return;
 }
 
 
@@ -36,6 +38,7 @@ fn IntLending(): int {
 
 fn Multiply(val: @int) {
 	val = val * 3;
+	return;
 }
 
 fn main(): int {

@@ -41,5 +41,8 @@
 		"xutility": "cpp"
 	},
 	"esbonio.server.enabled": true,
-	"cmake.configureOnOpen": false
+	"cmake.configureOnOpen": false,
+	"cSpell.words": [
+		"uniview"
+	]
 }

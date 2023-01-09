@@ -15,16 +15,20 @@ fn test(a: int, b: int) {
 
 struct Test {}
 
-fn Consume(t: Test) {}
+fn Consume(t: Test) {
+	return;
+}
 
 fn UnifiedUndefined() {
-	let t = Test {};
+	let t = new Test {};
 
 	if (true) {
 		Consume(t);
 	} else {
 		Consume(t);
 	}
+
+	return;
 }
 
 fn main(): int {
