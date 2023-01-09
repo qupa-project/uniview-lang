@@ -11,17 +11,14 @@ impl Cat {
 		return out;
 	}
 
-	fn say(this: Cat) {
+	fn say(this: $Cat) {
 		printf("%i: meow\n", this.id);
-	}
-
-	fn say(this: @Cat) {
-		printf("%i: meow\n", this.id);
+		return;
 	}
 }
 
 impl Clone for Cat {
-	fn clone(src: @Cat): Cat {
+	fn clone(src: @Self): Self {
 		let out = new Cat {
 			id: src.id + 1;
 		};
@@ -32,8 +29,9 @@ impl Clone for Cat {
 }
 
 impl Drop for Cat {
-	fn drop(this: @Cat) {
+	fn drop(this: @Self) {
 		printf("%s", "Deleting cat...\n");
+		return;
 	}
 }
 
@@ -42,12 +40,14 @@ struct CatCage {
 	inside: Cat;
 }
 
-fn Consume(o: CatCage){}
+fn Consume(o: CatCage){
+	return;
+}
 
 impl CatCage {
 	fn new(cat: Cat): Self {
 		let o = new CatCage {
-			inside: cat+2;
+			inside: cat;
 		};
 
 		return o;
@@ -56,9 +56,10 @@ impl CatCage {
 
 
 fn main(): int {
-	let c = Cat.new(2);
+	let c = Cat.new(cast#[i64](2));
 	Cat.say($c);
-	Cat.say(@c);
+	let c2 = Clone(@c);
+	Cat.say($c);
 
 	let h = CatCage.new(c);
 	return 0;
