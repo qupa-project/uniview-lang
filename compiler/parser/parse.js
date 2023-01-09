@@ -402,16 +402,18 @@ function Simplify_Struct_Attribute (node) {
 }
 
 function Simplify_Impl (node) {
+	let hasFor = node.value[1].value[0] != undefined;
+
 	let out = [
 		Simplify_Data_Type(node.value[0]),
-		node.value[1].value[0] ?
+		hasFor ?
 			Simplify_Impl_For(node.value[1].value[0]) :
 			new SyntaxNode("blank", "", node.ref.clone()),
 		Simplify_Impl_Body(node.value[2])
 	];
 
 	// Swap the type references when a for is present
-	if (out[1]) {
+	if (hasFor) {
 		let t = out[1];
 		out[1] = out[0];
 		out[0] = t;
