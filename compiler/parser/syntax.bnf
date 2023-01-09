@@ -102,7 +102,7 @@ program ::= %w* ( stmt_top %w* )* ;
 	call ::= access call_body ;
 		call_body ::= %( w* "(" w* ) call_args? %( w* ")" ) ;
 		call_args ::= expr %w* ( %( "," w* ) expr %w* )* %( ","? w* ) ;
-	call_procedure ::= call %";" ;
+	call_procedure ::= call %( w* ";" )? ;
 
 	return ::= %"return" ( %w+ expr )? %( w* ";" ) ;
 
