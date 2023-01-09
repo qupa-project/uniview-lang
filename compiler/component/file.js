@@ -75,10 +75,6 @@ class File {
 				case "library":
 					let inner = element.value[0];
 					if (inner.type == "import") {
-						inner.value = [
-							inner.value[0].value[1],
-							inner.value[1]
-						];
 						this.register(inner);
 					} else {
 						console.error(`  Parse Error: Unknown library action "${inner.type}"`);

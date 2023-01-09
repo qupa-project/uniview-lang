@@ -676,9 +676,10 @@ function Simplify_Library (node) {
 }
 function Simplify_Library_Import (node) {
 	node.value = [
-		node.value[1].flat(),
+		new SyntaxNode("name", node.value[1].flat() || "*", node.value[1].ref),
 		Simplify_String(node.value[0])
 	];
+
 	return node;
 }
 
@@ -711,8 +712,10 @@ function Simplify_External (node) {
 	return node;
 }
 function Simplify_External_Body (node) {
-	node.value = node.value[1]
+	node.value = node.value[0].value
 		.map(x => Simplify_External_Term(x.value[0]));
+
+	return node;
 }
 function Simplify_External_Term (node) {
 	switch (node.value[0].type) {

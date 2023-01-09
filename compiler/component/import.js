@@ -5,13 +5,14 @@ class Import {
 		this.ctx      = ctx;
 		this.ref      = ast ? ast.ref.start : null;
 
-		this.name = ( ast && ast.tokens[1] && ast.tokens[1].tokens ) ? ast.tokens[1].tokens : "*";
+		let hasAst = ast != null;
+		this.name = hasAst ? ast.value[0].value : "*";
 		this.files = [];
 
-		if (ast) {
+		if (hasAst) {
 			this.files.push({
 				file: null,
-				path: ast.tokens[0],
+				path: ast.value[1].value,
 				ref: ast.ref.start
 			});
 		}
