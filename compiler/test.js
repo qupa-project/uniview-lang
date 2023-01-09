@@ -79,9 +79,12 @@ function Compile(filename, id) {
 
 
 
+let commentReg = new RegExp(/\s*#/g);
+
 let tests = fs.readFileSync('./test/pre-alpha/_manifest_', 'utf8')
 	.replace(/\r\n/g, "\n")
 	.split('\n')
+	.filter(x => !commentReg.test(x))
 	.map( x => {
 		return path.resolve("./test/pre-alpha", x);
 	});
