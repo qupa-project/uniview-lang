@@ -1,7 +1,0 @@
-CmakeFiles/
-
-CPackSourceConfig.cmake
-CPackConfig.cmake
-CMakeCache.txt
-
-build/*
