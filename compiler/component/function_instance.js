@@ -92,14 +92,15 @@ class Function_Instance {
 
 		let head = this.ast.value[0];
 		this.signature = [ head.value[0], ...head.value[2].value.map(x => x.value[0]) ]
-			.map(x => {
+			.map((x, i) => {
 				if (x.type == "blank") {
 					return new TypeRef(Primitive.types.void, false, false, false);
 				}
 
 				let search = this.getType(x);
 				if (search instanceof TypeRef) {
-					if (search.type == Primitive.types.void) {
+					// If an argument is void (ignoring return type which is at the front)
+					if (i != 0 && search.type == Primitive.types.void) {
 						file.throw(
 							`Functions cannot include void type as argument`,
 							x.ref.start, x.ref.end

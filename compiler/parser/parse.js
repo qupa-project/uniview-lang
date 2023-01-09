@@ -305,27 +305,15 @@ function Simplify_Function_Redirect (node) {
 				// Return Type
 				node.value[2].value[0] ?
 					Simplify_Data_Type(node.value[2].value[0].value[0]) :
-					new SyntaxNode('data_type',
-						[
-							new SyntaxNode(
-								"name", "void",
-								node.ref.clone()
-							),
-							[],
-							new SyntaxNode(
-								'template', [],
-								node.ref.clone()
-							)
-						],
-						node.ref.clone()
-					),
+					new SyntaxNode('blank', "", node.ref.clone()),
 
 				// Name
-				Simplify_Name(node.value[4]),
+				Simplify_Name(node.value[3]),
 
 				// Arguments
-				Simplify_Argument(node.value[1])
-			]
+				Simplify_Func_Args(node.value[1])
+			],
+			node.ref
 		)
 	];
 

@@ -97,7 +97,7 @@ program ::= %w* ( stmt_top %w* )* ;
 			func_stmt ::= if | when | return | declare | assign | call_procedure ;
 
 	function_outline ::= func_head %( w* ";" ) ;
-	function_redirect ::= %( "fn" w+ ) string %( w* "(" w* ) func_arguments %( w* ")" w* ) ( %( w* ":" w* ) data_type )? %( w+ "as" w+ ) ...name %( w* ";" ) ;
+	function_redirect ::= %( "fn" w+ ) string %( w* "(" w* ) func_arguments %( w* ")" w* ) ( %( w* ":" w* ) data_type w+ )? %( "as" w+ ) ...name %( w* ";" ) ;
 
 	call ::= access call_body ;
 		call_body ::= %( w* "(" w* ) call_args? %( w* ")" ) ;
