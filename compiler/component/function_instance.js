@@ -18,7 +18,7 @@ class Function_Instance {
 		this.ast = ast;
 		this.ref = ast.ref.start;
 		this.external = external;
-		this.abstract = abstract || ast.value[1].type == "blank";
+		this.abstract = abstract || ast.type == "function_outline";
 
 		this.returnType = null;
 		this.signature = [];
