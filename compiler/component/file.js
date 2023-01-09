@@ -83,7 +83,7 @@ class File {
 					}
 					break;
 				case "include":
-					this.include(element.value[0], element.value[1], element.ref);
+					this.include(element.value[0].value, element.value[1].value, element.ref);
 					break;
 				default:
 					this.register(element);
