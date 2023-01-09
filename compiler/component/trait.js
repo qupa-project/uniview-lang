@@ -50,8 +50,8 @@ class Trait {
 
 			return new TypeRef(
 				this,
-				["@", "$"].includes(access.value[1].value),
-				access.value[1].value == "$"
+				["@", "$"].includes(access.value[0].value),
+				access.value[0].value == "$"
 			);
 		}
 
