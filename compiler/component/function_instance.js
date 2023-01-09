@@ -52,6 +52,10 @@ class Function_Instance {
 		return this.ctx.getFile();
 	}
 
+	getType(access, stack = []) {
+		this.ctx.getType(access, stack);
+	}
+
 	getFunctionGroup () {
 		return this.ctx.getFunctionGroup();
 	}
@@ -93,7 +97,7 @@ class Function_Instance {
 					return new TypeRef(Primitive.types.void, false, false, false);
 				}
 
-				let search = this.getFile().getType(x);
+				let search = this.getType(x);
 				if (search instanceof TypeRef) {
 					if (search.type == Primitive.types.void) {
 						file.throw(

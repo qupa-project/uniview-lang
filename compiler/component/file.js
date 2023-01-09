@@ -11,6 +11,7 @@ const Trait = require('./trait.js');
 const Implement = require('./impl.js');
 const TypeRef = require('./typeRef.js');
 const Import  = require('./import.js');
+const { ResolveAccess } = require("./resolve.js");
 
 // const { Namespace, Namespace_Type } = require('./namespace.js');
 const Parse = require('../parser/parse.js');
@@ -35,7 +36,7 @@ class File {
 		let prims = this.project.getPrimatives();
 		let lib = new Import(this, null);
 		this.names["*"] = lib;
-		prims.map(x => lib.inject(x))
+		prims.map(x => lib.inject(x));
 
 		this.exports = [];
 		this.imports = [];
@@ -181,8 +182,28 @@ class File {
 
 	getType (access, stack = []) {
 		if (access instanceof BNF.SyntaxNode) {
-			return this.resolveAccess(access);
+			let res = ResolveAccess(access, this);
+			if (res == null) {
+				return null;
+			}
+
+			let type = this.getType(res.access, stack);
+
+
+			if (type == null) {
+				return null;
+			}
+
+			type.constant = res.constant;
+			type.lent = res.lent;
+			return type;
 		}
+
+		// Circular loop check
+		if (stack.includes(this.id)) {
+			return null;
+		}
+		stack.push(this.id);
 
 		if (access.length == 0) {
 			return null;
@@ -206,12 +227,6 @@ class File {
 				}
 			}
 		}
-
-		// Circular loop
-		if (stack.includes(this.id)) {
-			return null;
-		}
-		stack.push(this.id);
 
 		// If the name isn't defined in this file
 		// Check other files
@@ -265,42 +280,6 @@ class File {
 		return null;
 	}
 
-	getTrait (access, stack = []) {
-		if (access.length == 0) {
-			return null;
-		}
-
-		if (access.length > 1) {
-			let term = access[0];
-			switch (term.type) {
-				case "name":
-				case "access_static":
-					break;
-				default:
-					return null;
-			}
-
-			let res = this.names[term.value].getType(access.slice(1), stack);
-			if (res) {
-				return res;
-			}
-		}
-
-		// Circular loop
-		if (stack.includes(this.id)) {
-			return null;
-		}
-		stack.push(this.id);
-
-		// If the name isn't defined in this file
-		// Check other files
-		if (this.names["*"] instanceof Import) {
-			return this.names["*"].getType(access, stack);
-		}
-
-		return null;
-	}
-
 	getMain () {
 		return this.names['main'] || null;
 	}
@@ -326,114 +305,6 @@ class File {
 	}
 	import (filename) {
 		return this.project.import(filename, false, this.path);
-	}
-
-
-
-	resolveAccess(node) {
-		switch (node.type) {
-			case "data_type":
-			case "access":
-				break;
-			default:
-				throw new Error(`Unexpected syntax node with type "${node.type}"`);
-		}
-
-		let access = [
-			node.value[1],
-			...node.value[2].value.map(x => this.resolveTemplate(x))
-		];
-		if (access.includes(null)) {
-			return null;
-		}
-
-		let type = this.getType(access);
-
-		if (node.value[0].value == "@") {
-			type.constant = false;
-			type.lent = true;
-		} else if (node.value[0].value == "$") {
-			type.constant = true;
-			type.lent = true;
-		}
-
-		return type;
-	}
-
-	/**
-	 *
-	 * @param {BNF_Node} node type: access
-	 */
-	resolveTemplate (node) {
-		switch (node.type) {
-			case "access":
-			case "variable":
-			case "data_type":
-				break;
-			default:
-				throw new Error(`Cannot resolve templates for ${node.type}`);
-		}
-
-		let access = node.value.map(x => {
-			switch (x.type) {
-				case "name":
-				case "access_static":
-					return x;
-				case "access_template":
-					return this.resolveTemplate_Argument(x);
-				case "access_dynamic":
-					this.throw(
-						`Error: Dynamic access should not be present in a data type`,
-						node.ref.start, node.ref.end
-					);
-					return x;
-				default:
-					throw new Error(`Unexpected access type ${x.type}`);
-			}
-		});
-
-		if (access.includes(null)) {
-			return null;
-		}
-
-		return access;
-	}
-
-	resolveTemplate_Argument (node) {
-		let access = node.value.map(arg => {
-			switch (arg.type) {
-				case "data_type":
-					var type = this.getType(arg);
-					if (type === null) {
-						this.throw(
-							`Error: Unknown data type ${arg.flat()}`,
-							arg.ref.start, arg.ref.end
-						);
-						return null;
-					}
-
-					return type;
-				case "constant":
-					var val = this.compile_constant(arg);
-					return val;
-				default:
-					this.throw(
-						`Error: ${arg.type} are currently unsupported in template arguments`,
-						arg.ref.start, arg.ref.end
-					);
-					return null;
-			}
-		});
-
-		if (access.includes(null)) {
-			return null;
-		}
-
-		return new BNF.SyntaxNode(
-			node.type,
-			access,
-			node.ref.clone()
-		);
 	}
 
 

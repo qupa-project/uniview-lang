@@ -4,7 +4,7 @@ const path = require('path');
 
 const { Generator_ID } = require('./generate.js');
 const LLVM = require('./../middle/llvm.js');
-const Primative = require('../primative/main.js');
+const Primitive = require('../primative/main.js');
 
 const File = require('./file.js');
 
@@ -25,11 +25,15 @@ class Project {
 
 		this.includes = [];
 
-		this.primatives = [];
-		Primative.Generate(this); // self imports
-		this.primatives.push(this.files[0]);
+		this.primitives = [];
+
+		// Import the main file
+		Primitive.Generate(this); // self imports
+		this.primitives.push(this.files[0]);
+
+		// Import the Uniview language internals
 		this.import(path.resolve(__dirname, "../../std/uniview.uv"), false);
-		this.primatives.push(this.files[1]);
+		this.primitives.push(this.files[1]);
 	}
 
 	import (path, entry = false, relation = this.rootPath) {
@@ -105,7 +109,7 @@ class Project {
 	 * Returns the primative library
 	 */
 	getPrimatives () {
-		return this.primatives;
+		return this.primitives;
 	}
 
 	/**

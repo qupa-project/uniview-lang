@@ -79,7 +79,7 @@ class Function {
 			}
 
 			this.ctx.getFile().throw(
-				`Error: Unable to find implementation of ${instA.toString()} for trait ${this.ctx.trait.name} in implementation`,
+				`Error: Unable to find implementation of "${instA.toString()}" for trait "${this.ctx.trait.name}" in implementation`,
 				this.ctx.ref,
 				this.ctx.endRef
 			);
@@ -93,7 +93,7 @@ class Function {
 			}
 
 			this.ctx.getFile().throw(
-				`Error: Implementation has an extra function instance ${instA.toString()} for trait ${this.ctx.trait.name} in implementation`,
+				`Error: Implementation has an extra function instance "${instA.toString()}" for trait "${this.ctx.trait.name}" in implementation`,
 				this.ctx.ref,
 				instA.ref
 			);

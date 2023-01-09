@@ -12,6 +12,7 @@ const Primitive = {
 const ExecutionFlow = require('./flow.js');
 
 const Reserved = require('../../reserved.js');
+const { ResolveAccess } = require('../resolve.js');
 
 class Execution extends ExecutionFlow {
 
@@ -168,10 +169,11 @@ class Execution extends ExecutionFlow {
 		}
 
 		// Link any template access
-		let access = this.resolveTemplate(ast.value[0]);
-		if (access === null) {
+		let res = ResolveAccess(ast.value[0], this.ctx);
+		if (res === null) {
 			return null;
 		}
+		let access = res.access;
 
 		// Find a function with the given signature
 		let target = this.getFunction(access, signature);

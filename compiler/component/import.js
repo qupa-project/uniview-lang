@@ -80,17 +80,6 @@ class Import {
 		return null;
 	}
 
-	getTrait (access, template, stack) {
-		for (let lib of this.files) {
-			let opt = lib.file.getTrait(access, template, stack);
-			if (opt) {
-				return opt;
-			}
-		}
-
-		return null;
-	}
-
 	link () {
 		return;
 	}

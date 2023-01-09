@@ -67,15 +67,6 @@ class ExecutionBase {
 	}
 
 
-	/**
-	 *
-	 * @param {BNF_Node} node type: access
-	 */
-	resolveTemplate (node) {
-		return this.getFile().resolveTemplate(node);
-	}
-
-
 
 
 
