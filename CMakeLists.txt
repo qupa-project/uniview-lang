@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13.4)
 
 file(STRINGS "VERSION" UNIVIEW_PROJECT_VERSION)
-project(uniview-lang VERSION ${UNIVIEW_PROJECT_VERSION} LANGUAGES C CXX)
+project(uniview-lang VERSION ${UNIVIEW_PROJECT_VERSION} LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,18 +22,13 @@ endif()
 message("Compiler architecture is ${_compiler_arch}")
 
 
-# list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_DIR}/lib/")
-
-
 SET(LLVM_DIR "./lib/install/lib/cmake/llvm" CACHE STRING "" FORCE)
-# find_package(LLVM REQUIRED CONFIG PATHS "./lib/install/lib/cmake/llvm" "lib/install/lib/cmake/llvm" NO_DEFAULT_PATH)
 find_package(LLVM REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
 
 include_directories(${LLVM_INCLUDE_DIRS})
-# separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 
 
@@ -53,6 +48,7 @@ llvm_map_components_to_libnames(
 	Support
 	Target
 	Linker
+	Object
 	# aarch64asmparser
 	# aarch64codegen
 	# aarch64desc
@@ -68,22 +64,46 @@ llvm_map_components_to_libnames(
 )
 
 
-# ADD_LIBRARY( Uniview-Core STATIC "src/core/main.c" )
+
+# set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -flto)
+set(CMAKE_C_COMPILER clang)
+SET( TAR )
+
 
 SET( APP_EXE uvc-tools )
-SET( TAR )
+message("Configuring ${APP_EXE}")
 add_executable( ${APP_EXE} "src/uvc-tool/main.c"
 	"src/uvc-tool/verbose.c"
 )
 
-# TARGET_LINK_LIBRARIES( Uniview-Core ${llvm_libs} )
-# TARGET_LINK_LIBRARIES( ${APP_EXE} Uniview-Core )
+
+SET( LIB uvc-core )
+message("Configuring ${LIB}")
+ADD_LIBRARY( ${LIB} STATIC
+	"src/core/main.c"
+)
+target_compile_options(${LIB} PUBLIC ${CMAKE_C_FLAGS} -emit-llvm)
+target_compile_options(${LIB} PUBLIC ${CMAKE_C_FLAGS} -flto)
+message("  flags: ${CMAKE_C_FLAGS}")
+# TARGET_LINK_LIBRARIES( ${LIB} ${llvm_libs} )
+
+
+
+message("Linking ${APP_EXE}")
 TARGET_LINK_LIBRARIES( ${APP_EXE} "${llvm_libs}" )
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
 
-add_custom_command(TARGET uvc-tools POST_BUILD
-	COMMAND node "${PROJECT_SOURCE_DIR}/tools/env-bind.js" "--uvc_tool=$<TARGET_FILE:uvc-tools>"
+
+
+add_custom_command(TARGET ${APP_EXE} POST_BUILD
+	COMMAND node "${PROJECT_SOURCE_DIR}/tools/env-bind.js" "--uvc_tool=$<TARGET_FILE:${APP_EXE}>"
 )
+add_custom_command(TARGET ${LIB} POST_BUILD
+	COMMAND node "${PROJECT_SOURCE_DIR}/tools/env-bind.js" "--uvc_lib=$<TARGET_FILE:${LIB}>"
+)
+
+
+message("Building")

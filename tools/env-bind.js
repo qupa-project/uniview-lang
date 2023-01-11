@@ -23,7 +23,8 @@ function UpdateEnv(delta) {
 
 if (process.argv[1] == __filename) {
 	let getopt = new Getopt([
-		['', 'uvc_tool=ARG', 'the path to the prebuilt UVC tool']
+		['', 'uvc_tool=ARG', 'the path to the prebuilt UVC tool'],
+		['', 'uvc_lib=ARG', 'the path to the prebuilt uniview library']
 	]).bindHelp();
 	let opt = getopt.parse(process.argv.slice(2));
 

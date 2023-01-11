@@ -1,8 +1,4 @@
 #pragma once
 
-
-#include <llvm-c/Core.h>
-#include <llvm-c/ExecutionEngine.h>
-#include <llvm-c/Target.h>
-#include <llvm-c/Analysis.h>
-#include <llvm-c/BitWriter.h>
+/* Filename: lib_mylib.h */
+void fun(void);
