@@ -1,8 +1,7 @@
-include llvm "./string.ll";
 import "memory.uv" as Memory;
 
 external assume {
-	fn "qupa.cstring.size" (str: cstring): u64 as sizeof;
+	fn strlen (str: cstring): u64;
 }
 
 struct String {
@@ -12,7 +11,7 @@ struct String {
 
 impl String {
 	fn new(str: cstring): String {
-		let size = sizeof($str);
+		let size = strlen($str);
 		let out = new String {
 			data: Memory.Alloc(size);
 			size: size;
