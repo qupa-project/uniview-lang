@@ -134,7 +134,7 @@ program ::= %w* ( stmt_top %w* )* ;
 #=============================
 #  Template
 #=============================
-	template ::= %( %"template" w* "(" w* ) template_args %( w* ")" ) ;
+	template ::= %( %"sect" w* "(" w* ) template_args %( w* ")" ) ;
 		template_args ::= struct_attribute %w* ( %( "," w* ) struct_attribute %w* )* ;
 
 
