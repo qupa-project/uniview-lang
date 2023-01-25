@@ -50,7 +50,7 @@ jobs:
           cmake --build build
 
       - name: Compiler Setup
-        run: run-s build:syntax
+        run: npm run build:syntax
 
       - name: Compiler test
         run: node ./compiler/test.js --action
