@@ -35,7 +35,7 @@ jobs:
           key: llvm-14.0
 
       - name: "Install LLVM and Clang"
-        uses: KyleMayes/install-llvm-action@v1.6
+        uses: KyleMayes/install-llvm-action@v1
         with:
           version: "14.0"
           directory: "./lib/install"
