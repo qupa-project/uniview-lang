@@ -1,10 +1,10 @@
+const chalk = require('chalk');
 const LLVM = require('../../middle/llvm.js');
 const Structure = require('../struct.js');
 const TypeRef = require('../typeRef.js');
 
 const Value = require('./value.js');
 
-const Probability = require('./probability.js');
 const { SyntaxNode } = require('bnf-parser');
 
 
@@ -24,12 +24,13 @@ class Variable extends Value {
 		this.name = name;
 		this.store = null;
 
-		this.probability = null;
 		this.isDecomposed = false;
 
 		this.lastUninit = ref;
 
 		this.isCorrupt = false; // Is there an invalid state tree
+		this.err = null;
+
 		this.isClone = false;
 		this.hasUpdated = false;
 
@@ -52,7 +53,7 @@ class Variable extends Value {
 
 			return true;
 		} else {
-			return this.store == null && this.probability == null;
+			return this.store == null;
 		}
 	}
 
@@ -78,17 +79,11 @@ class Variable extends Value {
 	 */
 	resolve (ref, ignoreComposition = false) {
 		if (this.isCorrupt) {
-			return {
+			return this.err || {
 				error: true,
 				msg: `Unable to merge state possibility with originally undefined value`,
 				ref
 			};
-		}
-
-		// Resolve probability
-		let res = this.resolveProbability(ref);
-		if (res !== null) {
-			return res;
 		}
 
 		// Automatically compose value
@@ -116,7 +111,7 @@ class Variable extends Value {
 		// If the current store is a non-loaded GEP
 		//   Load the GEP ready for use
 		if (this.store instanceof LLVM.GEP) {
-			throw new Error("GEPs should be handled by probability resolution");
+			throw new Error("GEPs should be handled by branch resolution");
 		}
 
 
@@ -183,7 +178,6 @@ class Variable extends Value {
 	makeUndefined(ref) {
 		this.elements.clear();
 		this.isDecomposed = false;
-		this.probability = null;
 		this.store = null;
 		this.lastUninit = ref.start;
 	}
@@ -240,7 +234,6 @@ class Variable extends Value {
 		}
 
 		this.isDecomposed = false;
-		this.probability = null;
 		this.hasUpdated = true;
 		this.store = register;
 
@@ -277,49 +270,45 @@ class Variable extends Value {
 		}
 
 		let struct = this.type.type;
-		if (this.type.type.typeSystem == "linear") {
-			let gep = struct.getTerm(accessor);
-			if (gep === null) {
-				return {
-					error: true,
-					msg: `Unable to access element "${accessor}"`,
-					ref: ref
-				};
-			}
-
-			let out;
-			if (!this.elements.has(gep.index)) {
-				// Access element
-				let read = struct.accessGEPByIndex(gep.index, this.store);
-				preamble.merge(read.preamble);
-
-				// Create a the new variable
-				read.type.constant = read.type.constant || this.type.constant;
-				out = new Variable(
-					read.type,
-					`${this.name}.${accessor}`,
-					ref.start
-				);
-
-				// Force the struct value into the variable
-				out.markUpdated(read.instruction, true, ref);
-
-				this.elements.set(gep.index, out);
-			} else {
-				out = this.elements.get(gep.index);
-			}
-
-			return {
-				variable: out,
-				preamble: preamble
-			};
-		} else {
+		if (!(struct instanceof Structure)) {
 			return {
 				error: true,
 				msg: "Unable to access sub-element of non-structure or static array",
 				ref: ref
 			};
 		}
+
+		let gep = struct.getTerm(accessor);
+		if (gep === null) {
+			return {
+				error: true,
+				msg: `Unable to access element "${accessor}"`,
+				ref: ref
+			};
+		}
+
+		let out;
+		if (!this.elements.has(gep.index)) {
+			// Access element
+			let read = struct.accessGEPByIndex(gep.index, this.store);
+			preamble.merge(read.preamble);
+
+			// Create a the new variable
+			read.type.constant = read.type.constant || this.type.constant;
+			out = new Variable(
+				read.type,
+				`${this.name}.${accessor}`,
+				ref.start
+			);
+
+			this.elements.set(gep.index, out);
+			out.store = read.instruction;
+		}
+
+		return {
+			variable: this.elements.get(gep.index),
+			preamble: preamble
+		};
 	}
 
 
@@ -399,43 +388,20 @@ class Variable extends Value {
 
 
 
-		/**
-	 *
-	 * @param {LLVM.Fragment|Error} ref
-	 */
-	decompose (ref){
-		// If already decomposed do nothing
-		if (this.isDecomposed) {
-			return new LLVM.Fragment();
+	isComposable() {
+		if (this.isCorrupt) {
+			return false;
 		}
 
-		// Only structures can be decomposed
-		if (!(this.type.type.typeSystem == "linear")) {
-			return {
-				error: true,
-				msg: `Cannot decompose none decomposable type ${this.type.type.name}`,
-				ref: ref
-			};
+		// Already composed
+		if (this.isDecomposed == false) {
+			return true;
 		}
 
-		// Cannot decompse an undefined value
-		if (this.store === null) {
-			return {
-				error: true,
-				msg: "Cannot decompose an undefined value",
-				ref: ref
-			};
-		}
-
-		// Ensure any super positions are resolved before decomposition
-		let res = this.resolveProbability(ref);
-		if (res !== null) {
-			return res;
-		}
-
-		// Mark decposed
-		this.isDecomposed = true;
-		return new LLVM.Fragment();
+		// If all elements are ready to be composed
+		return this.elements.values()
+			.map(v => !v.isUndefined && v.isComposable)
+			.reduce((c, p) => c && p, true);
 	}
 
 	/**
@@ -445,11 +411,6 @@ class Variable extends Value {
 	compose (ref){
 		if (!this.isDecomposed) {
 			return new LLVM.Fragment(ref);
-		}
-
-		let res = this.resolveProbability(ref);
-		if (res !== null) {
-			return res;
 		}
 
 		let frag = new LLVM.Fragment();
@@ -502,107 +463,110 @@ class Variable extends Value {
 		return frag;
 	}
 
-
-
-
-
-
-
-	/**
-	 * Prepare this variable to be merged with a higher scope
-	 * @param {LLVM.ID} segment
-	 * @param {BNF_Reference} ref
-	 * @returns
+			/**
+	 *
+	 * @param {LLVM.Fragment|Error} ref
 	 */
-	createProbability (segment, needsDecomposition = false, ref) {
-		let preamble  = new LLVM.Fragment();
-		let activator = null;
-		let error     = null;
-		let reg       = new LLVM.Constant("null");
-
-		// Resolve any probabilities
-		let instr;
-		if (!error) {
-			instr = this.resolve(ref, true);
-
-			if (instr.error) {
-				error = instr;
-			} else {
-				preamble.merge(instr.preamble);
-			}
+	decompose (ref){
+		// If already decomposed do nothing
+		if (this.isDecomposed) {
+			return new LLVM.Fragment();
 		}
 
-		// Decompose if required
-		if (!error && needsDecomposition) {
-			let res = this.decompose(ref);
-			if (res.error) {
-				error = res;
-			} else {
-				preamble.merge(res);
-			}
+		// Only structures can be decomposed
+		if (!(this.type.type.typeSystem == "linear")) {
+			return {
+				error: true,
+				msg: `Cannot decompose none decomposable type ${this.type.type.name}`,
+				ref: ref
+			};
 		}
 
-		if (error) {
-			activator = new LLVM.Latent(new LLVM.Failure(
-				error.msg, error.ref
-			), ref);
-		} else if (instr.register instanceof LLVM.GEP) {
-			throw new Error("Bad code path, GEP should have been removed within this.resolve()");
-		} else {
-			reg = instr.register;
+		// Cannot decompose an undefined value
+		if (this.store === null) {
+			return {
+				error: true,
+				msg: "Cannot decompose an undefined value",
+				ref: ref
+			};
 		}
 
-		return {
-			probability: new Probability(activator, reg, segment, ref),
-			preamble: preamble
-		};
+		this.isDecomposed = true;
+		return new LLVM.Fragment();
 	}
 
-	/**
-	 * Create a latent resolution point for resolving the value from multiple child scopes
-	 * @param {Variable[]} options
-	 * @param {LLVM.ID} segment
-	 * @param {BNF_Reference} ref
-	 * @returns
-	 */
-	createResolutionPoint (variables, scopes, segment, ref) {
-		let compStatus = GetCompositionState([this, ...variables]);
-		let preambles = scopes.map(x => new LLVM.Fragment());
+
+
+
+
+
+
+	resolveBranches(choices, ref) {
+
+		let variables = choices.map(x => x.variable);
+		let blocks = choices.map(x => x.blocks);
+
+		let compStatus = GetCompositionState(variables);
+		let preambles = blocks.map(_ => new LLVM.Fragment());
 		let frag = new LLVM.Fragment();
-		let hasErr = false;
 
 
-		// Prepare each scope for merging
-		let needsDecomposition = compStatus.hasDecomposed;
-		let opts = variables.map((v, i) => v.createProbability(
-			scopes[i].entryPoint.reference(),
-			needsDecomposition,
-			ref
-		));
-		opts.map((x, i) => preambles[i].merge(x.preamble));  // Append preambles to correct scopes
-		opts = opts.map(x => x.probability);                 // Extract the probabilities
+		/*================================
+		  Prepare each scope for merging
+		=================================*/
+		if (compStatus.hasDecomposed) {
+			let composable = choices.map(c => c.variable.isComposable());
+			if (composable) {
+				choices.map((c, i) => {
+					let res = c.variable.compose();
+					if (res.error) {
+						throw new Error("How? it said it was composable...");
+					}
+					preambles[i].merge(res);
+				});
+			} else {
+				throw new Error("Unimplemented: Needs to cascade resolution down the tree");
+			}
+		}
 
+		let blanks = choices.map(c => c.variable.store === null);
 
-		// Check for a failure in any branch
-		let hasFailure = opts.map(x => x.isFailure()).includes(true);
+		// Undefined in all states
+		if (!blanks.includes(false)) {
+			this.makeUndefined(ref);
+			return { preambles, frag };
+		}
 
+		// Undefined in one but not all states
+		if (blanks.includes(true)) {
+			this.makeUndefined(ref);
 
-		// Generate the latent resolution point
+			return {
+				error: true,
+				msg: `Cannot merge branch states, due to mixed undefined states of variable ${chalk.green(this.name)}.\n` +
+					"The variable must be defined or undefined in all states, but not a combination of the two",
+				start: ref.start,
+				end: ref.end
+			};
+		}
+
+		let opts = choices.map(c => [
+			c.variable.store,
+			new LLVM.Name(c.block, false, ref),
+		]);
+
+		opts
+			.filter(x => x[0].error)
+			.map(x => {
+				this.isCorrupt = true;
+				this.err = x;
+			});
+
 		let id = new LLVM.ID();
-		let instruction = new LLVM.Latent(
-			hasFailure ?
-				new LLVM.Failure(
-					`Cannot resolve superposition due to some states having internal errors`,
-					ref
-				) :
-				new LLVM.Set(
-					new LLVM.Name(id, false, ref),
-					new LLVM.Phi(this.type.toLLVM(), opts.map((x, i) => [
-						x.register.name,
-						new LLVM.Name(x.segment, false, ref)
-					]), ref),
-					ref
-				)
+		let instruction = new LLVM.Set(
+			new LLVM.Name(id, false, ref),
+			new LLVM.Phi(this.type.toLLVM(), opts, ref),
+			ref
 		);
 		let register = new LLVM.Argument(
 			this.type.toLLVM(),
@@ -610,112 +574,13 @@ class Variable extends Value {
 			ref
 		);
 		frag.append(instruction);
-
-		// Mark latent result
-		let prob = new Probability(
-			instruction,
-			register,
-			segment,
-			ref
-		);
-
-		for (let opt of opts) {
-			prob.link(opt);
-		}
-		this.probability = prob;
-
-		if (!hasErr && compStatus.hasDecomposed) {
-			// Get all sub-name spaces
-			let names = new Set();
-			for (let opt of variables) {
-				for (let key of opt.elements) {
-					names.add(Number(key[0]));
-				}
-			}
-
-			let links = [];
-			for (let opt of variables) {
-				let res = opt.decompose(ref);
-				if (res.error) {
-					links.push(new LLVM.Latent(new LLVM.Failure(
-						res.msg,
-						res.ref
-					), ref));
-				}
-			}
-
-			for (let name of names) {
-				let target = this.access(name, ref);
-				if (!target || target.error) {
-					console.error("Internal Error: Unhandled behaviour");
-					console.error(`From: Variable "${this.name}"`);
-					console.error(`  ${target.ref.start.toString()} -> ${target.ref.end.toString()}`);
-					console.error(`${target.msg}`);
-					process.exit(1);
-				}
-				frag.append(target.preamble);
-				target = target.variable;
-
-				let forward = variables.map(v => v.access(name, ref));
-				for (let [i, act] of forward.entries()) {
-					preambles[i].append(act.preamble);
-				}
-
-				let child = target.createResolutionPoint(forward.map(x => x.variable), scopes, segment, ref);
-
-				// Merge information
-				for (let i=0; i<preambles.length; i++) {
-					preambles[i].append(child.preambles[i]);
-				}
-				frag.append(child.frag);
-			}
-
-		}
-		this.hasUpdated = true;
-
-
-		// Merged two decomposed states
-		//   Hence this state is now decomposed
-		if (compStatus.hasDecomposed) {
-			this.isDecomposed = true;
-		}
+		this.markUpdated(register, true, ref);
 
 		return {
 			preambles,
 			frag
 		};
 	}
-
-	/**
-	 *
-	 * @param {Possibility} other
-	 */
-	addPossibility (poss, segment) {
-		if (this.store.length == 0){
-			this.isCorrupt = true;
-		}
-
-		this.store.push(poss);
-	}
-
-	/**
-	 * Resolve latent super positions as value needs to be accessed
-	 * @param {Error?} ref
-	 */
-	resolveProbability (ref) {
-		if (this.probability) {
-			let status = this.probability.resolve(ref);
-			if (status !== null && status.error) {
-				return status;
-			}
-
-			this.store = this.probability.register;
-			this.probability = null;
-		}
-
-		return null;
-	}
-
 
 
 
@@ -820,12 +685,15 @@ class Variable extends Value {
  * @param {Variable[]} variables
  */
 function GetCompositionState (variables) {
-	let composition = variables.map(v => v.isDecomposed);
-
-	return {
-		hasDecomposed: composition.filter(val => val == true).length != 0,
-		hasComposed: composition.filter(val => val == false).length != 0
-	};
+	return variables
+		.reduce((c, p) => {
+			return {
+				hasDecomposed: p.hasDecomposed || c.isDecomposed,
+				hasComposed: p.hasComposed || !c.isDecomposed,
+			};
+		}, {
+			hasComposed: false, hasDecomposed: false
+		});
 }
 
 module.exports = Variable;

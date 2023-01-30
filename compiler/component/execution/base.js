@@ -136,10 +136,9 @@ class ExecutionBase {
 
 
 
-	sync (branches, segment, ref){
+	sync (branches, ref){
 		return this.scope.sync(
 			branches,
-			segment,
 			ref
 		);
 	}

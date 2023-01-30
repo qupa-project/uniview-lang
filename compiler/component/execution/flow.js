@@ -17,6 +17,7 @@ class ExecutionFlow extends ExecutionExpr {
 		let frag = new LLVM.Fragment(ast);
 
 		// Check for elif clause
+		// These should have been abstracted during syntax parsing
 		if (ast.value[1].length > 0) {
 			this.getFile().throw(
 				`Error: Elif statements are currently unsupported`,
@@ -24,8 +25,6 @@ class ExecutionFlow extends ExecutionExpr {
 			);
 			return null;
 		}
-
-
 
 
 		/*===================================
@@ -45,9 +44,6 @@ class ExecutionFlow extends ExecutionExpr {
 		frag.merge(cond.preamble);
 
 
-
-
-
 		/*===================================
 			Prepare condition bodies
 		===================================*/
@@ -60,8 +56,6 @@ class ExecutionFlow extends ExecutionExpr {
 		if (branch_false == null || branch_true == null) {
 			return null;
 		}
-
-
 
 
 		/*===================================
@@ -103,7 +97,7 @@ class ExecutionFlow extends ExecutionExpr {
 			let continousSet = totalSet.filter( x => x.env.returned == false );
 
 
-			// Clean up any local variables
+			// Clean up newly defined variables
 			for (const branch of continousSet) {
 				let res = branch.env.cleanup(branch.ref);
 				if (res.error) {
@@ -117,9 +111,16 @@ class ExecutionFlow extends ExecutionExpr {
 			// Synchronise possible states into current
 			let merger = this.sync(
 				continousSet.map( x => x.env ),
-				endpoint_id,
 				ast.ref
 			);
+
+			if (merger.error) {
+				this.getFile().throw(
+					merger.msg,
+					merger.start, merger.end
+				);
+				return null;
+			}
 
 			// Merge branches
 			for (const [i, branch] of continousSet.entries()) {
@@ -153,7 +154,7 @@ class ExecutionFlow extends ExecutionExpr {
 
 
 	compile_when (ast) {
-		throw new Error("When statements are currently disabled");
+		throw new Error("When statements have been removed and will be replaced with match statements");
 	}
 
 
