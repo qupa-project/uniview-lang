@@ -1,10 +1,6 @@
-const Flattern = require('../../parser/flatten.js');
-const { Generator_ID } = require('../generate.js');
 const LLVM = require("../../middle/llvm.js");
 const TypeRef = require('./../typeRef.js');
 
-
-const Probability = require('./probability.js');
 const Variable = require('./variable.js');
 
 class Scope {

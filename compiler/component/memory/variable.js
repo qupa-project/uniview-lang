@@ -36,11 +36,6 @@ class Variable extends Value {
 		this.elements = new Map();
 	}
 
-
-	isSuperPosition () {
-		return this.possiblity !== null;
-	}
-
 	isUndefined () {
 		if (this.isDecomposed) {
 			// Not all terms have GEPs let alone undefined
@@ -272,10 +267,6 @@ class Variable extends Value {
 		}
 		preamble.merge(res.preamble);
 
-		// if (accessor.tokens != undefined) {
-		// 	throw new Error("Invalid variable accessor");
-		// }
-
 		// Automatically decompose the value if needed
 		if (!this.isDecomposed) {
 			let res = this.decompose(ref);
@@ -298,7 +289,11 @@ class Variable extends Value {
 
 			let out;
 			if (!this.elements.has(gep.index)) {
+				// Access element
 				let read = struct.accessGEPByIndex(gep.index, this.store);
+				preamble.merge(read.preamble);
+
+				// Create a the new variable
 				read.type.constant = read.type.constant || this.type.constant;
 				out = new Variable(
 					read.type,
@@ -306,13 +301,9 @@ class Variable extends Value {
 					ref.start
 				);
 
-				let act = new LLVM.Latent(read.preamble, ref);
-				preamble.append(act);
+				// Force the struct value into the variable
+				out.markUpdated(read.instruction, true, ref);
 
-				out.probability = new Probability(
-					act,
-					read.instruction,
-				"0", ref);
 				this.elements.set(gep.index, out);
 			} else {
 				out = this.elements.get(gep.index);
@@ -729,105 +720,12 @@ class Variable extends Value {
 
 
 	induceType(type, register, ref) {
-		if (type.type.size == 0) {
-			this.type = type;
-			this.store = undefined;
-			this.probability = undefined;
-			this.hasUpdated = false;
-			return new LLVM.Latent(new LLVM.Fragment());
-		}
-
-		let id = new LLVM.ID();
-		let frag = new LLVM.Fragment();
-
-		frag.append(new LLVM.Set(
-			new LLVM.Name(id, false, ref),
-			new LLVM.Bitcast(
-				type.toLLVM(ref, false, true),
-				register
-			)
-		));
-
-		if (type.type.typeSystem == "normal") {
-			let load = new LLVM.ID();
-			frag.append(new LLVM.Set(
-				new LLVM.Name(load, false),
-				new LLVM.Load(type.toLLVM(), new LLVM.Name(id.reference()))
-			));
-			id = load;
-		}
-
-		let latent = new LLVM.Latent(
-			frag
-		);
-
-		this.probability = new Probability(
-			latent,
-			new LLVM.Argument(type.toLLVM(), new LLVM.Name(id.reference(), false, ref))
-		);
-		this.type = type;
-
-		return latent;
+		throw new Error("When statements have been removed and will be replaced with match statements");
 	}
 
 	// Reverts the behaviour of induceType
 	deduceType(type, register, ref) {
-
-		// There is no value to be updated
-		if (this.isUndefined()) {
-			this.type = type;
-			return new LLVM.Latent(new LLVM.Fragment());
-		}
-
-		// Update the mode of the either type to this type
-		if (this.type.size == 0) {
-			throw new Error("Unimplemented");
-		}
-
-		// Read the current value
-		let val = this.read(ref);
-		if (val.error) {
-			return val;
-		}
-
-		// Transform the location to the correct pointer type
-		let id = new LLVM.ID();
-		let frag = new LLVM.Fragment();
-		frag.append(new LLVM.Set(
-			new LLVM.Name(id, false, ref),
-			new LLVM.Bitcast(
-				val.type.toLLVM(ref, false, true),
-				register
-			)
-		));
-
-		// Load the struct into memory
-		if (this.type.type.typeSystem != "normal") {
-			let load = new LLVM.ID();
-			frag.append(new LLVM.Set(
-				new LLVM.Name(load, false),
-				new LLVM.Load(type.toLLVM(), new LLVM.Name(id.reference()))
-			));
-			id = load;
-		}
-
-		// Store the value into the correct address
-		frag.append(new LLVM.Store(
-			new LLVM.Argument(this.type.toLLVM(), id.reference(), ref),
-			val
-		));
-
-		let latent = new LLVM.Latent(
-			frag
-		);
-
-		this.probability = new Probability(
-			latent,
-			register
-		);
-		this.type = type;
-
-		return latent;
+		throw new Error("When statements have been removed and will be replaced with match statements");
 	}
 
 
