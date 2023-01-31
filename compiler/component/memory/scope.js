@@ -287,8 +287,6 @@ class Scope {
 					continue;
 				}
 
-				console.log(290, branches)
-
 				let res = this.variables[name].resolveBranches(
 					branches.map(exec => {
 						return {

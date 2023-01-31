@@ -502,12 +502,10 @@ class Variable extends Value {
 
 
 	resolveBranches(choices, ref) {
-
-		let variables = choices.map(x => x.variable);
-		let blocks = choices.map(x => x.blocks);
-
-		let compStatus = GetCompositionState(variables);
-		let preambles = blocks.map(_ => new LLVM.Fragment());
+		let compStatus = GetCompositionState(
+			choices.map(x => x.variable)
+		);
+		let preambles = choices.map(_ => new LLVM.Fragment());
 		let frag = new LLVM.Fragment();
 
 
@@ -551,8 +549,8 @@ class Variable extends Value {
 		}
 
 		let opts = choices.map(c => [
-			c.variable.store,
-			new LLVM.Name(c.block, false, ref),
+			c.variable.store.name,
+			new LLVM.Name(c.block.reference(), false, ref),
 		]);
 
 		opts
@@ -561,6 +559,8 @@ class Variable extends Value {
 				this.isCorrupt = true;
 				this.err = x;
 			});
+
+		console.log(565, opts);
 
 		let id = new LLVM.ID();
 		let instruction = new LLVM.Set(
