@@ -1,3 +1,5 @@
+const chalk = require('chalk');
+
 function FixStringLength (string, count, filler = " ") {
 	return filler.repeat(Math.max(0, count - string.length)) +
 		string.slice(0, count);
@@ -43,14 +45,14 @@ function CodeSection (string, refStart, refEnd) {
 		string.push(
 			` ${FixStringLength("*", digits)} │` +
 			" ".repeat(refStart.col-indent) +
-			"^".repeat(refEnd.col-refStart.col)
+			chalk.cyan("^".repeat(refEnd.col-refStart.col))
 		);
 	}
 
 	return '─'.repeat(digits+2) + "┬" + "─".repeat(maxLen-indent+2) + "\n" +
 		string.join('\n') + "\n" +
 		'─'.repeat(digits+2) + "┴" + "─".repeat(maxLen-indent+2) +
-		`\n  ${refStart.toString()} -> ${refEnd.toString()}`;
+		chalk.gray(`\n  ${refStart.toString()} -> ${refEnd.toString()}`);
 }
 
 module.exports = {

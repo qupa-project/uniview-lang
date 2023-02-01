@@ -1,9 +1,9 @@
-const { ApplyPrecedence } = require('./expr.js');
+const { SyntaxNode, Parser, ParseError, ReferenceRange, Reference } = require('bnf-parser');
+const chalk = require('chalk');
+const fs = require('fs');
 
 const { CodeSection } = require('../helper/error.js');
-
-const { SyntaxNode, Parser, ParseError, ReferenceRange, Reference } = require('bnf-parser');
-const fs = require('fs');
+const { ApplyPrecedence } = require('./expr.js');
 
 const syntax = new Parser(
 	JSON.parse(
@@ -853,7 +853,7 @@ module.exports = function (data, filename){
 	let res = syntax.parse(data, false, "program");
 	if (res instanceof ParseError) {
 		let msg = filename ? `${filename}:\n  ` : "";
-		msg += `Syntax error at ${res.ref.toString()}\n`;
+		msg += chalk.cyan(`Syntax error at ${res.ref.toString()}\n`);
 		msg += `  ${CodeSection(data, res.ref.start, res.ref.end).split('\n').join('\n  ')}\n\n`;
 		msg += `  Interpreted: ${res.msg}`;
 
