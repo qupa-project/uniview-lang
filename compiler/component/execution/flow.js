@@ -1,9 +1,7 @@
 const LLVM     = require("../../middle/llvm.js");
 const TypeRef  = require('../typeRef.js');
 
-const Flattern = require("../../parser/flatten.js");
-
-const Primative = {
+const Primitive = {
 	types: require('../../primative/types.js'),
 	Either: require('../../primative/either.js')
 };
@@ -32,7 +30,7 @@ class ExecutionFlow extends ExecutionExpr {
 		===================================*/
 		let cond = this.compile_expr(
 			ast.value[0].value[0],
-			new TypeRef(Primative.types.bool),
+			new TypeRef(Primitive.types.bool),
 			true
 		);
 		if (cond == null) {

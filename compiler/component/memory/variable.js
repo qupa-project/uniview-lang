@@ -37,26 +37,6 @@ class Variable extends Value {
 		this.elements = new Map();
 	}
 
-	isUndefined () {
-		if (this.isDecomposed) {
-			// Not all terms have GEPs let alone undefined
-			if (this.elements.size < this.type.type.terms.length) {
-				return false;
-			}
-
-			// Check all children are undefined
-			for (let elm of this.elements) {
-				if (elm[1].isUndefined() == false) {
-					return false;
-				}
-			}
-
-			return true;
-		} else {
-			return this.store == null;
-		}
-	}
-
 	cascadeUpdates () {
 		if (this.hasUpdated) {
 			return;
@@ -123,56 +103,24 @@ class Variable extends Value {
 
 
 
-
-
-	/**
-	 * Read the value of a variable
-	 * @param {LLVM.BNF_Reference} ref
-	 * @returns {LLVM.Argument|Error}
-	 */
-	read (ref) {
-		let out = this.resolve(ref, false);
-		if (out.error) {
-			return out;
-		}
-
-		if (this.type.native) {
-			if (this.type.lent) {
-				let loadID = new LLVM.ID();
-				let loadType = out.register.type.duplicate().offsetPointer(-1);
-				out.preamble.append(new LLVM.Set(
-					new LLVM.Name(loadID, false, ref),
-					new LLVM.Load(loadType, out.register.name, ref),
-					ref
-				));
-
-				out.type = loadType;
-				out.register = new LLVM.Argument(
-					loadType,
-					new LLVM.Name(loadID.reference(), false, ref),
-				ref);
+	isUndefined () {
+		if (this.isDecomposed) {
+			// Not all terms have GEPs let alone undefined
+			if (this.elements.size < this.type.type.terms.length) {
+				return false;
 			}
+
+			// Check all children are undefined
+			for (let elm of this.elements) {
+				if (elm[1].isUndefined() == false) {
+					return false;
+				}
+			}
+
+			return true;
 		} else {
-			if (this.type.lent) {
-				return {
-					error: true,
-					msg: "Cannot give ownership of a borrowed value to a child function",
-					ref
-				};
-			} else if (this.type.constant) {
-				return {
-					error: true,
-					msg: `Cannot consume a constant value\n  Recommend cloning $${this.name}`,
-					ref
-				};
-			}
-
-			this.makeUndefined(ref);
-			this.lastUninit = ref.start;
+			return this.store == null;
 		}
-
-		out.type = this.type;
-		return out;
 	}
 
 	makeUndefined(ref) {
@@ -239,6 +187,58 @@ class Variable extends Value {
 
 		return new LLVM.Fragment();
 	}
+
+
+		/**
+	 * Read the value of a variable
+	 * @param {LLVM.BNF_Reference} ref
+	 * @returns {LLVM.Argument|Error}
+	 */
+		read (ref) {
+			let out = this.resolve(ref, false);
+			if (out.error) {
+				return out;
+			}
+
+			if (this.type.native) {
+				if (this.type.lent) {
+					let loadID = new LLVM.ID();
+					let loadType = out.register.type.duplicate().offsetPointer(-1);
+					out.preamble.append(new LLVM.Set(
+						new LLVM.Name(loadID, false, ref),
+						new LLVM.Load(loadType, out.register.name, ref),
+						ref
+					));
+
+					out.type = loadType;
+					out.register = new LLVM.Argument(
+						loadType,
+						new LLVM.Name(loadID.reference(), false, ref),
+					ref);
+				}
+			} else {
+				if (this.type.lent) {
+					return {
+						error: true,
+						msg: "Cannot give ownership of a borrowed value to a child function",
+						ref
+					};
+				} else if (this.type.constant) {
+					return {
+						error: true,
+						msg: `Cannot consume a constant value\n  Recommend cloning $${this.name}`,
+						ref
+					};
+				}
+
+				this.makeUndefined(ref);
+				this.lastUninit = ref.start;
+			}
+
+			out.type = this.type;
+			return out;
+		}
+
 
 		/**
 	 *
@@ -580,17 +580,6 @@ class Variable extends Value {
 			preambles,
 			frag
 		};
-	}
-
-
-
-	induceType(type, register, ref) {
-		throw new Error("When statements have been removed and will be replaced with match statements");
-	}
-
-	// Reverts the behaviour of induceType
-	deduceType(type, register, ref) {
-		throw new Error("When statements have been removed and will be replaced with match statements");
 	}
 
 
