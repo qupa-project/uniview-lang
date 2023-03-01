@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 file(STRINGS "../VERSION" UNIVIEW_PROJECT_VERSION)
 project(univiewlibs VERSION ${UNIVIEW_PROJECT_VERSION} LANGUAGES C CXX)
 
+find_program(CLANG_PATH clang++)
+set(CMAKE_CXX_COMPILER ${CLANG_PATH})
+set(CMAKE_MAKE_PROGRAM Ninja)
+set(CMAKE_LINKER lld)
+
 include(ExternalProject)
 
 
@@ -12,6 +17,9 @@ include(ExternalProject)
 
 # System information
 message("Setup Uniview Libs ${UNIVIEW_PROJECT_VERSION}")
+message("-- CMAKE_CXX_COMPILER:     ${CMAKE_CXX_COMPILER}")
+message("-- CMAKE_MAKE_PROGRAM:     ${CMAKE_MAKE_PROGRAM}")
+message("-- CMAKE_LINKER:           ${CMAKE_LINKER}")
 message("-- CMAKE_SYSTEM_INFO_FILE: ${CMAKE_SYSTEM_INFO_FILE}")
 message("-- CMAKE_SYSTEM_NAME:      ${CMAKE_SYSTEM_NAME}")
 message("-- CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")

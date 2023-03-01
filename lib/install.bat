@@ -1,4 +1,4 @@
-echo off
+@echo off
 
 title "Uniview Dependencie Setup"
 
@@ -14,4 +14,4 @@ cmake --build build --target install
 
 cd %last%
 
-echo on
+@echo on
