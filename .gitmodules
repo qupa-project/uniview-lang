@@ -2,5 +2,5 @@
 	path = lib/llvm
 	url = https://github.com/llvm/llvm-project
 	ignore = dirty
-	branch = release/14.x
+	branch = release/15.x
 	depth = 1

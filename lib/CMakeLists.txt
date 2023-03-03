@@ -43,9 +43,8 @@ if(GIT_FOUND)
 		if(GIT_SUBMODULE)
 			message(STATUS "Updating submodules...")
 			execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive --depth 1
-			      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-			      RESULT_VARIABLE git_submod_result)
-			#message("git_submod_result ${git_submod_result}")
+			  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+			  RESULT_VARIABLE git_submod_result)
 			if(NOT git_submod_result EQUAL "0")
 				message(FATAL_ERROR "git submodule update --init --recursive --depth 1 failed with ${git_submod_result}, please checkout submodules")
 			endif()
@@ -61,10 +60,16 @@ endif()
 # find_package(LLVM REQUIRED CONFIG)
 
 # set(LLVM_TARGETS_TO_BUILD:STRING "arm64;X86_64;WebAssembly;risv64") future targets
+set(TARGET_TRIPLE "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_VERSION}")
+set(LLVM_DEFAULT_TARGET_TRIPLE ${TARGET_TRIPLE})
 set(LLVM_TARGETS_TO_BUILD "X86;WebAssembly" CACHE STRING "" FORCE)
 set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "" FORCE)
+set(HAVE_CXX_ATOMICS64_WITHOUT_LIB True)
+set(HAVE_CXX_ATOMICS_WITHOUT_LIB True)
 
 message("Building targets: ${LLVM_TARGETS_TO_BUILD}")
+message("Targets Tripple: ${TARGET_TRIPLE}")
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 
 # set(LLVM_ENABLE_BINDINGS OFF)
 # set(LLVM_ENABLE_PIC OFF)
@@ -91,6 +96,7 @@ set(LLVM_ENABLE_DOXYGEN OFF)
 set(LLVM_ENABLE_SPHINX OFF)
 
 add_subdirectory("llvm/llvm")
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 
 # install(
 # 	TARGETS llvm/llvm
