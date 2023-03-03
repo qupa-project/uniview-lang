@@ -42,7 +42,7 @@ if (process.argv[1] == __filename) {
 
 	UpdateEnv(updates);
 
-	console.log(`Updated: ${Object.keys(updates).join(", ")}`)
+	console.log(`Env Updated: ${Object.keys(updates).join(", ")}`)
 }
 
 
