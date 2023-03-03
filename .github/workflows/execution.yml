@@ -5,6 +5,10 @@ on:
     branches: [ main, staging ]
   pull_request:
     branches: [ main, staging ]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Why did you manually run this?
 
 jobs:
   build-linux:
