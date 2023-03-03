@@ -27,7 +27,7 @@ jobs:
           node-version: 18
       - name: Cache LLVM and Clang
         id: cache-llvm
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: "./lib/install"
           key: llvm-14.0
