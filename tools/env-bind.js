@@ -12,7 +12,7 @@ function UpdateEnv(delta) {
 	if (config === undefined) {
 		config = delta;
 	} else {
-		for (key in delta) {
+		for (let key in delta) {
 			config[key] = delta[key];
 		}
 	}
