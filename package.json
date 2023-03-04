@@ -23,7 +23,7 @@
 		"install-tools": "node tools/install.js",
 		"build": "npm run build-syntax & npm run build-tools",
 		"build-syntax": "node compiler/parser/build.js",
-		"build-tools": "cmake . -B build & cmake --build build"
+		"build-tools": "cmake . -B build -G Ninja & cmake --build build"
 	},
 	"bin": {
 		"uvc": "compiler/compile.js",

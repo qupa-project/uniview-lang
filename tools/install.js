@@ -6,6 +6,8 @@ const os = require('os');
 const env = require('./env-bind.js');
 const path = require('path');
 
+const installDir = __dirname;
+
 /**
  * Download a resource from `url` to `dest`.
  * @param {string} url - Valid URL to attempt download of resource
@@ -16,7 +18,6 @@ function Download(url, dest) {
 	return new Promise((resolve, reject) => {
 		// Check file does not exist yet before hitting network
 		fs.access(dest, fs.constants.F_OK, (err) => {
-
 				if (err === null) reject('File already exists');
 
 				const request = https.get(url, response => {
@@ -71,7 +72,7 @@ async function InstallTools() {
 		);
 
 		console.info("  Unzipping tools...");
-		await Unzip('./tools.zip', './');
+		await Unzip('./tools.zip', installDir);
 
 		env.UpdateEnv({uvc_tool: path.resolve(__dirname, "./uvc-tools.exe")});
 
@@ -82,4 +83,5 @@ async function InstallTools() {
 }
 
 InstallTools()
-	.catch(console.error);
+	.catch(console.error)
+	.then( ()=> {process.exit(0)} )

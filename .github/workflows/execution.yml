@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, staging ]
   pull_request:
-    branches: [ main, staging ]
+    branches: [ staging ]
   workflow_dispatch:
     inputs:
       reason:
@@ -18,18 +18,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Setup NodeJS
-        uses: actions/setup-node@v3
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
         with:
-          node-version: 16
-
-      - name: Install NPM Dependencies
-        run: npm install --ignore-scripts
-
+          version: 1.10.0
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
       - name: Cache LLVM and Clang
         id: cache-llvm
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: "./lib/install"
           key: llvm-14.0
@@ -43,17 +41,11 @@ jobs:
       - name: Symlink libclang.so (Linux)
         run: sudo ln -s libclang-14.so.1 /lib/x86_64-linux-gnu/libclang.so
         working-directory: ${{ env.LLVM_PATH }}/lib
-
-      - name: Build UVC tools
-        run: |
-          cmake . -B build
-          cmake --build build
-
-      - name: Compiler Setup
-        run: npm run build-syntax
-
-      - name: Compiler test
-        run: node ./compiler/test.js --action
+      - run: npm install --ignore-scripts
+      - run: cmake . -B build -G Ninja
+      - run: cmake --build build
+      - run: npm run build-syntax
+      - run: node ./compiler/test.js --action
 
   build-win:
     if: ${{ false }}  # disable for now
@@ -64,6 +56,6 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
       - run: npm install
       - run: node ./compiler/test.js --action
