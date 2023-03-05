@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, staging ]
   pull_request:
-    branches: [ staging ]
+    branches: [ main, staging ]
   workflow_dispatch:
     inputs:
       reason:
@@ -12,7 +12,7 @@ on:
 
 jobs:
   build-linux:
-
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
