@@ -18,6 +18,13 @@ function Checkpoint(name, start) {
 		return;
 	}
 
+	if (!timers[name]) {
+		timers[name] = {
+			start: 0,
+			tally: 0
+		}
+	}
+
 	if (start) {
 		timers[name].start = Date.now();
 	} else {
@@ -33,12 +40,12 @@ function Print() {
 
 	console.log(
 		"Timers: \n" +
-		Object.keys(timers).map(key => `  - ${key}: ${timers[key].tally}`).join("\n") +
+		Object.keys(timers).map(key => `  - ${key}: ${timers[key].tally} ms`).join("\n") +
 		`\nTotal: ${
 			Object.keys(timers)
 				.map(key => timers[key].tally)
 				.reduce((p, c) => p + c, 0)
-		}`
+		} ms`
 	);
 }
 
