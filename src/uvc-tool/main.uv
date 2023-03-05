@@ -1,0 +1,9 @@
+include static "../../build/uvc-core.lib";
+external assume {
+	fn fun (): void;
+}
+
+fn main(): int {
+	fun();
+	return 0;
+}

@@ -1,3 +1,4 @@
+#pragma once
 #include <stdbool.h>
 
 int verbose(const char * restrict, ...);
