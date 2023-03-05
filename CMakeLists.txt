@@ -92,15 +92,18 @@ message("Configuring ${LIB}")
 ADD_LIBRARY( ${LIB} STATIC
 	"src/core/main.c"
 )
-target_compile_options(${LIB} PUBLIC ${CMAKE_C_FLAGS} -emit-llvm)
-target_compile_options(${LIB} PUBLIC ${CMAKE_C_FLAGS} -flto)
-message("  flags: ${CMAKE_C_FLAGS}")
 # TARGET_LINK_LIBRARIES( ${LIB} ${llvm_libs} )
+
+add_executable( test_thing "test.c"
+)
 
 
 
 message("Linking ${APP_EXE}")
 TARGET_LINK_LIBRARIES( ${APP_EXE} "${llvm_libs}" )
+
+
+TARGET_LINK_LIBRARIES( test_thing ${LIB} )
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
@@ -114,6 +117,3 @@ add_custom_command(TARGET ${APP_EXE} POST_BUILD
 add_custom_command(TARGET ${LIB} POST_BUILD
 	COMMAND node "${PROJECT_SOURCE_DIR}/tools/env-bind.js" "--uvc_lib=$<TARGET_FILE:${LIB}>"
 )
-
-
-message("Building")

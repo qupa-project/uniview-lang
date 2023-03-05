@@ -1,6 +1,6 @@
 
-/* Filename: lib_mylib.c */
 #include <stdio.h>
-void fun() {
+
+__declspec(dllexport) void fun() {
   printf("fun() called from a static library");
 }
