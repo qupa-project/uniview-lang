@@ -1,22 +1,4 @@
-#include <llvm-c/Core.h>
-#include <llvm-c/ExecutionEngine.h>
-#include <llvm-c/Target.h>
-#include <llvm-c/Analysis.h>
-#include <llvm-c/IRReader.h>
-#include <llvm-c/BitWriter.h>
-#include <llvm-c/Linker.h>
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-
-#include "verbose.h"
-
-enum Compilation_Mode {
-	CM_Run,
-	CM_IR,
-	CM_Verify
-};
+#include "main.h"
 
 int main(int argc, char const *argv[]) {
 	enum Compilation_Mode outType = CM_Run;
@@ -49,6 +31,9 @@ int main(int argc, char const *argv[]) {
 					break;
 				case 'v':
 					outType = CM_Verify;
+					break;
+				case 'o':
+					outType = CM_Obj;
 					break;
 			}
 
@@ -111,30 +96,10 @@ int main(int argc, char const *argv[]) {
 			LLVMLinkModules2(main_mod, mod);
 		}
 	}
-
 	free(valid);
 
 	if (main_mod == NULL) {
 		fprintf(stderr, "Missing main module argument");
-		return 1;
-	}
-
-
-
-	verbose("Starting Execution Engine\n");
-	char *err = NULL;
-	LLVMExecutionEngineRef engine;
-	LLVMLinkInMCJIT();
-	LLVMInitializeNativeTarget();
-	LLVMInitializeNativeAsmPrinter();
-	LLVMInitializeNativeAsmParser();
-	if (LLVMCreateExecutionEngineForModule(&engine, main_mod, &err) != 0) {
-		fprintf(stderr, "failed to create execution engine\n");
-		return 1;
-	}
-	if (err) {
-		fprintf(stderr, "error: %s\n", err);
-		LLVMDisposeMessage(err);
 		return 1;
 	}
 
@@ -151,28 +116,108 @@ int main(int argc, char const *argv[]) {
 			}
 			break;
 		case CM_Run:
-			verbose("Running\n");
+			return Mode_Execute(ctx, main_mod);
+		case CM_Obj:
+			return Mode_Object(ctx, main_mod, "out.o");
+	}
 
-			LLVMValueRef mainFn;
-			char * const mainFn_name = "main";
-			LLVMBool fail = LLVMFindFunction(engine, mainFn_name, &mainFn);
-			if (fail) {
-				fprintf(stderr, "Cannot find main function");
-				return 1;
-			}
+	return statusCode;
+}
 
-			LLVMGenericValueRef res = LLVMRunFunction(engine, mainFn, 0, NULL);
-			statusCode = LLVMGenericValueToInt( res, (LLVMBool)1 );
-			LLVMDisposeGenericValue(res);
-			break;
+
+
+int Mode_Execute(LLVMContextRef ctx, LLVMModuleRef module) {
+	LLVMExecutionEngineRef engine;
+	LLVMLinkInMCJIT();
+	LLVMInitializeNativeTarget();
+	LLVMInitializeNativeAsmPrinter();
+	LLVMInitializeNativeAsmParser();
+
+	verbose("Starting Execution Engine\n");
+	char *err = NULL;
+	if (LLVMCreateExecutionEngineForModule(&engine, module, &err) != 0) {
+		fprintf(stderr, "failed to create execution engine\n");
+		return 1;
+	}
+	if (err) {
+		fprintf(stderr, "error: %s\n", err);
+		LLVMDisposeMessage(err);
+		return 1;
+	}
+
+	verbose("Running\n");
+
+	LLVMValueRef mainFn;
+	char * const mainFn_name = "main";
+	LLVMBool fail = LLVMFindFunction(engine, mainFn_name, &mainFn);
+	if (fail) {
+		fprintf(stderr, "Cannot find main function");
+		return 1;
 	}
 
 
+	unsigned long long statusCode = 0;
+	LLVMGenericValueRef res = LLVMRunFunction(engine, mainFn, 0, NULL);
+	statusCode = LLVMGenericValueToInt( res, (LLVMBool)1 );
+	LLVMDisposeGenericValue(res);
+
 	verbose("Shutting down execution Engine\n");
 	LLVMDisposeExecutionEngine(engine);
+
 	// LLVMDisposeModule(main_mod);
 	// should dispose all other modules first?
 	LLVMContextDispose(ctx);
 
 	return statusCode;
+}
+
+
+int Mode_Object(LLVMContextRef ctx, LLVMModuleRef module, const char *output_filename) {
+	LLVMInitializeX86TargetInfo();
+	LLVMInitializeNativeTarget();
+	LLVMInitializeX86TargetMC();
+	LLVMInitializeNativeAsmParser();
+	LLVMInitializeNativeAsmPrinter();
+
+	LLVMTargetRef target = NULL;
+	char *error = NULL;
+	LLVMGetTargetFromTriple(LLVMGetDefaultTargetTriple(), &target, &error);
+	if (error != NULL) {
+		fprintf(stderr, "Error: %s\n", error);
+		LLVMDisposeMessage(error);
+		return 1;
+	}
+
+	LLVMCodeGenOptLevel opt_level = LLVMCodeGenLevelAggressive;
+	LLVMRelocMode reloc_mode = LLVMRelocStatic;
+	LLVMCodeModel code_model = LLVMCodeModelDefault;
+
+	LLVMTargetMachineRef target_machine = LLVMCreateTargetMachine(
+		target,
+		LLVMGetDefaultTargetTriple(),
+		"",
+		"",
+		opt_level,
+		reloc_mode,
+		code_model
+	);
+
+	// LLVMSetModuleDataLayout(module, LLVMGetModuleDataLayout(data_layout_mod));
+	LLVMBool failed = LLVMTargetMachineEmitToFile(
+		target_machine,
+		module,
+		output_filename,
+		LLVMObjectFile,
+		&error
+	);
+
+	if (failed) {
+		fprintf(stderr, "Error: %s\n", error);
+		LLVMDisposeMessage(error);
+		return 1;
+	}
+
+	LLVMDisposeTargetMachine(target_machine);
+	LLVMContextDispose(ctx);
+	return 0;
 }
