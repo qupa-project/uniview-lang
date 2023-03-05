@@ -316,16 +316,12 @@ class File {
 		}
 
 		// Check the include type is valid
-		switch (type) {
-			case "llvm":
-				type = "--language=ir";
-				break;
-			default:
-				this.throw(
-					`Error: Cannot include file, unable to handle include type ${type}`,
-					ref.start, ref.end
-				);
-				return;
+		if (!["llvm", "static"].includes(type)) {
+			this.throw(
+				`Error: Cannot include file, unable to handle include type "${type}"`,
+				ref.start, ref.end
+			);
+			return;
 		}
 
 		// Check the file exists

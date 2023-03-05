@@ -118,13 +118,20 @@ if (opt.options.mode == "uvir") {
 ------------------------------------------*/
 console.info("Compiling...");
 
-let tool_mode = "run";
+let needsLinking = project.includes
+	.filter(x => ["object", "static"].includes(x.type)).length > 0;
+
+let tool_mode = "execute";
 switch (opt.options.mode) {
 	case "execute":
-		tool_mode = "run";
+		tool_mode = "r";
+		break;
+	case "compile":
+		needsLinking = true;
+		tool_mode = "o";
 		break;
 	case "verify":
-		tool_mode = "verify";
+		tool_mode = "v";
 		break;
 	case "llir":
 		tool_mode = "ir";
@@ -135,11 +142,14 @@ switch (opt.options.mode) {
 		process.exit(1);
 }
 
+
 let args = [
 	`${opt.options.output}.ll`,
-	"--mode", tool_mode,
-	// "-opt", opt.options.opt
-].concat(project.includes);
+	"--mode", needsLinking ? "o" : tool_mode,
+].concat(project.includes
+	.filter(x => x.type=="llvm")
+	.map(x => x.path)
+);
 
 if (opt.options.verbose) {
 	args.push("--verbose");
@@ -164,7 +174,68 @@ tool.stderr.pipe(process.stderr);
 
 tool.on('close', (code) => {
 	Timers.Checkpoint("assemble", false);
+
+	if (needsLinking) {
+		Link();
+		return;
+	}
+
 	console.info(`\nStatus Code: ${code}`);
 	Timers.Print();
 	process.exit(code);
 });
+
+
+
+function Link() {
+	Timers.Checkpoint("linking", true);
+
+	let targets = project.includes
+		.filter(x => x.type!="llvm")
+		.map(x => x.path);
+
+	console.info(`\nlld-link ${opt.options.output}.o ${targets.join(" ")}\n`);
+	let linker = spawn("lld-link", [
+		opt.options.output+".o",
+		...targets,
+		`/OUT:${opt.options.output}.exe`
+	], {
+		cwd: project.rootPath
+	});
+
+	linker.stdout.pipe(process.stdout);
+	linker.stderr.pipe(process.stderr);
+
+	linker.on('close', (code) => {
+		Timers.Checkpoint("linking", false);
+
+		if (opt.options.mode == "execute") {
+			Execution();
+			return;
+		}
+		console.log(215, opt.options.mode);
+
+		console.info(`\nStatus Code: ${code}`);
+		Timers.Print();
+		process.exit(code);
+	});
+}
+
+
+function Execution() {
+	Timers.Checkpoint("execution", true);
+	console.info(`\n${opt.options.output}.exe\n`);
+	let exec = spawn(`${opt.options.output}.exe`, [], {
+		cwd: project.rootPath
+	});
+
+	exec.stdout.pipe(process.stdout);
+	exec.stderr.pipe(process.stderr);
+
+	exec.on('close', (code) => {
+		Timers.Checkpoint("execution", false);
+		console.info(`\nStatus Code: ${code}`);
+		Timers.Print();
+		process.exit(code);
+	});
+}
