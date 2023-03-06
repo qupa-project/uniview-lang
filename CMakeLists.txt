@@ -94,9 +94,6 @@ ADD_LIBRARY( ${LIB} STATIC
 )
 # TARGET_LINK_LIBRARIES( ${LIB} ${llvm_libs} )
 
-add_executable( test_thing "test.c"
-)
-
 
 
 message("Linking ${APP_EXE}")
