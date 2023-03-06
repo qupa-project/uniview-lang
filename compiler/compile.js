@@ -35,9 +35,7 @@ if (opt.options.version) {
 	process.exit(0);
 }
 
-if (!opt.options.opt) {
-	opt.options.opt = "O0";
-} else {
+if (opt.options.opt) {
 	console.warn("Warn: Compilation does not currently support optimisation");
 }
 
@@ -124,7 +122,7 @@ let needsLinking = project.includes
 let tool_mode = "execute";
 switch (opt.options.mode) {
 	case "execute":
-		tool_mode = "r";
+		tool_mode = "o";
 		break;
 	case "compile":
 		needsLinking = true;
@@ -146,6 +144,7 @@ switch (opt.options.mode) {
 let args = [
 	`${opt.options.output}.ll`,
 	"--mode", needsLinking ? "o" : tool_mode,
+	"--output", opt.options.output+(tool_mode == "ir" ? ".bc" : ".o")
 ].concat(project.includes
 	.filter(x => x.type=="llvm")
 	.map(x => x.path)

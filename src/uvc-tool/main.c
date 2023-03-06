@@ -6,6 +6,8 @@ int main(int argc, char const *argv[]) {
 	char* valid = (char*)malloc(argc);
 	valid[0] = 0;
 
+	const char* output = "out.o";
+
 	for (int i=1; i<argc; i++) {
 		verbose("loop %i of %i", i, argc);
 		if (strcmp(argv[i], "--version") == 0) {
@@ -37,6 +39,14 @@ int main(int argc, char const *argv[]) {
 					break;
 			}
 
+			valid[i] = 0;
+			valid[i+1] = 0;
+			i++;
+			continue;
+		}
+
+		if (strcmp(argv[i], "--output") != 1 && i+1 < argc) {
+			output = argv[i+1];
 			valid[i] = 0;
 			valid[i+1] = 0;
 			i++;
@@ -110,7 +120,7 @@ int main(int argc, char const *argv[]) {
 			break;
 		case CM_IR:
 			// Write out bitcode to file
-			if (outType == CM_IR && LLVMWriteBitcodeToFile(main_mod, "out.bc") != 0) {
+			if (outType == CM_IR && LLVMWriteBitcodeToFile(main_mod, output) != 0) {
 				fprintf(stderr, "error writing bitcode to file, skipping\n");
 				return 0;
 			}
@@ -118,9 +128,10 @@ int main(int argc, char const *argv[]) {
 		case CM_Run:
 			return Mode_Execute(ctx, main_mod);
 		case CM_Obj:
-			return Mode_Object(ctx, main_mod, "out.o");
+			return Mode_Object(ctx, main_mod, output);
 	}
 
+	LLVMContextDispose(ctx);
 	return statusCode;
 }
 

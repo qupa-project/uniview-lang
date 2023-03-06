@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 
 __declspec(dllexport) void fun() {
