@@ -5,12 +5,12 @@
 @set last=%cd%
 @cd %~dp0
 
-@title Uniview Dependencie Setup - Configuring...
+@title Configuring - Uniview Dependencies
 @rem cmake -S . -B build --install-prefix="%~dp0\install"
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-@title Uniview Dependencie Setup - Building...
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+@title Building - Uniview Dependencies
 cmake --build build
-@title Uniview Dependencie Setup - Installing...
+@title Installing - Uniview Dependencies
 cmake --build build --target install
 
 @cd %last%
