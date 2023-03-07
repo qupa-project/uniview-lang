@@ -100,8 +100,6 @@ message("Linking ${APP_EXE}")
 TARGET_LINK_LIBRARIES( ${APP_EXE} "${llvm_libs}" )
 
 
-TARGET_LINK_LIBRARIES( test_thing ${LIB} )
-
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
