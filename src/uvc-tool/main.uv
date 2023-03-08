@@ -1,10 +1,10 @@
 include static "../../build/uvc-core.lib";
 
 include static "../../lib/install/lib/LLVMAnalysis.lib";
+include static "../../lib/install/lib/LLVMBitReader.lib";
+include static "../../lib/install/lib/LLVMBitWriter.lib";
 include static "../../lib/install/lib/LLVMCore.lib";
 include static "../../lib/install/lib/LLVMExecutionEngine.lib";
-include static "../../lib/install/lib/LLVMBitWriter.lib";
-include static "../../lib/install/lib/LLVMBitReader.lib";
 include static "../../lib/install/lib/LLVMIRReader.lib";
 include static "../../lib/install/lib/LLVMLinker.lib";
 include static "../../lib/install/lib/LLVMTarget.lib";
