@@ -70,7 +70,8 @@ endif()
 # set(LLVM_TARGETS_TO_BUILD:STRING "arm64;X86_64;WebAssembly;risv64") future targets
 
 set(LLVM_TARGETS_TO_BUILD "X86;WebAssembly" CACHE STRING "" FORCE)
-set(LLVM_ENABLE_PROJECTS "llvm;libc;lld")
+# set(LLVM_ENABLE_PROJECTS "llvm;libc;lld")
+set(LLVM_ENABLE_PROJECTS "llvm;lld")
 set(LLVM_ENABLE_RUNTIMES "libc")
 
 set(HAVE_CXX_ATOMICS64_WITHOUT_LIB True)
