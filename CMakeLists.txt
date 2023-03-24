@@ -46,30 +46,29 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
 #################################################################
-llvm_map_components_to_libnames(
-	llvm_libs
+llvm_map_components_to_libnames( llvm_libs
+	# aarch64asmparser
+	# aarch64codegen
+	# aarch64desc
+	# aarch64info
 	Analysis
+	# armasmparser
+	# armcodegen
+	# armdesc
+	# arminfo
 	BitWriter
 	Core
 	# Demangle
 	ExecutionEngine
 	irReader
+	Linker
 	MCJIT
+	Object
 	Support
 	Target
-	Linker
-	Object
-	# aarch64asmparser
-	# aarch64codegen
-	# aarch64desc
-	# aarch64info
-	# armasmparser
-	# armcodegen
-	# armdesc
-	# arminfo
 	x86asmparser
-	x86codegen
 	# x86desc
+	x86codegen
 	# x86info
 )
 
@@ -85,6 +84,7 @@ message("Configuring ${APP_EXE}")
 add_executable( ${APP_EXE} "src/uvc-tool/main.c"
 	"src/uvc-tool/verbose.c"
 )
+TARGET_LINK_LIBRARIES( ${APP_EXE} "${llvm_libs}" )
 
 
 SET( LIB uvc-core )
@@ -92,12 +92,11 @@ message("Configuring ${LIB}")
 ADD_LIBRARY( ${LIB} STATIC
 	"src/core/main.c"
 )
-# TARGET_LINK_LIBRARIES( ${LIB} ${llvm_libs} )
+TARGET_LINK_LIBRARIES( ${LIB} "${llvm_libs}" )
 
 
-
-message("Linking ${APP_EXE}")
-TARGET_LINK_LIBRARIES( ${APP_EXE} "${llvm_libs}" )
+# Add the LLVM library directories
+# link_directories(${LLVM_LIBRARY_DIRS})
 
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

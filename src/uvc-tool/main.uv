@@ -7,7 +7,11 @@ include static "../../lib/install/lib/LLVMCore.lib";
 include static "../../lib/install/lib/LLVMExecutionEngine.lib";
 include static "../../lib/install/lib/LLVMIRReader.lib";
 include static "../../lib/install/lib/LLVMLinker.lib";
-include static "../../lib/install/lib/LLVMTarget.lib";
+include static "../../lib/install/lib/LLVMJITLink.lib";
+// include static "../../lib/install/lib/LLVMTarget.lib";
+// include static "../../lib/install/lib/LLVMX86AsmParser.lib";
+// include static "../../lib/install/lib/LLVMX86CodeGen.lib";
+// include static "../../lib/install/lib/LLVMX86Info.lib";
 
 external assume {
 	fn fun (): void;
@@ -27,7 +31,7 @@ fn main(): int {
 
 	// let ctx = LLVMContextCreate();
 
-	// LLVMLinkInMCJIT();
+	LLVMLinkInMCJIT();
 	// LLVMInitializeX86Target();
 	// LLVMInitializeX86AsmPrinter();
 	// LLVMInitializeX86AsmParser();
