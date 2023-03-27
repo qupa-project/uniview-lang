@@ -34,6 +34,7 @@ build/
 
 # Ignore Compilation outputs outputs
 *.ll
+*.bc
 *.asm
 *.s
 *.bin

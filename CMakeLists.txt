@@ -47,10 +47,6 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 # that we wish to use
 #################################################################
 llvm_map_components_to_libnames( llvm_libs
-	# aarch64asmparser
-	# aarch64codegen
-	# aarch64desc
-	# aarch64info
 	Analysis
 	# armasmparser
 	# armcodegen
@@ -67,10 +63,11 @@ llvm_map_components_to_libnames( llvm_libs
 	Support
 	Target
 	x86asmparser
-	# x86desc
+	x86desc
 	x86codegen
-	# x86info
+	x86info
 )
+set(LLVM_TARGETS_TO_BUILD "X86;" CACHE STRING "" FORCE)
 
 
 
@@ -93,14 +90,20 @@ add_executable( ${APP_EXE} "src/uvc-tool/main.cpp"
 	"src/uvc-tool/verbose.cpp"
 )
 TARGET_LINK_LIBRARIES( ${APP_EXE} "${llvm_libs}" )
-
-
-SET( LIB uvc-core )
-message("Configuring ${LIB}")
-ADD_LIBRARY( ${LIB} STATIC
-	"src/core/main.c"
+add_custom_command(TARGET ${APP_EXE} POST_BUILD
+	COMMAND node "${PROJECT_SOURCE_DIR}/tools/env-bind.js" "--uvc_tool=$<TARGET_FILE:${APP_EXE}>"
 )
-TARGET_LINK_LIBRARIES( ${LIB} "${llvm_libs}" )
+
+
+# SET( LIB uvc-core )
+# message("Configuring ${LIB}")
+# ADD_LIBRARY( ${LIB} STATIC
+# 	"src/core/main.c"
+# )
+# TARGET_LINK_LIBRARIES( ${LIB} "${llvm_libs}" )
+# add_custom_command(TARGET ${LIB} POST_BUILD
+# 	COMMAND node "${PROJECT_SOURCE_DIR}/tools/env-bind.js" "--uvc_lib=$<TARGET_FILE:${LIB}>"
+# )
 
 
 # Add the LLVM library directories
@@ -110,12 +113,3 @@ TARGET_LINK_LIBRARIES( ${LIB} "${llvm_libs}" )
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
-
-
-
-add_custom_command(TARGET ${APP_EXE} POST_BUILD
-	COMMAND node "${PROJECT_SOURCE_DIR}/tools/env-bind.js" "--uvc_tool=$<TARGET_FILE:${APP_EXE}>"
-)
-add_custom_command(TARGET ${LIB} POST_BUILD
-	COMMAND node "${PROJECT_SOURCE_DIR}/tools/env-bind.js" "--uvc_lib=$<TARGET_FILE:${LIB}>"
-)
