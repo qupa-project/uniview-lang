@@ -55,7 +55,7 @@ struct Config {
 	std::vector<std::string> files;
 	std::string              output;
 	std::string              target;
-	bool                 coroutines;
+	bool                  parseCoro;
 };
 
 Config IngestConfig(int argc, char* argv[]);
