@@ -47,24 +47,32 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 # that we wish to use
 #################################################################
 llvm_map_components_to_libnames( llvm_libs
-	Analysis
 	# armasmparser
 	# armcodegen
 	# armdesc
 	# arminfo
-	BitWriter
-	Core
 	# Demangle
+	Analysis
+	Analysis
+	BitReader
+	BitWriter
+	CodeGen
+	Core
+	Coroutines
 	ExecutionEngine
+	Interpreter
+	IPO
 	irReader
 	Linker
 	MCJIT
 	Object
+	Passes
 	Support
 	Target
+	TransformUtils
 	x86asmparser
-	x86desc
 	x86codegen
+	x86desc
 	x86info
 )
 set(LLVM_TARGETS_TO_BUILD "X86;" CACHE STRING "" FORCE)

@@ -7,6 +7,7 @@
 
 
 #include <llvm/ADT/Triple.h>
+#include <llvm/Analysis/CGSCCPassManager.h>
 #include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/CodeGen/CommandFlags.h>
 #include <llvm/CodeGen/TargetPassConfig.h>
@@ -17,6 +18,7 @@
 #include <llvm/ExecutionEngine/SectionMemoryManager.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRPrintingPasses.h>
+#include <llvm/IR/PassManager.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -33,12 +35,22 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
+
 #include <llvm/Transforms/Coroutines/CoroCleanup.h>
 #include <llvm/Transforms/Coroutines/CoroConditionalWrapper.h>
 #include <llvm/Transforms/Coroutines/CoroEarly.h>
+#include <llvm/Transforms/Coroutines/CoroElide.h>
 #include <llvm/Transforms/Coroutines/CoroSplit.h>
+#include <llvm/Transforms/Scalar/AnnotationRemarks.h>
 #include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/IPO/GlobalDCE.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
+
+#include <llvm/Analysis/CGSCCPassManager.h>
+// #include <llvm/IR/LazyCallGraph.h>
 
 #include "verbose.hpp"
 
@@ -51,23 +63,23 @@ enum class Exec_Mode {
 };
 
 struct Config {
-	Exec_Mode                mode;
-	std::vector<std::string> files;
+	Exec_Mode                  mode;
+	std::vector<std::string>  files;
 	std::string              output;
 	std::string              target;
-	bool                  parseCoro;
+	int                         opt;
 };
 
 Config IngestConfig(int argc, char* argv[]);
 
 llvm::Module* loadAndLinkModules(llvm::LLVMContext& context, const std::vector<std::string>& files);
 
-int Output_Module_Bitcode(llvm::Module* module, const std::string& file_path, bool bitcode);
-
-// void ApplyCoroutine(llvm::LLVMContext& context, llvm::Module& module);
+int Output_Module_Bitcode(llvm::Module* module, bool bitcode, Config config);
 
 int Execute_Module(llvm::LLVMContext& context, llvm::Module* module);
 
-int Compile_Object(llvm::LLVMContext& ctx, llvm::Module& module, const std::string& output_filename);
+int Compile_Object(llvm::LLVMContext& ctx, llvm::Module* module, Config config);
+
+void Apply_Coroutines(llvm::Module* module);
 
 int main(int argc, char* argv[]);
