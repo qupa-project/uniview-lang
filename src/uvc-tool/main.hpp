@@ -18,18 +18,20 @@
 #include <llvm/ExecutionEngine/SectionMemoryManager.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRPrintingPasses.h>
-#include <llvm/IR/PassManager.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/PassManager.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Linker/Linker.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/PassPlugin.h>
 #include <llvm/Support/CodeGen.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
+#include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
@@ -80,6 +82,6 @@ int Execute_Module(llvm::LLVMContext& context, llvm::Module* module);
 
 int Compile_Object(llvm::LLVMContext& ctx, llvm::Module* module, Config config);
 
-void Apply_Coroutines(llvm::Module* module);
+void Optimise(llvm::Module* module);
 
 int main(int argc, char* argv[]);

@@ -136,6 +136,32 @@ Module* loadAndLinkModules(LLVMContext& context, const vector<string>& files) {
 }
 
 
+void Optimise(Module* module, int level) {
+	// Create the analysis managers.
+	LoopAnalysisManager LAM;
+	FunctionAnalysisManager FAM;
+	CGSCCAnalysisManager CGAM;
+	ModuleAnalysisManager MAM;
+
+	PassBuilder PB;
+	PB.registerModuleAnalyses(MAM);
+	PB.registerCGSCCAnalyses(CGAM);
+	PB.registerFunctionAnalyses(FAM);
+	PB.registerLoopAnalyses(LAM);
+	PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+	ModulePassManager MPM;
+	if (level == 0) {
+		MPM = PB.buildO0DefaultPipeline(OptimizationLevel::O0, false);
+	} else {
+		MPM = PB.buildPerModuleDefaultPipeline(OptimizationLevel::O1);
+	}
+
+	// Optimize the IR
+	MPM.run(*module, MAM);
+	return;
+}
+
 
 int Output_Module_Bitcode(Module* module, bool bitcode, Config config) {
 	std::error_code ec;
@@ -149,16 +175,7 @@ int Output_Module_Bitcode(Module* module, bool bitcode, Config config) {
 	if (bitcode) {
 		WriteBitcodeToFile(*module, output);
 	} else {
-		llvm::legacy::PassManager pm;
-
-		PassManagerBuilder passBuilder;
-		passBuilder.OptLevel = 3;
-		passBuilder.Inliner = createFunctionInliningPass(3, 0, true);
-		passBuilder.populateModulePassManager(pm);
-
-		pm.add(createPrintModulePass(output));
-		pm.run(*module);
-		output.flush();
+		module->print(output, nullptr);
 	}
 
 
@@ -301,6 +318,11 @@ int main(int argc, char* argv[]) {
 	}
 
 	mod->setTargetTriple(config.target);
+
+
+	verbose("Optimising...");
+	Optimise(mod, 0);
+
 
 	switch (config.mode) {
 		case Exec_Mode::Verify:
