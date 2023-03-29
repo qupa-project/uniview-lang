@@ -9,7 +9,7 @@ Config IngestConfig(int argc, char* argv[]) {
 	config.files.clear(); // init
 	config.mode = Exec_Mode::Object;
 	config.output = "out";
-	config.opt = 3;
+	config.opt = 0;
 
 	// Normalize the target triple
 	// llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
@@ -48,6 +48,12 @@ Config IngestConfig(int argc, char* argv[]) {
 
 		if (strcmp(argv[i], "--target") == 0 && i+1 < argc) {
 			config.target = argv[i+1];
+			i++;
+			continue;
+		}
+
+		if (strcmp(argv[i], "--opt") == 0 && i+1 < argc) {
+			config.opt = atoi(argv[i+1]);
 			i++;
 			continue;
 		}
@@ -151,10 +157,15 @@ void Optimise(Module* module, int level) {
 	PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
 	ModulePassManager MPM;
-	if (level == 0) {
-		MPM = PB.buildO0DefaultPipeline(OptimizationLevel::O0, false);
-	} else {
-		MPM = PB.buildPerModuleDefaultPipeline(OptimizationLevel::O1);
+	switch (level) {
+		case 1:
+			MPM = PB.buildPerModuleDefaultPipeline(OptimizationLevel::O1); break;
+		case 2:
+			MPM = PB.buildPerModuleDefaultPipeline(OptimizationLevel::O2); break;
+		case 3:
+			MPM = PB.buildPerModuleDefaultPipeline(OptimizationLevel::O3); break;
+		default:
+			MPM = PB.buildO0DefaultPipeline(OptimizationLevel::O0, false);
 	}
 
 	// Optimize the IR
@@ -321,7 +332,7 @@ int main(int argc, char* argv[]) {
 
 
 	verbose("Optimising...");
-	Optimise(mod, 0);
+	Optimise(mod, config.opt);
 
 
 	switch (config.mode) {
