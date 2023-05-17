@@ -237,13 +237,10 @@ int Compile_Object(LLVMContext& ctx, Module* module, Config config) {
 		return 1;
 	}
 
-	auto CPU = "generic";
-	auto Features = "";
-
 	verbose("  - Starting target builder\n");
 	TargetOptions opt;
 	auto RM = llvm::Optional<llvm::Reloc::Model>();
-	auto TheTargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
+	auto TheTargetMachine = Target->createTargetMachine(TargetTriple, "generic", "", opt, RM);
 
 	module->setDataLayout(TheTargetMachine->createDataLayout());
 
@@ -306,7 +303,7 @@ int Execute_Module(LLVMContext& context, Module* module) {
 	EngineBuilder builder( std::move(modulePtr) );
 	error.clear();
 	builder.setErrorStr(&error);
-	builder.setEngineKind(llvm::EngineKind::JIT); // Use JIT engine kind
+	builder.setEngineKind(llvm::EngineKind::JIT);
 	auto engine = builder.create();
 	if (!engine) {
 		printf("\n\u001b[31merror\u001b[0m: %s\n  %s\n\n", "Failed to create execution engine", error.c_str());
@@ -320,7 +317,7 @@ int Execute_Module(LLVMContext& context, Module* module) {
 	llvm::GenericValue result = engine->runFunction(mainFunction, args);
 	auto code = result.IntVal.getSExtValue();
 
-	printf("\n\nExited: %lli\n", code);
+	verbose("\n\nExited: %lli\n", code);
 	return code;
 }
 

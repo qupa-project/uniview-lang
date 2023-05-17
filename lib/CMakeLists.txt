@@ -30,8 +30,8 @@ message("-- CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
 message("-- CMAKE_BUILD_TYPE:       ${CMAKE_BUILD_TYPE}")
 message("-- CMAKE_SYSTEM:           ${CMAKE_SYSTEM}")
 
-set(LLVM_DEFAULT_TARGET_TRIPLE "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_VERSION}")
-message("Targets Tripple: ${LLVM_DEFAULT_TARGET_TRIPLE}")
+# LLVM does a better job of this, CMake's processor value is not valid for LLVM
+# set(LLVM_DEFAULT_TARGET_TRIPLE "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_VERSION}")
 
 set(_compiler_arch ${CMAKE_C_COMPILER_ARCHITECTURE_ID})
 if("${_compiler_arch}" STREQUAL "")
