@@ -23,19 +23,6 @@ Config IngestConfig(int argc, char* argv[]) {
 	config.output = "out";
 	config.opt = 0;
 
-	// Normalize the target triple
-	// llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
-	// printf("%s, %s, %s\n",
-	// 	triple.getArchName().str().c_str(),
-	// 	triple.getEnvironmentName().str().c_str(),
-	// 	triple.getOSName().str().c_str()
-	// );
-
-	// triple.setArch(llvm::Triple::normalizeArch(triple.getArch()));
-	// auto TargetTriple = llvm::sys::getDefaultTargetTriple();
-	// module.setTargetTriple(TargetTriple);
-	// verbose("  target: %s\n", TargetTriple.c_str());
-
 	config.target = llvm::sys::getDefaultTargetTriple();
 
 	// Loop through each argument
@@ -227,9 +214,8 @@ int Compile_Object(LLVMContext& ctx, Module* module, Config config) {
 	InitializeAllAsmParsers();
 	InitializeAllAsmPrinters();
 
-	auto TargetTriple = module->getTargetTriple();
 	std::string err;
-	auto Target = TargetRegistry::lookupTarget(TargetTriple, err);
+	auto Target = TargetRegistry::lookupTarget(config.target, err);
 	if (!Target) {
 		printf("\n\u001b[31merror\u001b[0m: %s\n", err.c_str());
 
@@ -240,7 +226,7 @@ int Compile_Object(LLVMContext& ctx, Module* module, Config config) {
 	verbose("  - Starting target builder\n");
 	TargetOptions opt;
 	auto RM = llvm::Optional<llvm::Reloc::Model>();
-	auto TheTargetMachine = Target->createTargetMachine(TargetTriple, "generic", "", opt, RM);
+	auto TheTargetMachine = Target->createTargetMachine(config.target, "generic", "", opt, RM);
 
 	module->setDataLayout(TheTargetMachine->createDataLayout());
 
