@@ -4,11 +4,9 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
 
 require('dotenv').config();
-
-const Getopt = require('node-getopt');
+const getopts = require('getopts');
 
 const Project = require('./component/project.js');
 
@@ -20,45 +18,51 @@ const root = path.resolve("./");
 	Compiler configuration flags
 ------------------------------------------*/
 const validModes = ["execute", "verify", "preprocess", "uvir", "llir"];
-let getopt = new Getopt([
-	['m', 'mode=ARG', `compilation mode (${validModes.join("|")})`],
-	['', 'opt=ARG', 'optimisation level'],
-	['o', 'output=ARG', 'output name'],
-	['', 'profile', 'Enable profile timings'],
-	['', 'version', 'show version'],
-	['', 'verbose', 'verbose logs']
-]).bindHelp();
-let opt = getopt.parse(process.argv.slice(2));
+let opts = getopts(process.argv.slice(2), {
+	default: {
+		mode: "execute",
+		output: "out",
+		version: false,
+		profile: false,
+		verbose: false,
+		optimisation: "O0",
+		help: false
+	},
+	alias: {
+		optimisation: ["opt"],
+		output: "o"
+	},
+	boolean: ["version", "profile", "help", "verbose"]
+});
 
-if (opt.options.version) {
+if (opts.version) {
 	console.info(version);
 	process.exit(0);
 }
 
-if (opt.options.opt) {
-	console.warn("Warn: Compilation does not currently support optimisation");
+if (!['O1', 'O2', "O3"].includes(opts.optimisation)) {
+	console.warn(`Warn: Invalid optimisation level ${opts.optimisation}, assuming O0`);
 }
 
-if (!opt.options.mode) {
-	opt.options.mode = "execute";
-} else if (!validModes.includes(opt.options.mode)) {
-	console.error(`Invalid compilation mode "${opt.options.mode}"`);
+if (!validModes.includes(opts.mode)) {
+	console.error(`Invalid compilation mode "${opts.mode}"`);
 	process.exit(1);
 }
 
-if (!opt.options.output) {
-	opt.options.output = "out";
+
+if (opts._.length > 1) {
+	console.error("Cannot take multiple uv starting points");
+	process.exit(1);
 }
 
-
-if (opt.argv.length > 1) {
-	console.error("Cannot take multiple uv starting points");
+if (opts._.length < 1) {
+	console.error("Missing entry point");
 	process.exit(1);
 }
 
 
 let Timers = require('./timers.js');
-if (opt.options.profile) {
+if (opts.profile) {
 	Timers.Enable(["read", "link", "compile", "assemble"])
 }
 
@@ -69,7 +73,7 @@ if (opt.options.profile) {
 ------------------------------------------*/
 // Load required files
 Timers.Checkpoint("read", true);
-let origin = path.resolve(root, opt.argv[0]);
+let origin = path.resolve(root, opts._[0]);
 let project = new Project(root, {
 	caching: false
 });
@@ -100,13 +104,13 @@ let asm = project.toLLVM();
 Timers.Checkpoint("compile", false);
 
 
-if (opt.options.mode == "preprocess") {
+if (opts.mode == "preprocess") {
 	console.info("Passed");
 	process.exit(0);
 }
 
-fs.writeFileSync(`${opt.options.output}.ll`, asm.flattern(), 'utf8');
-if (opt.options.mode == "uvir") {
+fs.writeFileSync(`${opts.output}.ll`, asm.flattern(), 'utf8');
+if (opts.mode == "uvir") {
 	process.exit(0);
 }
 
@@ -120,7 +124,7 @@ let needsLinking = project.includes
 	.filter(x => ["object", "static"].includes(x.type)).length > 0;
 
 let tool_mode = "execute";
-switch (opt.options.mode) {
+switch (opts.mode) {
 	case "execute":
 		tool_mode = "run";
 		break;
@@ -135,22 +139,22 @@ switch (opt.options.mode) {
 		tool_mode = "ir";
 		break;
 	default:
-		console.error(`Invalid option mode ${opt.options.mode} for compilation tools`);
+		console.error(`Invalid option mode ${opts.mode} for compilation tools`);
 		console.error(`This error shouldn't occur`);
 		process.exit(1);
 }
 
 
 let args = [
-	`${opt.options.output}.ll`,
+	`${opts.output}.ll`,
 	"--mode", needsLinking ? "o" : tool_mode,
-	"--output", opt.options.output
+	"--output", opts.output
 ].concat(project.includes
 	.filter(x => x.type=="llvm")
 	.map(x => x.path)
 );
 
-if (opt.options.verbose) {
+if (opts.verbose) {
 	args.push("--verbose");
 }
 
@@ -193,11 +197,11 @@ function Link() {
 		.filter(x => x.type!="llvm")
 		.map(x => x.path);
 
-	console.info(`\nlld-link ${opt.options.output}.o ${targets.join(" ")}\n`);
+	console.info(`\nlld-link ${opts.output}.o ${targets.join(" ")}\n`);
 	let linker = spawn("lld-link", [
-		opt.options.output+".o",
+		opts.output+".o",
 		...targets,
-		`/OUT:${opt.options.output}.exe`
+		`/OUT:${opts.output}.exe`
 	], {
 		cwd: project.rootPath
 	});
@@ -208,7 +212,7 @@ function Link() {
 	linker.on('close', (code) => {
 		Timers.Checkpoint("linking", false);
 
-		if (opt.options.mode == "execute") {
+		if (opts.mode == "execute") {
 			Execution();
 			return;
 		}
@@ -222,8 +226,8 @@ function Link() {
 
 function Execution() {
 	Timers.Checkpoint("execution", true);
-	console.info(`\n${opt.options.output}.exe\n`);
-	let exec = spawn(`${opt.options.output}.exe`, [], {
+	console.info(`\n${opts.output}.exe\n`);
+	let exec = spawn(`${opts.output}.exe`, [], {
 		cwd: project.rootPath
 	});
 
