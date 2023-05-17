@@ -128,5 +128,9 @@
 		"*.ipp": "cpp"
 	},
 	"editor.insertSpaces": false,
-	"files.eol": "\n"
+	"files.eol": "\n",
+	"cSpell.words": [
+		"qupa",
+		"Uniview"
+	]
 }

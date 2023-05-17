@@ -17,7 +17,7 @@ const root = path.resolve("./");
 /*------------------------------------------
 	Compiler configuration flags
 ------------------------------------------*/
-const validModes = ["execute", "verify", "preprocess", "uvir", "llir"];
+const validModes = [`parse`, `verify`, `uvir`, `llir`, `object`, `execute`];
 let opts = getopts(process.argv.slice(2), {
 	default: {
 		mode: "execute",
@@ -104,7 +104,7 @@ let asm = project.toLLVM();
 Timers.Checkpoint("compile", false);
 
 
-if (opts.mode == "preprocess") {
+if (opts.mode == "parse") {
 	console.info("Passed");
 	process.exit(0);
 }
@@ -128,7 +128,7 @@ switch (opts.mode) {
 	case "execute":
 		tool_mode = "run";
 		break;
-	case "compile":
+	case "object":
 		needsLinking = true;
 		tool_mode = "object";
 		break;
