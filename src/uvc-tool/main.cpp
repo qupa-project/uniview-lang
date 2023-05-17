@@ -15,7 +15,7 @@ void ShowTriples(){
 	return;
 }
 
-void InitializeTargets(){
+void InitializeTargets() {
 	LLVMInitializeX86TargetInfo();
 	LLVMInitializeX86Target();
 	LLVMInitializeX86TargetMC();

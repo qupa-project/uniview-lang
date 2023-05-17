@@ -42,9 +42,7 @@ jobs:
         run: sudo ln -s libclang-15.so.1 /lib/x86_64-linux-gnu/libclang.so
         working-directory: ${{ env.LLVM_PATH }}/lib
       - run: npm install --ignore-scripts
-      - run: cmake . -B build -G Ninja
-      - run: cmake --build build
-      - run: npm run build-syntax
+      - run: npm run build
       - run: node ./compiler/test.js --action
 
   build-win:
