@@ -9,7 +9,7 @@
 		"node": ">=14"
 	},
 	"dependencies": {
-		"bnf-parser": "^3.1.1",
+		"bnf-parser": "^3.1.4",
 		"dotenv": "^16.0.1",
 		"node-getopt": "^0.3.2",
 		"unzipper": "^0.10.11"
