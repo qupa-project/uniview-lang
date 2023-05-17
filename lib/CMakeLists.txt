@@ -9,6 +9,8 @@ set(CMAKE_MAKE_PROGRAM "Ninja")
 set(CMAKE_GENERATOR "Ninja")
 set(CMAKE_LINKER lld)
 
+set(CMAKE_BUILD_TYPE "Release")
+
 include(ExternalProject)
 
 
@@ -25,7 +27,11 @@ message("-- CMAKE_LINKER:           ${CMAKE_LINKER}")
 message("-- CMAKE_SYSTEM_INFO_FILE: ${CMAKE_SYSTEM_INFO_FILE}")
 message("-- CMAKE_SYSTEM_NAME:      ${CMAKE_SYSTEM_NAME}")
 message("-- CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
+message("-- CMAKE_BUILD_TYPE:       ${CMAKE_BUILD_TYPE}")
 message("-- CMAKE_SYSTEM:           ${CMAKE_SYSTEM}")
+
+# LLVM does a better job of this, CMake's processor value is not valid for LLVM
+# set(LLVM_DEFAULT_TARGET_TRIPLE "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_VERSION}")
 
 set(_compiler_arch ${CMAKE_C_COMPILER_ARCHITECTURE_ID})
 if("${_compiler_arch}" STREQUAL "")
@@ -33,6 +39,11 @@ if("${_compiler_arch}" STREQUAL "")
 endif()
 
 message("Compiler architecture is ${_compiler_arch}")
+
+set(CMAKE_INSTALL_PREFIX "${PROJECT_SOURCE_DIR}/install" CACHE PATH "Installation directory" FORCE)
+message(STATUS "Install path: ${CMAKE_INSTALL_PREFIX}")
+
+set(CMAKE_BUILD_TYPE Release CACHE STRING "Set the build type")
 
 
 
@@ -61,27 +72,27 @@ endif()
 #################################################################
 # find_package(LLVM REQUIRED CONFIG)
 
-# set(LLVM_TARGETS_TO_BUILD:STRING "arm64;X86_64;WebAssembly;risv64") future targets
-set(TARGET_TRIPLE "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_VERSION}")
-set(LLVM_DEFAULT_TARGET_TRIPLE ${TARGET_TRIPLE})
-set(LLVM_TARGETS_TO_BUILD "X86;WebAssembly" CACHE STRING "" FORCE)
-set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "" FORCE)
+set(LLVM_TARGETS_TO_BUILD "ARM;RISCV;X86;")
+set(LLVM_ENABLE_PROJECTS "llvm;lld")
+set(LLVM_BUILD_JIT ON)
+
+
+set(LLVM_ENABLE_COROUTINES ON)
+set(LLVM_ENABLE_LLD_CPP ON)
+set(LLVM_ENABLE_CXX_BINDINGS OFF)
+# set(LLVM_ENABLE_LIBCXX OFF)
+# set(LLVM_ENABLE_C_BINDINGS OFF)
+# set(LLVM_ENABLE_LIBC OFF)
+# set(LIBCXX_ENABLE_STATIC OFF)
+# set(LIBC_ENABLE_STATIC OFF)
+
+
 set(HAVE_CXX_ATOMICS64_WITHOUT_LIB True)
 set(HAVE_CXX_ATOMICS_WITHOUT_LIB True)
 
-message("Building targets: ${LLVM_TARGETS_TO_BUILD}")
-message("Targets Tripple: ${TARGET_TRIPLE}")
-message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-
-# set(LLVM_ENABLE_BINDINGS OFF)
-# set(LLVM_ENABLE_PIC OFF)
-# set(LLVM_ENABLE_TERMINFO OFF)
-# set(LLVM_ENABLE_WARNINGS OFF)
 set(LLVM_ENABLE_Z3_SOLVER OFF)
 set(LLVM_ENABLE_ZLIB OFF)
 set(LLVM_ENABLE_ZLIB:STRING OFF)
-
-set(LLVM_ENABLE_RUNTIMES:STRING "all")
 
 # Disable examples/benchmarks/docs
 set(LLVM_INCLUDE_EXAMPLES OFF)
@@ -99,8 +110,4 @@ set(LLVM_ENABLE_SPHINX OFF)
 
 add_subdirectory("llvm/llvm")
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-
-# install(
-# 	TARGETS llvm/llvm
-# 	DESTINATION "${PROJECT_SOURCE_DIR}/install/"
-# )
+message(STATUS "Building for ${LLVM_TARGETS_TO_BUILD}")

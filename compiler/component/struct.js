@@ -1,5 +1,5 @@
 const LLVM = require('./../middle/llvm.js');
-const Flattern = require('../parser/flattern.js');
+const Flattern = require('../parser/flatten.js');
 const TypeDef = require('./typedef.js');
 const TypeRef = require('./typeRef.js');
 
@@ -14,7 +14,6 @@ class Struct_Term {
 		this.typeRef = typeRef;
 		this.declared = ref;
 		this.size = -1;
-		this.typeSystem = "linear";
 
 		this.ir = new LLVM.Fragment();
 	}
@@ -28,7 +27,11 @@ class Struct_Term {
 	}
 
 	toLLVM() {
-		return this.typeRef.toLLVM(this.declared, true);
+		let type = this.typeRef.toLLVM(this.declared);
+		if (!this.typeRef.native) {
+			type.offsetPointer(-1);
+		}
+		return type;
 	}
 }
 
@@ -40,6 +43,8 @@ class Structure extends TypeDef {
 		this.linked = false;
 		this.size = -1;
 		this.alignment = 0;
+
+		this.nestedCloner = null;
 
 		this.defaultImpl = null;
 		this.impls = [];
@@ -107,6 +112,20 @@ class Structure extends TypeDef {
 		return null;
 	}
 
+	hasNestedCloner() {
+		if (this.nestedCloner !== null) {
+			// Do nothing value already cached
+		} else if (this.getCloner() !== null) {
+			this.nestedCloner = true;
+		} else {
+			this.nestedCloner = this.terms
+				.map(x => x.typeRef.type.hasNestedCloner())
+				.reduce((prev, curr) => prev || curr, false);
+		}
+
+		return this.secondHandClone;
+	}
+
 	indexOfTerm (name) {
 		for (let i=0; i<this.terms.length; i++) {
 			if (this.terms[i].name == name) {
@@ -163,7 +182,7 @@ class Structure extends TypeDef {
 		);
 
 		// Non-linear type - hence the value must be loaded
-		if (type.type.typeSystem == "normal") {
+		if (type.native) {
 			if (reading) {
 				let id = new LLVM.ID();
 				preamble.append(new LLVM.Set(
@@ -182,7 +201,7 @@ class Structure extends TypeDef {
 					ref
 				);
 			} else {
-				val.type = type.toLLVM(ref, false, true);
+				val.type = type.toLLVM(ref).offsetPointer(1);
 			}
 		}
 
@@ -194,7 +213,7 @@ class Structure extends TypeDef {
 	}
 
 	parse () {
-		this.name = this.ast.tokens[0].tokens;
+		this.name = this.ast.value[0].value;
 		this.represent = "%struct." + (
 			this.external ? this.name : `${this.name}.${this.ctx.getFileID().toString(36)}`
 		);
@@ -213,7 +232,7 @@ class Structure extends TypeDef {
 			return;
 		}
 
-		for (let node of this.ast.tokens[1].tokens) {
+		for (let node of this.ast.value[1].value) {
 			switch (node.type) {
 				case "comment":
 					break;
@@ -231,7 +250,7 @@ class Structure extends TypeDef {
 	}
 
 	linkTerm (node, stack = []) {
-		let name = node.tokens[1].tokens;
+		let name = node.value[1].value;
 		let index = this.indexOfTerm(name);
 		if (index != -1) {
 			this.ctx.getFile().throw(
@@ -243,11 +262,11 @@ class Structure extends TypeDef {
 		}
 
 		// Get attribute type
-		let typeNode = node.tokens[0];
-		let typeRef = this.ctx.getType(Flattern.DataTypeList(typeNode));
+		let typeNode = node.value[0];
+		let typeRef = this.getFile().getType(node.value[0]);
 		if (typeRef === null) {
 			this.ctx.getFile().throw(
-				`Error: Unknown type ${Flattern.DataTypeStr(typeNode)}`,
+				`Error: Unknown type ${Flattern.AccessToString(node.value[0])}`,
 				typeNode.ref.start,
 				typeNode.ref.end
 			);
@@ -263,16 +282,6 @@ class Structure extends TypeDef {
 			return false;
 		}
 
-		// Check a structure is not including a class attribute
-		if (this.meta != "CLASS" && typeRef.type.meta == "CLASS") {
-			this.ctx.getFile().throw(
-				`Error: Structures cannot include classes as attributes`,
-				this.ref,
-				node.ref.end
-			);
-			return false;
-		}
-
 		// Check child attribute is linked for valid size
 		if (!typeRef.type.linked) {
 			type.link([this, ...stack]);
@@ -280,7 +289,7 @@ class Structure extends TypeDef {
 
 		let term = new Struct_Term(
 			name,
-			new TypeRef(0, typeRef.type),
+			new TypeRef(typeRef.type),
 			node.ref.start
 		);
 		this.terms.push(term);
@@ -332,75 +341,10 @@ class Structure extends TypeDef {
 	/**
 	 *
 	 * @param {LLVM.Argument} argument
+	 * @param {LLVM.Argument} to
 	 */
-	cloneInstance(argument, ref) {
-		let preamble = new LLVM.Fragment();
-		let irType = new TypeRef(1, this, false);
-		let instruction;
-
-		let cloner = this.getCloner();
-		if (cloner) {
-			let id = new LLVM.ID();
-
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(id),
-				new LLVM.Alloc(irType.toLLVM(ref, true))
-			));
-
-			instruction = new LLVM.Argument (
-				irType.toLLVM(ref, false, true),
-				new LLVM.Name(id.reference())
-			);
-
-			// Call the clone opperation
-			preamble.append(new LLVM.Call(
-				new LLVM.Type("void", 0),
-				new LLVM.Name(cloner.represent, true, ref),
-				[
-					instruction,
-					argument
-				], ref
-			));
-
-			return {
-				preamble,
-				instruction
-			};
-		} else {
-			let storeID = new LLVM.ID();
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(storeID, false),
-				new LLVM.Alloc(irType.toLLVM())
-			));
-			instruction = new LLVM.Argument(
-				irType.toLLVM(),
-				new LLVM.Name(storeID.reference(), false)
-			);
-
-			let cacheID = new LLVM.ID();
-			preamble.append(new LLVM.Set(
-				new LLVM.Name(cacheID, false),
-				new LLVM.Load(
-					irType.toLLVM(ref, true),
-					argument.name
-				),
-				ref
-			));
-
-			preamble.append(new LLVM.Store(
-				instruction,
-				new LLVM.Argument(
-					irType.toLLVM(ref, true),
-					new LLVM.Name(cacheID.reference(ref), false, ref)
-				),
-				ref
-			));
-		}
-
-		return {
-			preamble,
-			instruction
-		};
+	cloneInstance(argument, to, ref) {
+		throw new Error("Old code path");
 	}
 
 
@@ -409,7 +353,7 @@ class Structure extends TypeDef {
 			this.alignment = Math.max.apply(null,
 				this.terms
 					.map(x => x.typeRef.type)
-					.map(x => x.primative ? x.size : x.alignment)
+					.map(x => x.native ? x.size : x.alignment)
 			);
 
 			this.size = this.terms

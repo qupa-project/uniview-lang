@@ -1,6 +1,6 @@
-const Flattern = require('../../parser/flattern.js');
 const LLVM     = require("../../middle/llvm.js");
 const TypeRef = require('../typeRef.js');
+const { SyntaxNode } = require('bnf-parser');
 
 const Primative = {
 	types: require('./../../primative/types.js')
@@ -21,18 +21,6 @@ class ExecutionBase {
 		this.isChild    = false;
 
 		this.entryPoint = entryPoint.reference();
-	}
-
-	/**
-	 * Return the function this scope is within
-	 * @returns {Function_Instance}
-	 */
-	getFunction (access, signature, template) {
-		return this.getFile().getFunction(access, signature, template);
-	}
-
-	getType(node, template) {
-		return this.ctx.getType(node, template);
 	}
 
 
@@ -60,51 +48,22 @@ class ExecutionBase {
 		return null;
 	}
 
-
 	/**
-	 *
-	 * @param {BNF_Node} node
+	 * Return the function this scope is within
+	 * @param {SyntaxNode[]}
+	 * @param {TypeRef[]}
+	 * @returns {Function_Instance}
 	 */
-	resolveTemplate (node) {
-		let template = [];
-		for (let arg of node.tokens) {
-			switch (arg.type) {
-				case "data_type":
-					let type = this.ctx.getType(
-						Flattern.DataTypeList(arg),
-						this.resolveTemplate(arg.tokens[3])
-					);
-					if (type === null) {
-						this.getFile().throw(
-							`Error: Unknown data type ${Flattern.DataTypeStr(arg)}`,
-							arg.ref.start, arg.ref.end
-						);
-						return null;
-					}
-
-					// Update pointer size
-					type.pointer = arg.tokens[0];
-
-					template.push(type);
-					break;
-				case "constant":
-					let cnst = this.compile_constant(arg);
-					if (cnst.type.type == Primative.types.void) {
-						template.push(new TypeRef(0, Primative.types.void, false, false));
-					} else {
-						template.push(cnst);
-					}
-					break;
-				default:
-					this.getFile().throw(
-						`Error: ${arg.type} are currently unsupported in template arguments`,
-						arg.ref.start, arg.ref.end
-					);
-					return null;
-			}
+	getFunction (access, signature) {
+		if (!Array.isArray(access)) {
+			throw new Error(`Unexpected access type`);
 		}
 
-		return template;
+		return this.getFile().getFunction(access, signature);
+	}
+
+	getType(node) {
+		return this.ctx.getType(node);
 	}
 
 
@@ -114,15 +73,14 @@ class ExecutionBase {
 
 	/**
 	 * Get a register
-	 * @param {*} ast
+	 * @param {SyntaxNode} ast
 	 * @param {Boolean} read
 	 */
 	getVar (ast, read = true) {
 		let preamble = new LLVM.Fragment();
 
 		// Link dynamic access arguments
-		ast = this.resolveAccess (ast);
-		let res = this.scope.getVar (ast, read);
+		let res = this.scope.getVar(ast, read);
 
 		// Inject reference if it is missing
 		if (res.error) {
@@ -130,10 +88,10 @@ class ExecutionBase {
 			return res;
 		}
 
-		let accesses = ast.tokens[2];
+		let accesses = ast.value.slice(1);
 		for (let access of accesses) {
 			res.hasUpdated = res.hasUpdated || !read;
-			res = res.access(access[1].tokens, access[1].ref);
+			res = res.access(access.value, access.ref);
 			if (res.error) {
 				return res;
 			}
@@ -173,53 +131,6 @@ class ExecutionBase {
 			instruction: out.register
 		};
 	}
-
-
-
-	/**
-	 *
-	 * @param {BNF_Node} node
-	 */
-	resolveType (node) {
-		let template = this.resolveTemplate(node.tokens[3]);
-		if (template === null) {
-			return null;
-		}
-
-		let type = this.ctx.getType(
-			Flattern.DataTypeList(node),
-			template
-		);
-
-		return type;
-	}
-
-	/**
-	 * Resolves any dynamic access for the variable
-	 * ALTERS original AST
-	 * @param {*} ast
-	 */
-	resolveAccess (ast) {
-		for (let access of ast.tokens[2]) {
-			if (access[0] == "[]") {
-				for (let i in access[1]) {
-					let res = this.compile_expr(access[1][i], null, true);
-					if (res === null) {
-						return {
-							error: true,
-							msg: `Error: Unexpected dynamic access opperand type ${arg.type}`,
-							ref: arg.ref
-						};
-					}
-
-					access[1][i] = res;
-				}
-			}
-		}
-
-		return ast;
-	}
-
 
 
 

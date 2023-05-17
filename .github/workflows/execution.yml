@@ -44,7 +44,7 @@ jobs:
       - run: npm install --ignore-scripts
       - run: cmake . -B build -G Ninja
       - run: cmake --build build
-      - run: npm run build-syntax
+      - run: npm run build:syntax
       - run: node ./compiler/test.js --action
 
   build-win:

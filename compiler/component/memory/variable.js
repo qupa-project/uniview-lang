@@ -5,6 +5,7 @@ const TypeRef = require('../typeRef.js');
 const Value = require('./value.js');
 
 const Probability = require('./probability.js');
+const { SyntaxNode } = require('bnf-parser');
 
 
 
@@ -145,7 +146,23 @@ class Variable extends Value {
 			return out;
 		}
 
-		if (this.type.type.typeSystem == 'linear') {
+		if (this.type.native) {
+			if (this.type.lent) {
+				let loadID = new LLVM.ID();
+				let loadType = out.register.type.duplicate().offsetPointer(-1);
+				out.preamble.append(new LLVM.Set(
+					new LLVM.Name(loadID, false, ref),
+					new LLVM.Load(loadType, out.register.name, ref),
+					ref
+				));
+
+				out.type = loadType;
+				out.register = new LLVM.Argument(
+					loadType,
+					new LLVM.Name(loadID.reference(), false, ref),
+				ref);
+			}
+		} else {
 			if (this.type.lent) {
 				return {
 					error: true,
@@ -179,24 +196,51 @@ class Variable extends Value {
 	/**
 	 * Updated the variable to a new value
 	 * @param {LLVM.Argument} register
-	 * @param {Boolean} force apply the update even if the value is borrowed
+	 * @param {Boolean} force the update to apply with no execution taking place
 	 * @param {*} ref
 	 * @returns {Error?}
 	 */
 	markUpdated (register, force = false, ref) {
 		if (!force) {
+			if (this.type.constant) {
+				return {
+					error: true,
+					msg: "Cannot change a constant value",
+					ref
+				};
+			}
+
 			if (this.type.lent) {
-				return {
-					error: true,
-					msg: "Cannot overwite a lent value",
+				let res = this.cleanup(ref);
+				if (res.error) {
+					return res;
+				}
+				let frag = res;
+
+				let target = register;
+				if (register.pointer > 0) {
+					let frag = res;
+					let loadID = new LLVM.ID();
+					let loadType = register.type.duplicate().offsetPointer(-1);
+					frag.append(new LLVM.Set(
+						new LLVM.Name(loadID, false, ref),
+						new LLVM.Load(loadType, register, ref),
+						ref
+					));
+
+					target = new LLVM.Argument(
+						loadType,
+						new LLVM.Name(loadID.reference(), false, ref),
+					ref);
+				}
+
+				frag.append(new LLVM.Store(
+					this.store,
+					target,
 					ref
-				};
-			} else if (this.type.constant) {
-				return {
-					error: true,
-					msg: "Cannot overwite a constant value",
-					ref
-				};
+				));
+
+				return frag;
 			}
 		}
 
@@ -205,7 +249,7 @@ class Variable extends Value {
 		this.hasUpdated = true;
 		this.store = register;
 
-		return true;
+		return new LLVM.Fragment();
 	}
 
 		/**
@@ -215,6 +259,10 @@ class Variable extends Value {
 	 * @returns {Object[Variable, LLVM.Fragment]|Error}
 	 */
 	access (accessor, ref) {
+		if (accessor instanceof SyntaxNode) {
+			throw new Error("Unexpected syntax node");
+		}
+
 		let preamble = new LLVM.Fragment();
 
 		// Resolve any probabilities
@@ -228,7 +276,7 @@ class Variable extends Value {
 		// 	throw new Error("Invalid variable accessor");
 		// }
 
-		// Automatically decompoase the value if needed
+		// Automatically decompose the value if needed
 		if (!this.isDecomposed) {
 			let res = this.decompose(ref);
 			if (res.error) {
@@ -303,7 +351,7 @@ class Variable extends Value {
 		let type = this.type.duplicate();
 		type.lent = true;
 
-		if (this.type.type.typeSystem == "normal") {
+		if (!this.type.lent && this.type.native) {
 			let ptr = new LLVM.ID();
 
 			preamble.append(new LLVM.Set(
@@ -349,37 +397,10 @@ class Variable extends Value {
 	}
 
 	cloneValue (ref) {
-		// Resolve to composed/probability state
-		let out = this.resolve(ref, false);
-		if (out.error) {
-			return out;
-		}
-
-		if (
-			this.type.type.typeSystem == "normal" ||
-			!this.type.type.cloneInstance
-		) {
-			return {
-				preamble: new LLVM.Fragment(),
-				instruction: this.store,
-				type: this.type.duplicate()
-			};
-		}
-
-		this.store = out.register;
-		let preamble = out.preamble;
-
-		// Clone the register
-		let clone = this.type.type.cloneInstance(out.register, ref);
-		preamble.merge(clone.preamble);
-
-		let type = this.type.duplicate();
-		type.lent = false;
-
 		return {
-			preamble: preamble,
-			instruction: clone.instruction,
-			type: type
+			error: true,
+			msg: "Old code path hit",
+			ref: ref
 		};
 	}
 
@@ -455,7 +476,11 @@ class Variable extends Value {
 			let store = res.register;
 			let isLinear = elm[1].type.type.typeSystem == "linear";
 			if (isLinear) {
-				let type = elm[1].type.duplicate().toLLVM(ref, true);
+				let type = elm[1].type.toLLVM(ref);
+				if (!elm[1].type.native) {
+					type.offsetPointer(-1);
+				}
+
 				let id = new LLVM.ID(ref);
 				frag.append(new LLVM.Set(
 					new LLVM.Name(id, false, ref),
@@ -850,6 +875,9 @@ class Variable extends Value {
 				let del = this.type.type.getDestructor();
 				if (del) {
 					let res = this.read(ref);
+					if (res.error) {
+						return res;
+					}
 
 					frag.merge(res.preamble);
 					frag.append(new LLVM.Call(

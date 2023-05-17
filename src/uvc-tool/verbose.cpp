@@ -2,17 +2,18 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "verbose.h"
+#include "verbose.hpp"
 
-bool Verbose = false;
+bool isVerbose = false;
 
 void setVerbose(bool setting) {
-		Verbose = setting;
+		isVerbose = setting;
 }
 
-int verbose(const char * restrict format, ...) {
-	if( !Verbose )
+int verbose(const char* format, ...) {
+	if (!isVerbose) {
 		return 0;
+	}
 
 	va_list args;
 	va_start(args, format);
@@ -20,4 +21,8 @@ int verbose(const char * restrict format, ...) {
 	va_end(args);
 
 	return ret;
+}
+
+bool getVerbose() {
+	return isVerbose;
 }

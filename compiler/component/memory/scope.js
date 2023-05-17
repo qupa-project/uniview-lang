@@ -1,4 +1,4 @@
-const Flattern = require('../../parser/flattern.js');
+const Flattern = require('../../parser/flatten.js');
 const { Generator_ID } = require('../generate.js');
 const LLVM = require("../../middle/llvm.js");
 const TypeRef = require('./../typeRef.js');
@@ -52,32 +52,16 @@ class Scope {
 			if (this.variables[arg.name]) {
 				this.getFile().throw(
 					`Duplicate use of argument ${arg.name} function`,
-					this.variables[arg.name].declared, arg.ref
+					this.variables[arg.name].ref.start, arg.ref.end
 				);
 
 				return null;
 			}
 
 			// Load any lent normal types so they can be treated as normal variables
-			let resolvedNormal = false;
 			let id = new LLVM.ID();
 			let type = arg.type;
 			let reg = new LLVM.Name(id.reference(), false);
-			if (type.lent && type.type.typeSystem == "normal") {
-				resolvedNormal = true;
-
-				let nxtType = type.duplicate();
-				nxtType.lent = false;
-
-				let loadID = new LLVM.ID();
-				frag.append(new LLVM.Set(
-					new LLVM.Name(loadID, false),
-					new LLVM.Load(nxtType.toLLVM(), reg)
-				));
-
-				reg = new LLVM.Name(loadID.reference(), false);
-				type = nxtType;
-			}
 
 			// Creation of namespace
 			this.variables[arg.name] = new Variable(
@@ -108,15 +92,9 @@ class Scope {
 				this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
 				return null;
 			}
-			this.variables[arg.name].hasUpdated = false;
 
-			// Cache details so the final value can be stored back at the original address
-			if (resolvedNormal) {
-				this.lentNormals.push([
-					this.variables[arg.name],
-					new LLVM.Name(id.reference(), false)
-				]);
-			}
+			// force will never generate a code fragment
+			this.variables[arg.name].hasUpdated = false;
 		}
 
 		return {frag, registers};
@@ -150,16 +128,20 @@ class Scope {
 	 * @returns {Variable}
 	 */
 	getVar (ast, read = true) {
-		if (ast.type != "variable") {
-			throw new TypeError(`Parsed AST must be a branch of type variable, not "${ast.type}"`);
+		switch (ast.type) {
+			case "variable":
+			case "access":
+				break;
+			default:
+				throw new TypeError(`Parsed AST must be a branch of type variable, not "${ast.type}"`);
 		}
 
-		let target = this.variables[ast.tokens[1].tokens];
+		let target = this.variables[ast.value[0].value];
 		if (!target) {
 			return {
 				error: true,
-				msg: `Unknown variable name ${ast.tokens[1].tokens}`,
-				ref: ast.tokens[1].ref
+				msg: `Unknown variable name "${ast.value[0].value}"`,
+				ref: ast.value[0].ref
 			};
 		}
 
@@ -196,7 +178,7 @@ class Scope {
 			};
 		}
 
-		return new TypeRef (target.pointer - ast.tokens[0], target.type);
+		return new TypeRef(target.type);
 	}
 
 	/**

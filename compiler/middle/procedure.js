@@ -38,7 +38,7 @@ class Procedure extends Fragment {
 		if (this.stmts.length > 0) {
 			out += ` {\n` +
 				`${this.stmts
-						.map(x => x.flattern(indent+2))
+						.map(x => x.flattern(indent+4))
 						.filter(x => x.length !== 0)
 						.join("\n")}` +
 				`\n}`;

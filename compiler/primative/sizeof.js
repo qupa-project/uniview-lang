@@ -33,7 +33,7 @@ class Template_Primative_Size_Of extends Template {
 		}
 
 		let inputType = template[0];
-		let outputType = new TypeRef(0, types.u64);
+		let outputType = new TypeRef(types.u64);
 		let match = this.findMatch(inputType);
 		if (match) {
 			return match;

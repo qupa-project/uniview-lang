@@ -1,5 +1,4 @@
-const BNF = require('bnf-parser');
-const BNF_SytaxNode = BNF.types.BNF_SyntaxNode;
+const { SyntaxNode, ReferenceRange } = require('bnf-parser');
 
 
 
@@ -8,22 +7,27 @@ let precedence = {
 	expr_compare: 2,
 	expr_bool: 4,
 
-	expr_mul : 0,
-	expr_div : 0,
-	expr_mod : 0,
-	expr_add : 1,
-	expr_sub : 1,
+	expr_invert: 0,
+	expr_lend: 0,
+	expr_share: 0,
+	expr_mul : 1,
+	expr_div : 1,
+	expr_mod : 1,
+	expr_add : 2,
+	expr_sub : 2,
 
-	expr_lt    : 2,
-	expr_lt_eq : 2,
-	expr_gt    : 2,
-	expr_gt_eq : 2,
-	expr_eq    : 3,
+	expr_lt    : 3,
+	expr_lt_eq : 3,
+	expr_gt    : 3,
+	expr_gt_eq : 3,
+	expr_eq    : 4,
 
-	expr_and : 4,
-	expr_or  : 5,
+	expr_and : 5,
+	expr_or  : 6,
 
-	expr_brackets: 6
+	expr_comma: 7,
+
+	expr_brackets: 8
 };
 
 function GetPrecedence (a, b) {
@@ -36,8 +40,8 @@ function GetPrecedence (a, b) {
 	if (A == undefined && B == undefined) {
 		return 0;
 	} else if (A == B) {
-		let A = precedence[a.tokens[0].type];
-		let B = precedence[b.tokens[0].type];
+		let A = precedence[a.value[0].type];
+		let B = precedence[b.value[0].type];
 
 		if (A  == undefined && B  == undefined) {
 			return 0;
@@ -58,107 +62,103 @@ function GetPrecedence (a, b) {
 }
 
 
+const OPERATION_DICT = {
+	// expr_arithmetic
+	"+": {
+		base: "expr_arithmetic",
+		sub: "expr_add"
+	},
+	"-": {
+		base: "expr_arithmetic",
+		sub: "expr_sub"
+	},
+	"*": {
+		base: "expr_arithmetic",
+		sub: "expr_mul"
+	},
+	"/": {
+		base: "expr_arithmetic",
+		sub: "expr_div"
+	},
+	"%": {
+		base: "expr_arithmetic",
+		sub: "expr_mod"
+	},
+
+	// expr_compare
+	"==": {
+		base: "expr_compare",
+		sub: "expr_eq",
+	},
+	"!=": {
+		base: "expr_compare",
+		sub: "expr_neq"
+	},
+	"<": {
+		base: "expr_compare",
+		sub: "expr_lt"
+	},
+	">": {
+		base: "expr_compare",
+		sub: "expr_gt"
+	},
+	"<=": {
+		base: "expr_compare",
+		sub: "expr_lt_eq"
+	},
+	">=": {
+		base: "expr_compare",
+		sub: "expr_gt_eq"
+	},
+
+	// expr_bool
+	"&&": {
+		base: "expr_bool",
+		sub: "expr_and"
+	},
+	"||": {
+		base: "expr_bool",
+		sub: "expr_or"
+	}
+};
+
 /**
  *
- * @param {BNF_SytaxNode} lhs
- * @param {BNF_SytaxNode} opperation
- * @param {BNF_SytaxNode} rhs
- * @returns {BNF_SytaxNode}
+ * @param {SyntaxNode} lhs
+ * @param {SyntaxNode} opperation
+ * @param {SyntaxNode} rhs
+ * @returns {SyntaxNode}
  */
-function Construct_Operation(lhs, opperation, rhs) {
-	let base;
-	let sub;
-	switch (opperation.tokens) {
-		// expr_arithmetic
-		case "+":
-			base = "expr_arithmetic";
-			sub = "expr_add";
-			break;
-		case "-":
-			base = "expr_arithmetic";
-			sub = "expr_sub";
-			break;
-		case "*":
-			base = "expr_arithmetic";
-			sub = "expr_mul";
-			break;
-		case "/":
-			base = "expr_arithmetic";
-			sub = "expr_div";
-			break;
-		case "%":
-			base = "expr_arithmetic";
-			sub = "expr_mod";
-			break;
-
-		// expr_compare
-		case "==":
-			base = "expr_compare";
-			sub = "expr_eq";
-			break;
-		case "!=":
-			base = "expr_compare";
-			sub = "expr_neq";
-			break;
-		case "<":
-			base = "expr_compare";
-			sub = "expr_lt";
-			break;
-		case ">":
-			base = "expr_compare";
-			sub = "expr_gt";
-			break;
-		case "<=":
-			base = "expr_compare";
-			sub = "expr_lt_eq";
-			break;
-		case ">=":
-			base = "expr_compare";
-			sub = "expr_gt_eq";
-			break;
-
-		// expr_bool
-		case "&&":
-			base = "expr_bool";
-			sub = "expr_and";
-			break;
-		case "||":
-			base = "expr_bool";
-			sub = "expr_or";
-			break;
-
-		default:
-			throw new Error(`Unexpected expression opperation ${opperation.tokens}`);
+function Construct_Operation(lhs, operation, rhs) {
+	let mode = OPERATION_DICT[operation.value];
+	if (!mode) {
+		throw new Error(`Unexpected expression operation ${operation.value}`);
 	}
 
-	let node = new BNF_SytaxNode(
-		base,
+	let node = new SyntaxNode(
+		mode.base,
 		[
-			new BNF_SytaxNode(
-				sub,
+			new SyntaxNode(
+				mode.sub,
 				[],
-				0,
-				opperation.ref.start,
-				opperation.ref.end
+				operation.ref.clone()
 			)
 		],
-		0,
-		lhs.ref.start,
-		rhs.ref.end
+		new ReferenceRange(lhs.ref.start.clone(), rhs.ref.end.clone())
 	);
 
 	let p = GetPrecedence(lhs, node);
 
 	if (p == 1) {
-		node.tokens[0].tokens = [
-			lhs.tokens[0].tokens[1],
+		node.value[0].value = [
+			lhs.value[0].value[1],
 			rhs
 		];
-		lhs.tokens[0].tokens[1] = node;
+		lhs.value[0].value[1] = node;
 
 		return lhs;
 	} else {
-		node.tokens[0].tokens = [
+		node.value[0].value = [
 			lhs, rhs
 		];
 
@@ -171,14 +171,14 @@ function Construct_Operation(lhs, opperation, rhs) {
 
 /**
  *
- * @param {BNF_SytaxNode[]} queue
+ * @param {SyntaxNode[]} queue
  * @returns {BNF_SyntaxNode}
  */
 function ApplyPrecedence (queue) {
 	let root = queue[0];
 	for (let i=1; i<queue.length; i++) {
 		switch (queue[i].type) {
-			case "expr_middle_opper":
+			case "expr_middle_oper":
 				root = Construct_Operation(
 					root,
 					queue[i],
@@ -186,9 +186,9 @@ function ApplyPrecedence (queue) {
 				);
 				i++;
 				break;
-			case "expr_right_opper":
+			case "expr_left_oper":
 			default:
-				throw new TypeError(`Unexpected expression opperator type ${queue[i].type}`);
+				throw new TypeError(`Unexpected expression operator type ${queue[i].type}`);
 		}
 	}
 

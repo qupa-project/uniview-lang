@@ -4,11 +4,26 @@ fn main (): int {
 	let c = 3.0;
 	let d = 4.0;
 
-	let res_int = a + b;
-	res_int = a - b;
-	res_int = a * b;
-	res_int = a / b;
-	res_int = a % b;
+	if (a + b != 3) {
+		printf("%s", "Failed add");
+		return 1;
+	}
+	if (a - b != -1) {
+		printf("%s", "Failed subtract");
+		return 1;
+	}
+	if (a * b != 2) {
+		printf("%s", "Failed multiply");
+		return 1;
+	}
+	if (a / b != 0) {
+		printf("%s", "Failed divide");
+		return 1;
+	}
+	if (a % b != 1) {
+		printf("%s", "Failed modulo");
+		return 1;
+	}
 
 	let res_float = c + d;
 	res_float = c - d;

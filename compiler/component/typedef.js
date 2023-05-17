@@ -1,5 +1,6 @@
 const { Generator_ID } = require('./generate.js');
 const LLVM = require('./../middle/llvm.js');
+const TypeRef = require('./typeRef.js');
 let typeIDGen = new Generator_ID();
 
 class TypeDef {
@@ -9,7 +10,7 @@ class TypeDef {
 		this.ref      = ast.ref.start;
 		this.external = external;
 
-		this.primative = false;
+		this.native = false;
 		this.linked = false;
 
 		this.id = typeIDGen.next();
@@ -47,10 +48,17 @@ class TypeDef {
 		return null;
 	}
 
+	getType(access) {
+		return access.length == 0 ? new TypeRef(this) : null;
+	}
+
 	getDestructor() {
 		return false;
 	}
 	getCloner() {
+		return false;
+	}
+	hasNestedCloner() {
 		return false;
 	}
 

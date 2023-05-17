@@ -10,15 +10,22 @@
  - [x] `struct {key: value}` syntax now available for creating structures
  - [x] Intrinsic `Drop` trait which automatically gets executed on structs with this type when the value falls out of scope
  - [x] Intrinsic `Clone` trait which automatically gets called when cloning a struct with the Clone trait implemented
+ - [x] No longer able to define a variable with the name of a reserved word
+ - [x] More detailed compilation time metrics with ``--profile`` flag
+ - [] A value can be lent to a new variable within the same scope
+ - [] A lent value can be returned only if the lent value is from a non locally defined value
+ - [] A value can have multiple immutable lends
 
 ## Fixes
  - [x] Lent normal values are now treated as non-lent values within a function, however, the final values are stored back in the original location upon function cleanup
 
 ## Changes
  - [x] Comments are now able to be used anywhere whitespace can
+ - [x] Cloning now done via the `Clone()` function instead of via the `$` operator.
 
 ## Tweaks
  - [x] Now uses the LLVM tool chain (instead of clang) to generated the platform specific assembly, then clang does the final mile to make the executable binary.
+ - [x] String constants are now stored globally as constants in the application instead of being allocated each time.
 
 ## Version 0.1.0
 

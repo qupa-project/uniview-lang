@@ -6,49 +6,25 @@ external assume {
 }
 
 struct String {
-	data: unsafe_blob;
+	data: addr_space;
 	size: u64;
 }
 
-
-impl Drop for String {
-	fn drop(this: @String) {
-		Memory.Free(this.data);
-	}
-}
-
-impl Clone for String {
-	fn clone(this: @String): String {
-		// Initiliase the data structure
-		let data = Memory.Alloc(this.size);
-
-		let out = String {
-			data: data,
-			size: this.size
-		};
-
-		// Copy the blob data to the new allocation
-		Memory.Copy($out.data, $this.data, this.size, false);
-
-		return out;
-	}
-}
-
 impl String {
-	fn New(str: cstring): String {
+	fn new(str: cstring): String {
 		let size = sizeof($str);
-		let out = String {
-			data: Memory.Alloc(size),
-			size: size
+		let out = new String {
+			data: Memory.Alloc(size);
+			size: size;
 		};
 
-		let other = bitcast#[unsafe_blob](str);
+		let other = bitcast#[addr_space](str);
 		Memory.Move($out.data, $other, out.size, false);
 
 		return out;
 	}
 
-	fn Append(this: @String, other: String) {
+	fn append(this: @String, other: String) {
 		let nx_len = this.size + other.size - cast#[u64](1);
 		this.data = Memory.Realloc(this.data, nx_len);
 
@@ -62,11 +38,11 @@ impl String {
 	fn Slice(this: @String, begin: u64): String {
 		return String.Slice(@this, begin, this.size);
 	}
-
 	fn Slice(this: @String, begin: u64, end: u64): String {
 		if (begin > this.size) {
 			begin = this.size;
 		}
+
 		if (end > this.size - cast#[u64](1)) {
 			end = this.size - cast#[u64](1);
 		}
@@ -74,9 +50,9 @@ impl String {
 		// Create a space for the new data
 		let length = end - begin;
 		let size = length + cast#[u64](1);
-		let sub = String {
-			size: size,
-			data: Memory.Alloc(size)
+		let sub = new String {
+			size: size;
+			data: Memory.Alloc(size);
 		};
 
 		// Move the taken slice to the new string
@@ -98,12 +74,13 @@ impl String {
 		return sub;
 	}
 
-	fn Slice(this: String, begin: u64): String {
-		let end = this.size;
-		return String.Slice(this, begin, end);
-	}
 
-	fn Slice(this: String, begin: u64, end: u64): String {
+
+	fn slice(this: String, begin: u64): String {
+		let end = this.size;
+		return String.slice(this, begin, end);
+	}
+	fn slice(this: String, begin: u64, end: u64): String {
 		if (begin > this.size) {
 			begin = this.size;
 		}
@@ -114,9 +91,9 @@ impl String {
 		// Create a space for the new data
 		let length = end - begin;
 		let size = length + cast#[u64](1);
-		let sub = String {
-			size: size,
-			data: Memory.Alloc(size)
+		let sub = new String {
+			size: size;
+			data: Memory.Alloc(size);
 		};
 
 		// Move the taken slice to the new string
@@ -129,17 +106,42 @@ impl String {
 		return sub;
 	}
 
+	fn length(this: $String): u64 {
+		let out: u64 = this.size - cast#[u64](1);
+		return out;
+	}
+}
 
-	fn Length(this: &String): u64 {
-		return this.size - cast#[u64](1);
+
+impl Drop for String {
+	fn drop(this: @String) {
+		Memory.Free($this.data);
+	}
+}
+
+
+impl Clone for String {
+	fn clone(this: @String): String {
+		// Initiliase the data structure
+		let data = Memory.Alloc(this.size);
+
+		let out = new String {
+			data: data;
+			size: this.size;
+		};
+
+		// Copy the blob data to the new allocation
+		Memory.Copy($out.data, $this.data, this.size, false);
+
+		return out;
 	}
 }
 
 
 fn puts(str: @String) {
-	printf("%s", bitcast#[cstring](str.data));
+	printf("%s", bitcast#[cstring]($str.data));
 }
 
 fn puts(str: String) {
-	printf("%s", bitcast#[cstring](str.data));
+	printf("%s", bitcast#[cstring]($str.data));
 }

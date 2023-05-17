@@ -1,17 +1,16 @@
 @echo off
 
-title "Uniview Dependencie Setup"
+@title "Uniview Dependencie Setup"
 
-set last=%cd%
-cd %~dp0
+@set last=%cd%
+@cd %~dp0
 
-title Uniview Dependencie Setup - Configuring...
-cmake -S . -B build --install-prefix="%~dp0\install"
-title Uniview Dependencie Setup - Building...
+@title Configuring - Uniview Dependencies
+cmake -S . -B build
+@title Building - Uniview Dependencies
 cmake --build build
-title Uniview Dependencie Setup - Installing...
+@title Installing - Uniview Dependencies
 cmake --build build --target install
 
-cd %last%
-
+@cd %last%
 @echo on

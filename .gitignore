@@ -32,10 +32,15 @@ build/
 # Ignore uniview files
 *.uv
 
-# Ignore LLVM outputs
+# Ignore Compilation outputs outputs
 *.ll
+*.bc
 *.asm
+*.s
 *.bin
 *.exe
 *.app
 *.out
+*.o
+*.lib
+*.dll
