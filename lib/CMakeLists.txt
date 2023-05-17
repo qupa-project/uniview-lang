@@ -72,8 +72,7 @@ endif()
 #################################################################
 # find_package(LLVM REQUIRED CONFIG)
 
-# set(LLVM_TARGETS_TO_BUILD:STRING "AArch64;X86;WebAssembly;RISCV") future targets
-set(LLVM_TARGETS_TO_BUILD "X86;" CACHE STRING "" FORCE)
+set(LLVM_TARGETS_TO_BUILD "ARM;RISCV;X86;")
 set(LLVM_ENABLE_PROJECTS "llvm;lld")
 set(LLVM_BUILD_JIT ON)
 
@@ -111,3 +110,4 @@ set(LLVM_ENABLE_SPHINX OFF)
 
 add_subdirectory("llvm/llvm")
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Building for ${LLVM_TARGETS_TO_BUILD}")

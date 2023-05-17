@@ -47,12 +47,7 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 # that we wish to use
 #################################################################
 llvm_map_components_to_libnames( llvm_libs
-	# armasmparser
-	# armcodegen
-	# armdesc
-	# arminfo
 	# Demangle
-	Analysis
 	Analysis
 	BitReader
 	BitWriter
@@ -71,12 +66,26 @@ llvm_map_components_to_libnames( llvm_libs
 	Support
 	Target
 	TransformUtils
+
+	# PLATFORM SPECIFIC
+	# armasmparser
+	# armcodegen
+	# armdesc
+	# arminfo
+	# riscvasmparser
+	# riscvcodegen
+	# riscvdesc
+	# riscvinfo
+	# webassemblyasmparser
+	# webassemblycodegen
+	# webassemblydesc
+	# webassemblyinfo
 	x86asmparser
 	x86codegen
 	x86desc
 	x86info
 )
-set(LLVM_TARGETS_TO_BUILD "X86;" CACHE STRING "" FORCE)
+set(LLVM_TARGETS_TO_BUILD "ARM;RISCV;X86;")
 
 
 
