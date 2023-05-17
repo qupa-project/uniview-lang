@@ -2,11 +2,39 @@
 	"name": "@qupa/uniview",
 	"version": "0.1.0",
 	"description": "Uniview Language",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/qupa-project/uniview-lang.git"
+	},
+	"author": "",
+	"license": "MIT",
+	"homepage": "https://github.com/qupa-project/uniview-lang#readme",
+	"bugs": {
+		"url": "https://github.com/qupa-project/uniview-lang/issues"
+	},
 	"main": "compile/compile.js",
 	"preferGlobal": true,
 	"engineStrict": true,
 	"engines": {
 		"node": ">=14"
+	},
+	"scripts": {
+		"test": "npm run test-execution",
+		"test-translation": "node compiler/test.js",
+		"test-compilation": "node compiler/test.js --bin",
+		"test-execution": "node compiler/test.js --bin --exec",
+		"postinstall": "run-s build-syntax install-tools",
+		"install-tools": "node tools/install.js",
+		"build": "run-s build:*",
+		"build:syntax": "node compiler/parser/build.js",
+		"build:tools": "cmake . -B build -G Ninja & cmake --build build"
+	},
+	"bin": {
+		"uvc": "compiler/compile.js",
+		"uvc-env": "tools/env-binder.js"
+	},
+	"devDependencies": {
+		"npm-run-all": "^4.1.5"
 	},
 	"dependencies": {
 		"bnf-parser": "^3.1.4",
@@ -14,29 +42,4 @@
 		"node-getopt": "^0.3.2",
 		"unzipper": "^0.10.11"
 	},
-	"scripts": {
-		"test": "npm run test-execution",
-		"test-translation": "node compiler/test.js",
-		"test-compilation": "node compiler/test.js --bin",
-		"test-execution": "node compiler/test.js --bin --exec",
-		"postinstall": "npm run build-syntax & npm run install-tools",
-		"install-tools": "node tools/install.js",
-		"build": "npm run build-syntax & npm run build-tools",
-		"build-syntax": "node compiler/parser/build.js",
-		"build-tools": "cmake . -B build -G Ninja & cmake --build build"
-	},
-	"bin": {
-		"uvc": "compiler/compile.js",
-		"uvc-env": "tools/env-binder.js"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/qupa-project/uniview-lang.git"
-	},
-	"author": "",
-	"license": "MIT",
-	"bugs": {
-		"url": "https://github.com/qupa-project/uniview-lang/issues"
-	},
-	"homepage": "https://github.com/qupa-project/uniview-lang#readme"
 }
