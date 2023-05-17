@@ -33,7 +33,7 @@ class Template_Primative_Size_Of extends Template {
 		}
 
 		let inputType = template[0];
-		let outputType = new TypeRef(0, types.u64);
+		let outputType = new TypeRef(types.u64);
 		let match = this.findMatch(inputType);
 		if (match) {
 			return match;
@@ -60,7 +60,7 @@ class Template_Primative_Size_Of extends Template {
 		func.ir.append(new LLVM.Return(
 			new LLVM.Argument(
 				outputType.toLLVM(),
-				new LLVM.Constant(inputType.pointer > 0 ? 8 : inputType.type.size, null)
+				new LLVM.Constant(inputType.pointer > 0 ? 8 : inputType.type.getSize(), null)
 			)
 		));
 

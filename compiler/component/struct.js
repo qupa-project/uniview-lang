@@ -1,5 +1,5 @@
 const LLVM = require('./../middle/llvm.js');
-const Flattern = require('../parser/flattern.js');
+const Flattern = require('../parser/flatten.js');
 const TypeDef = require('./typedef.js');
 const TypeRef = require('./typeRef.js');
 
@@ -13,14 +13,25 @@ class Struct_Term {
 		this.name = name;
 		this.typeRef = typeRef;
 		this.declared = ref;
-		this.size = typeRef.type.size;
-		this.typeSystem = "linear";
+		this.size = -1;
 
 		this.ir = new LLVM.Fragment();
 	}
 
+	getSize () {
+		if (this.size == -1) {
+			this.size = this.typeRef.type.getSize();
+		}
+
+		return this.size;
+	}
+
 	toLLVM() {
-		return this.typeRef.toLLVM(this.declared, true);
+		let type = this.typeRef.toLLVM(this.declared);
+		if (!this.typeRef.native) {
+			type.offsetPointer(-1);
+		}
+		return type;
 	}
 }
 
@@ -30,6 +41,13 @@ class Structure extends TypeDef {
 		super(ctx, ast, external);
 		this.terms = [];
 		this.linked = false;
+		this.size = -1;
+		this.alignment = 0;
+
+		this.nestedCloner = null;
+
+		this.defaultImpl = null;
+		this.impls = [];
 	}
 
 	/**
@@ -43,7 +61,7 @@ class Structure extends TypeDef {
 		if (typeof(name) == "number") {
 			found = i < this.terms.length;
 			i = name;
-		} else{
+		} else {
 			for (; i<this.terms.length && !found; i++) {
 				if (this.terms[i].name == name) {
 					found = true;
@@ -60,6 +78,52 @@ class Structure extends TypeDef {
 			index: i,
 			type: type
 		};
+	}
+
+	getFunction(access, signature, template) {
+		if (this.defaultImpl) {
+			return this.defaultImpl.getFunction(access, signature, template);
+		}
+
+		return null;
+	}
+
+	getDestructor () {
+		let res = this.impls
+			.filter(x => x.trait.name == "Drop")
+			.map(x => x.names["drop"].instances[0]);
+
+		if (res.length == 1) {
+			return res[0];
+		}
+
+		return null;
+	}
+
+	getCloner () {
+		let res = this.impls
+			.filter(x => x.trait.name == "Clone")
+			.map(x => x.names["clone"].instances[0]);
+
+		if (res.length == 1) {
+			return res[0];
+		}
+
+		return null;
+	}
+
+	hasNestedCloner() {
+		if (this.nestedCloner !== null) {
+			// Do nothing value already cached
+		} else if (this.getCloner() !== null) {
+			this.nestedCloner = true;
+		} else {
+			this.nestedCloner = this.terms
+				.map(x => x.typeRef.type.hasNestedCloner())
+				.reduce((prev, curr) => prev || curr, false);
+		}
+
+		return this.secondHandClone;
 	}
 
 	indexOfTerm (name) {
@@ -118,7 +182,7 @@ class Structure extends TypeDef {
 		);
 
 		// Non-linear type - hence the value must be loaded
-		if (type.type.typeSystem == "normal") {
+		if (type.native) {
 			if (reading) {
 				let id = new LLVM.ID();
 				preamble.append(new LLVM.Set(
@@ -137,7 +201,7 @@ class Structure extends TypeDef {
 					ref
 				);
 			} else {
-				val.type = type.toLLVM(ref, false, true);
+				val.type = type.toLLVM(ref).offsetPointer(1);
 			}
 		}
 
@@ -149,7 +213,7 @@ class Structure extends TypeDef {
 	}
 
 	parse () {
-		this.name = this.ast.tokens[0].tokens;
+		this.name = this.ast.value[0].value;
 		this.represent = "%struct." + (
 			this.external ? this.name : `${this.name}.${this.ctx.getFileID().toString(36)}`
 		);
@@ -168,8 +232,7 @@ class Structure extends TypeDef {
 			return;
 		}
 
-		this.size = 0;
-		for (let node of this.ast.tokens[1].tokens) {
+		for (let node of this.ast.value[1].value) {
 			switch (node.type) {
 				case "comment":
 					break;
@@ -182,11 +245,12 @@ class Structure extends TypeDef {
 					throw new Error(`Unexpected attribute ${node.type}`);
 			}
 		}
+
 		this.linked = true;
 	}
 
 	linkTerm (node, stack = []) {
-		let name = node.tokens[1].tokens;
+		let name = node.value[1].value;
 		let index = this.indexOfTerm(name);
 		if (index != -1) {
 			this.ctx.getFile().throw(
@@ -198,23 +262,22 @@ class Structure extends TypeDef {
 		}
 
 		// Get attribute type
-		let typeNode = node.tokens[0];
-		let typeRef = this.ctx.getType(Flattern.DataTypeList(typeNode));
+		let typeNode = node.value[0];
+		let typeRef = this.getFile().getType(node.value[0]);
 		if (typeRef === null) {
 			this.ctx.getFile().throw(
-				`Error: Unknown type ${Flattern.DataTypeStr(typeNode)}`,
+				`Error: Unknown type ${Flattern.AccessToString(node.value[0])}`,
 				typeNode.ref.start,
 				typeNode.ref.end
 			);
 			return false;
 		}
 
-		// Check a structure is not including a class attribute
-		if (this.meta != "CLASS" && typeRef.type.meta == "CLASS") {
+		if (typeRef.type == Primative.types.void) {
 			this.ctx.getFile().throw(
-				`Error: Structures cannot include classes as attributes`,
-				this.ref,
-				node.ref.end
+				`Error: Structures cannot include void type as an attribute`,
+				typeNode.ref.start,
+				typeNode.ref.end
 			);
 			return false;
 		}
@@ -226,12 +289,35 @@ class Structure extends TypeDef {
 
 		let term = new Struct_Term(
 			name,
-			new TypeRef(0, typeRef.type),
+			new TypeRef(typeRef.type),
 			node.ref.start
 		);
 		this.terms.push(term);
-		this.size += term.size;
 		return true;
+	}
+
+	bindImplementation (impl) {
+		if (impl.trait == null) {
+			if (this.defaultImpl) {
+				this.ctx.getFile().throw(
+					`Error: Struct ${this.name} already has a default implementation, however a new one is attempting to be assigned`,
+					this.defaultImpl.ref,
+					impl.ref
+				)
+			}
+
+			this.defaultImpl = impl;
+		} else {
+			if (this.impls.filter(x => x.trait == impl.trait).length > 0) {
+				this.ctx.getFile().throw(
+					`Error: Struct ${this.name} already has an implementation for trait ${impl.trait.name}, however a new one is attempting to be assigned`,
+					this.defaultImpl.ref,
+					impl.ref
+				);
+			}
+
+			this.impls.push(impl);
+		}
 	}
 
 	compile () {
@@ -255,66 +341,28 @@ class Structure extends TypeDef {
 	/**
 	 *
 	 * @param {LLVM.Argument} argument
+	 * @param {LLVM.Argument} to
 	 */
-	cloneInstance(argument, ref) {
-		let preamble = new LLVM.Fragment();
+	cloneInstance(argument, to, ref) {
+		throw new Error("Old code path");
+	}
 
-		let type = new TypeRef(1, this);
 
-		let storeID = new LLVM.ID();
-		preamble.append(new LLVM.Set(
-			new LLVM.Name(storeID, false),
-			new LLVM.Alloc(type.toLLVM())
-		));
-		let instruction = new LLVM.Argument(
-			type.toLLVM(),
-			new LLVM.Name(storeID.reference(), false)
-		);
+	getSize () {
+		if (this.size == -1) {
+			this.alignment = Math.max.apply(null,
+				this.terms
+					.map(x => x.typeRef.type)
+					.map(x => x.native ? x.size : x.alignment)
+			);
 
-		let size = this.sizeof(ref);
-		preamble.merge(size.preamble);
+			this.size = this.terms
+				.map(x => x.getSize())
+				.map(x => Math.ceil(x/this.alignment)*this.alignment)
+				.reduce((tally, curr) => tally + curr, 0);
+		}
 
-		let fromID = new LLVM.ID();
-		preamble.append(new LLVM.Set(
-			new LLVM.Name(fromID, false),
-			new LLVM.Bitcast(
-				new LLVM.Type("i8", 1),
-				argument
-			)
-		));
-		let toID = new LLVM.ID();
-		preamble.append(new LLVM.Set(
-			new LLVM.Name(toID, false),
-			new LLVM.Bitcast(
-				new LLVM.Type("i8", 1),
-				instruction
-			)
-		));
-
-		preamble.append(new LLVM.Call(
-			new LLVM.Type("void", 0),
-			new LLVM.Name("llvm.memcpy.p0i8.p0i8.i64", true),
-			[
-				new LLVM.Argument(
-					new LLVM.Type("i8", 1),
-					new LLVM.Name(toID.reference(), false)
-				),
-				new LLVM.Argument(
-					new LLVM.Type("i8", 1),
-					new LLVM.Name(fromID.reference(), false)
-				),
-				size.instruction,
-				new LLVM.Argument(
-					new LLVM.Type('i1', 0),
-					new LLVM.Constant("0")
-				)
-			]
-		));
-
-		return {
-			preamble,
-			instruction
-		};
+		return this.size;
 	}
 }
 

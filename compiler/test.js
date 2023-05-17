@@ -8,20 +8,14 @@ const path = require('path');
 
 let flags = {
 	clang: process.argv.includes('--bin'),
-	exec: process.argv.includes('--exec')
+	exec: process.argv.includes('--exec'),
+	action: process.argv.includes('--action')
 };
 if (flags.exec) {
 	flags.clang = true;
 }
 
-let extraArgs = [];
-if (flags.exec) {
-	extraArgs.push('--execute');
-} else if (!flags.clang) {
-	extraArgs.push('--verifyOnly');
-} else {
-	extraArgs.push('--compileOnly');
-}
+let extraArgs = ["--mode", "execute"];
 
 
 const root = path.resolve(__dirname, "../");
@@ -30,6 +24,8 @@ let total = 0;
 let completed = 0;
 let fails = 0;
 let totalDuration = 0;
+
+let failed_files = [];
 
 function Compile(filename, id) {
 	let target = path.relative(root, filename);
@@ -44,7 +40,8 @@ function Compile(filename, id) {
 		let start = Date.now();
 		let compile = spawn(`node`, [
 			"compiler/compile.js", target,
-			"-o", `./test/temp/${id}`
+			"-o", `./test/temp/${id}`,
+			'--verbose'
 		].concat(extraArgs), {
 			cwd: path.resolve(__dirname, "../")
 		});
@@ -61,6 +58,8 @@ function Compile(filename, id) {
 				msg += "\n\n" + log; // only include the log on failure
 				failed = true;
 				fails++;
+
+				failed_files.push(target);
 			}
 
 			let duration = (end-start)/1000;
@@ -69,7 +68,7 @@ function Compile(filename, id) {
 
 			completed++;
 
-			console.info("\nTest", completed, ' of ', total);
+			console.info("\nTest", completed, 'of', total);
 			console.log(msg);
 			console.info(failed ? "  FAILED" : "  success");
 			res();
@@ -80,9 +79,12 @@ function Compile(filename, id) {
 
 
 
+let commentReg = new RegExp(/\s*#/g);
+
 let tests = fs.readFileSync('./test/pre-alpha/_manifest_', 'utf8')
 	.replace(/\r\n/g, "\n")
 	.split('\n')
+	.filter(x => !commentReg.test(x))
 	.map( x => {
 		return path.resolve("./test/pre-alpha", x);
 	});
@@ -105,8 +107,13 @@ async function Test () {
 
 	await Promise.all(tasks);
 
-	console.info(`\nFailed ${fails} of ${tests.length}`);
-	console.info(` Total Time: ${totalDuration.toFixed(3)}s`);
+	console.info('\nSummary:');
+	if (fails > 0) {
+		console.info(`  Failed Tests:\n    ${failed_files.join("\n    ")}`);
+	}
+
+	console.info(`  Failed ${fails} of ${tests.length}`);
+	console.info(`  Total Compute Time: ${totalDuration.toFixed(3)}s`);
 
 	if (fails > 0) {
 		process.exit(1);

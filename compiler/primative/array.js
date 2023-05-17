@@ -43,7 +43,7 @@ class Template_Array extends Template {
 			this.instances[signature] = inst;
 		}
 
-		return new TypeRef(0, inst);
+		return new TypeRef(inst);
 	}
 
 	toLLVM() {

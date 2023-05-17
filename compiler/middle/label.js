@@ -12,8 +12,8 @@ class Label extends Instruction {
 		this.name = name;
 	}
 
-	toDefinition(ommit = false) {
-		return new Label_Definition(this.name, ommit, this.ref);
+	toDefinition(omit = false) {
+		return new Label_Definition(this.name, omit, this.ref);
 	}
 
 	flattern() {
@@ -24,7 +24,7 @@ class Label extends Instruction {
 class Label_Definition extends Label {
 	constructor (name, ommit = false, ref = null) {
 		super(name, ref);
-		this.ommit = ommit;
+		this.omit = ommit;
 	}
 
 	assign_ID (gen) {
@@ -32,7 +32,7 @@ class Label_Definition extends Label {
 	}
 
 	flattern() {
-		return (this.ommit ? "" : "\n") + `${this.name.flattern()}:`;
+		return (this.omit ? "" : "\n") + `${this.name.flattern()}:`;
 	}
 }
 

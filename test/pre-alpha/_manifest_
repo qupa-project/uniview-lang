@@ -1,9 +1,11 @@
 cast.uv
-class.uv
+# class.uv
 compare.uv
+# either.uv
+hello-world.uv
 if.uv
-library-behaviour.uv
+lending.uv
 math.uv
-string-test.uv
+# string-test.uv
 struct.uv
 time.uv

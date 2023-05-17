@@ -1,11 +1,13 @@
+include llvm "memory.ll";
+
 external assume {
-	fn "llvm.memmove.p0i8.p0i8.i64" (dest: unsafe_blob, src: unsafe_blob, bytes: u64, volatile: bool) as Move;
-	fn "llvm.memcpy.p0i8.p0i8.i64" (dest: unsafe_blob, src: unsafe_blob, bytes: u64, volatile: bool) as Copy;
-	fn "llvm.memset.p0i8.i64" (dest: unsafe_blob, val: i8, bytes: u64, volatile: bool) as Set;
+	fn "llvm.memmove.p0i8.p0i8.i64" (dest: addr_space, src: addr_space, bytes: u64, volatile: bool) as Move;
+	fn "llvm.memcpy.p0i8.p0i8.i64" (dest: addr_space, src: addr_space, bytes: u64, volatile: bool) as Copy;
+	fn "llvm.memset.p0i8.i64" (dest: addr_space, val: i8, bytes: u64, volatile: bool) as Set;
 
-	fn "malloc" (size: u64): unsafe_blob as Alloc;
-	fn "realloc" (src: unsafe_blob, size: u64): unsafe_blob as Realloc;
-	fn "free" (addr: unsafe_blob) as Free;
+	fn "malloc" (size: u64): addr_space as Alloc;
+	fn "realloc" (src: addr_space, size: u64): addr_space as Realloc;
+	fn "free" (addr: addr_space) as Free;
 
-	fn Offset(addr: unsafe_blob, amount: i64): unsafe_blob;
+	fn "offset_ptr" (addr: addr_space, amount: i64): addr_space as Offset;
 }

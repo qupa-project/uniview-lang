@@ -2,30 +2,60 @@ name: Execution
 
 on:
   push:
-    branches: [ main, dev, staging ]
+    branches: [ main, staging ]
   pull_request:
-    branches: [ main, dev, staging ]
+    branches: [ main, staging ]
   workflow_dispatch:
     inputs:
       reason:
         description: Why did you manually run this?
 
 jobs:
-  build:
+  build-linux:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
-    strategy:
-      matrix:
-        node-version: [ 14.x ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+        with:
+          version: 1.10.0
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v3
+        with:
+          path: "./lib/install"
+          key: llvm-15.0
+      - name: "Install LLVM and Clang"
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "15.0"
+          directory: "./lib/install"
+          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+      - name: Symlink libclang.so (Linux)
+        if: contains(matrix.os, 'ubuntu')
+        run: sudo ln -s libclang-15.so.1 /lib/x86_64-linux-gnu/libclang.so
+        working-directory: ${{ env.LLVM_PATH }}/lib
+      - run: npm install --ignore-scripts
+      - run: cmake . -B build -G Ninja
+      - run: cmake --build build
+      - run: npm run build:syntax
+      - run: node ./compiler/test.js --action
+
+  build-win:
+    if: ${{ false }}  # disable for now
+    runs-on: windows-latest
+    timeout-minutes: 10
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm install
-    - run: npm run build --if-present
-    - run: npm run test
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm install
+      - run: node ./compiler/test.js --action

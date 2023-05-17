@@ -1,9 +1,8 @@
-import "print.uv";
 import "string.uv";
 
 fn main(): int {
-	let a = String("Hello");
-	let b = String(" World");
+	let a = String.New("Hello");
+	let b = String.New(" World");
 	String.Append(@a, $b);
 	puts($a);
 	String.Append(@a, b);
@@ -16,12 +15,8 @@ fn main(): int {
 	puts($a);
 	puts($t);
 
-	String.Delete(t);
 	t = String.Slice(@a, s, e);
 	puts($a);
 	puts($t);
-
-	String.Delete(a);
-	String.Delete(t);
 	return 0;
 }

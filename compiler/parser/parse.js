@@ -1,536 +1,229 @@
 const { ApplyPrecedence } = require('./expr.js');
 
-const BNF = require('bnf-parser');
+const { CodeSection } = require('../helper/error.js');
+
+const { SyntaxNode, Parser, ParseError, ReferenceRange, Reference } = require('bnf-parser');
 const fs = require('fs');
 
-const BNF_SyntaxNode = BNF.types.BNF_SyntaxNode;
-
-const syntax = BNF.types.BNF_Tree.fromJSON(
-	JSON.parse(fs.readFileSync(__dirname+"/syntax.json", 'utf8'))
+const syntax = new Parser(
+	JSON.parse(
+		fs.readFileSync(__dirname+"/syntax.json", 'utf8')
+	),
+	"Uniview.bnf"
 );
 
 
 function Simplify_Program (node) {
-	let out = [];
-	for (let inner of node.tokens[1]) {
-		out.push(Simplify_Stmt_Top(inner.tokens[0][0]));
-	}
-	node.tokens = out;
+	node.value = node.value[0].value
+		.map(x => Simplify_Stmt_Top(x.value[0]));
 
-	// Remove irrelevant internal data
-	node.reached = null;
 	return node;
 }
-
 function Simplify_Stmt_Top (node) {
-	let inner;
-	switch (node.tokens[0].type) {
-		case "comment":
-			inner = node.tokens[0];
-			break;
-		case "external":
-			inner = Simplify_External(node.tokens[0]);
-			break;
-		case "include":
-			inner = Simplify_Include(node.tokens[0]);
-			break;
-		case "function":
-			inner = Simplify_Function(node.tokens[0]);
-			break;
-		case "library":
-			inner = Simplify_Library(node.tokens[0]);
-			break;
-		case "class":
-			inner = Simplify_Class(node.tokens[0]);
-			break;
-		case "template":
-			inner = Simplify_Template(node.tokens[0]);
-			break;
-		case "struct":
-			inner = Simplify_Struct(node.tokens[0]);
-			break;
-		case "flag_definition":
-			inner = Simplify_Flag_Definition(node.tokens[0]);
-			break;
-		default:
-			throw new TypeError(`Unexpected top level statement ${node.tokens[0].type}`);
+
+	let func = STMT_TOP_MAP[node.value[0].type];
+	if (!func) {
+		throw new TypeError(`Unexpected top level statement ${node.value[0].type} at ${node.value[0].ref.toString()}`);
 	}
+
+	// Apply the correct simplification if present
+	let inner = func(node.value[0]);
 
 	// Remove irrelevant internal data
 	inner.reached = null;
+
 	return inner;
 }
 
 
-
-
-
-function Simplify_Library (node) {
-	switch (node.tokens[0].type) {
-		case "import":
-			node.tokens = [ Simplify_Library_Import(node.tokens[0]) ];
+/*================================
+	Constants
+================================*/
+function Simplify_Constant (node) {
+	switch (node.value[0].type) {
+		case "hexadecimal":
+		case "octal":
+		case "boolean":
+		case "void":
+		case "integer":
+		case "float":
+			node.value[0].value = node.value[0].flat();
 			break;
-		case "expose":
-			node.tokens = [ Simplify_Library_Expose(node.tokens[0]) ];
-			break;
-		default:
-			throw new TypeError(`Unexpected library statement ${node.tokens[0].type}`);
-	}
-	node.reached = null;
-	return node;
-}
-function Simplify_Library_Import (node) {
-	let out = [null, "*"];
-	switch (node.tokens[0].type) {
-		case "import_direct":
-			out[1] = Simplify_Name(node.tokens[0].tokens[6][0]);
-		case "import_as":
-			out[0] = Simplify_String(node.tokens[0].tokens[2][0]);
+		case "string":
+			node.value[0] = Simplify_String(node.value[0]);
 			break;
 		default:
-			throw new TypeError(`Unexpected library statement ${node.tokens[0].type}`);
+			throw new TypeError(`Unexpected constant expression ${node.value[0].type}`);
 	}
 
-	node.tokens = out;
-	node.reached = null;
 	return node;
 }
-function Simplify_Library_Expose (node) {
-	let match = "";
-	if (typeof(node.tokens[2][0].tokens) == "string") {
-		match = "*";
-	} else {
-		match = Simplify_Name(node.tokens[2][0].tokens[0]).tokens;
-	}
-
-	node.tokens = match;
-	node.reached = null;
-	return node;
-}
-
-
-
-function Simplify_String (node) {
-	// Merge the segments together
-	let data = "";
-	for (let seg of node.tokens[0].tokens[1]) {
-		if (typeof(seg.tokens) == "string") {
-			data += seg.tokens.slice(1);
-		} else {
-			data += seg.tokens[0].tokens;
-		}
-	}
-
-	// Filter wild cards
+function Simplify_String(node) {
+	let str = node.value[0];
+	let inner = str.value[0];
 	let out = "";
-	for (let i=0; i<data.length; i++) {
-		let char = data[i];
-
-		if (char == "\\") {
-			i++;
-			char = data[i];
-
-			switch (char) {
-				case "n":
-					char = "\n";
-					break;
-				case "t":
-					char = "\t";
-					break;
-				case "B":
-					char = String.fromCharCode(7); // bell
-					break;
-				case "v":
-					char = String.fromCharCode(11); // vertical tab
-					break;
-				case "r":
-					char = String.fromCharCode(13); // carriage return
-					break;
+	if (!Array.isArray(inner.value)) {
+			throw new TypeError("Internal logic failure. Unexpected string");
+	}
+	for (let charNode of inner.value) {
+			if (charNode.type == "literal") {
+					out += charNode.value;
 			}
-		}
-
-		out += char;
+			else {
+					let esc = charNode.value;
+					switch (esc[1].value) {
+							case "b":
+									out += "\b";
+									break;
+							case "f":
+									out += "\f";
+									break;
+							case "n":
+									out += "\n";
+									break;
+							case "r":
+									out += "\r";
+									break;
+							case "t":
+									out += "\t";
+									break;
+							case "v":
+									out += "\v";
+									break;
+							default: out += esc[1].value;
+					}
+			}
 	}
 
-	node.tokens = [
-		node.tokens[0].tokens[0][0].tokens[0],
-		out
-	];
-	node.reached = null;
+	return new SyntaxNode( "string", out, node.ref );
+}
+function Simplify_Integer(node) {
+	node.value = node.flat();
 	return node;
 }
 
 
 
-function Simplify_Class (node) {
-	let out = [
-		Simplify_Name(node.tokens[2][0]),
-		Simplify_Class_Body(node.tokens[7][0])
-	];
-	node.tokens  = out;
-	node.reached = null;
-	return node;
-}
-function Simplify_Class_Body (node) {
-	node.tokens = node.tokens[0]
-		.filter ( x => x.tokens[0].type != "comment")
-		.map( x => Simplify_Class_Stmt(x.tokens[1][0]).tokens[0] );
-	node.reached = null;
-	return node;
-}
-function Simplify_Class_Stmt (node) {
-	switch (node.tokens[0].type) {
-		case "comment":
-			break;
-		case "struct_attribute":
-			node.tokens = [ Simplify_Struct_Attribute(node.tokens[0]) ];
-			break;
-		case "function":
-			node.tokens = [ Simplify_Function(node.tokens[0]) ];
-			break;
-		default:
-			throw new Error(`Unexpected class statement "${node.tokens[0].type}"`);
-	}
-
-	node.reached = null;
-	return node;
-}
 
 
+/*================================
+	Accessors
+================================*/
+function Simplify_Access (node) {
+	node.value = [
+		// Name
+		Simplify_Name(node.value[0]),
 
-function Simplify_Template (node) {
-	node.tokens = Simplify_Template_Args(node.tokens[2][0]).tokens;
-	node.reached = null;
-	return node;
-}
-
-function Simplify_Template_Args (node) {
-	let out = [ Simplify_Template_Arg(node.tokens[0][0]) ];
-	for (let inner of node.tokens[1]) {
-		out.push( Simplify_Template_Arg(inner.tokens[3][0]) );
-	}
-
-	node.tokens = out;
-	node.reached = null;
-	return node;
-}
-
-function Simplify_Template_Arg (node) {
-	switch (node.tokens[0].type) {
-		case "data_type":
-			return Simplify_Data_Type(node.tokens[0]);
-		case "constant":
-			return Simplify_Constant(node.tokens[0]);
-		default:
-			throw new TypeError(`Unexpected data-type type ${node.tokens[0].type}`);
-	}
-}
-
-
-
-function Simplify_Flag_Definition (node) {
-	// TODO
-	return node;
-}
-
-
-
-function Simplify_External (node) {
-	node.tokens = [
-		node.tokens[2][0].tokens,                        // mode
-		Simplify_External_Body(node.tokens[6][0]).tokens // internal
-	];
-	node.reached = null;
-	return node;
-}
-function Simplify_External_Body (node) {
-	let out = [];
-	for (let inner of node.tokens[0]) {
-		let next = Simplify_External_Term(inner.tokens[0][0]);
-		if (next) {
-			out.push(next);
-		}
-	}
-
-	node.tokens = out;
-	node.reached = null;
-	return node;
-}
-function Simplify_External_Term (node) {
-	let inner = null;
-	switch (node.tokens[0].type) {
-		case "function_outline":
-			inner = Simplify_Function_Outline(node.tokens[0]);
-			break;
-		case "function_redirect":
-			inner = Simplify_Function_Redirect(node.tokens[0]);
-			break;
-		case "struct":
-			inner = Simplify_Struct(node.tokens[0]);
-			break;
-		case "type_def":
-			inner = Simplify_Type_Def(node.tokens[0]);
-			break;
-		case "declare":
-			inner = Simplify_Declare(node.tokens[0]);
-			break;
-		case "comment":
-			break;
-		default:
-			throw new TypeError(`Unexpected external statement ${node.tokens[0].type}`);
-	}
-
-	return inner;
-}
-
-function Simplify_Type_Def (node) {
-	node.tokens = [
-		Simplify_Name(node.tokens[2][0]),   // name
-		Simplify_Integer(node.tokens[6][0]) // size
-	];
-	node.reached = null;
-	return node;
-}
-
-function Simplify_Include (node) {
-	node.tokens = [
-		node.tokens[2][0].tokens,                    // mode
-		Simplify_String(node.tokens[4][0]).tokens[1] // path
-	];
-	node.reached = null;
-	return node;
-}
-
-
-
-function Simplify_Struct (node) {
-	let out = [
-		Simplify_Name(node.tokens[2][0]),
-		Simplify_Struct_Body(node.tokens[6][0])
-	];
-	node.tokens  = out;
-	node.reached = null;
-	return node;
-}
-function Simplify_Struct_Body (node) {
-	node.tokens = node.tokens[0]
-		.filter ( x => x.tokens[0].type != "comment")
-		.map( x => Simplify_Struct_Stmt(x.tokens[1][0]).tokens[0] );
-	node.reached = null;
-	return node;
-}
-function Simplify_Struct_Stmt (node) {
-	switch (node.tokens[0].type) {
-		case "comment":
-			break;
-		case "struct_attribute":
-			node.tokens = [ Simplify_Struct_Attribute(node.tokens[0]) ];
-			break;
-		default:
-			throw new Error(`Unexpected structure statement "${node.tokens[0].type}"`);
-	}
-
-	node.reached = null;
-	return node;
-}
-function Simplify_Struct_Attribute (node) {
-	let out = [
-		Simplify_Data_Type(node.tokens[4][0]),
-		Simplify_Name(node.tokens[0][0])
+		// Access
+		...node.value[1].value.map(x => Simplify_Access_Opt(x.value[0]))
 	];
 
-	node.tokens = out;
-	node.reached = null;
 	return node;
 }
-
-
-
-function Simplify_Composition (node) {
-	node = node.tokens[0];
-
-	if (node.type != "decompose" && node.type != "compose") {
-		throw new Error(`Unexpected composition statement "${node.type}"`);
-	}
-
-	node.tokens = [ Simplify_Variable(node.tokens[2][0]) ];
-	node.reached = null;
-	return node;
-}
-
-
-
-function Simplify_Variable (node) {
-	let inner = [
-		0,
-		Simplify_Name(node.tokens[0][0]),
-		node.tokens[1].map(x => {
-			return Simplify_Variable_Access(x).tokens;
-		})
-	];
-
-	node.reached = null;
-	node.tokens = inner;
-	return node;
-}
-
-function Simplify_Variable_Access (node) {
-	let out = [];
-	switch (node.tokens[0].type) {
-		case "accessor_dynamic":
-			out = [ "[]", Simplify_Variable_Args(node.tokens[0].tokens[2][0]).tokens ];
-			break;
-		case "accessor_refer":
-			out = [ "->" ];
-			break;
-		case "accessor_static":
-			out = [ ".", Simplify_Name(node.tokens[0].tokens[1][0]) ];
-			break;
+function Simplify_Access_Opt (node) {
+	switch (node.type) {
+		case "access_static":
+			return Simplify_Access_Static(node);
+		case "access_dynamic":
+			return Simplify_Access_Dynamic(node);
+		case "access_template":
+			return Simplify_Access_Template(node);
 		default:
 			throw new TypeError(`Unexpected accessor type ${node.type}`);
 	}
+}
 
-	node.tokens = out;
-	node.reached = null;
+function Simplify_Access_Static (node) {
+	node.value = node.flat();
 	return node;
 }
 
-function Simplify_Variable_Args (node) {
-	let out = [ Simplify_Variable_Arg(node.tokens[0][0]) ];
-	for (let inner of node.tokens[1]) {
-		out.push( Simplify_Variable_Arg(inner.tokens[3][0]) );
-	}
-
-	node.tokens = out;
-	node.reached = null;
+function Simplify_Access_Dynamic (node) {
+	node.value = Simplify_Call_Args(node.value[1]).value;
 	return node;
 }
 
-function Simplify_Variable_Arg (node) {
-	switch (node.tokens[0].type) {
-		case "data_type":
-			return Simplify_Data_Type(node.tokens[0]);
+function Simplify_Access_Template (node) {
+	node.value = Simplify_Access_Template_Args(node.value[0]).value;
+	return node;
+}
+function Simplify_Access_Template_Args (node) {
+	node.value = [
+		node.value[0],
+		...node.value[1].value
+	].map(Simplify_Access_Template_Arg);
+
+	return node;
+}
+function Simplify_Access_Template_Arg (node) {
+	switch (node.value[0].type) {
 		case "constant":
-			return Simplify_Constant(node.tokens[0]);
-		case "variable":
-			return Simplify_Variable(node.tokens[0]);
+			return Simplify_Constant(node.value[0]);
+		case "data_type":
+			return Simplify_Data_Type(node.value[0]);
 		default:
-			throw new TypeError(`Unexpected variable access type ${node.tokens[0].type}`);
+			throw new Error(`Unknown template argument syntax type ${node.type}`);
 	}
 }
 
 
 
-function Simplify_Name (node) {
-	let out = node.tokens[0][0].tokens[0].tokens;
-	for (let inner of node.tokens[1]) {
-		if (Array.isArray(inner.tokens)) {
-			if (inner.tokens[0].type == "letter") {
-				out += inner.tokens[0].tokens[0].tokens;
-			} else {
-				out += inner.tokens[0].tokens;
-			}
-		} else {
-			out += inner.tokens;
-		}
-	}
 
-	node.tokens  = out;
-	node.reached = null;
+
+/*================================
+	Variables
+================================*/
+function Simplify_Name (node) {
+	node.value = node.flat();
 	return node;
 }
 
-
-
+function Simplify_Variable (node) {
+	// Meaningfully identical in terms of AST simplification
+	return Simplify_Access(node);
+}
 
 function Simplify_Data_Type (node) {
-	let inner = [
-		0,
-		Simplify_Name(node.tokens[0][0]),
-		node.tokens[1].map(x => {
-			return Simplify_Data_Type_Access(x);
-		}),
-		node.tokens[2].length > 0 ? Simplify_Template(node.tokens[2][0]) : {   // Template
-			type: "template",
-			tokens: [],
-			ref: {start: null, end:null}
-		},
+	node.value = [
+		// Lending status
+		node.value[0],
+
+		// Name
+		Simplify_Name(node.value[1]),
+
+		// Access
+		new SyntaxNode(
+			"(...)*",
+			node.value[2].value.map(x => Simplify_Access_Opt(x.value[0])),
+			node.value[2].ref
+		)
 	];
 
-	node.reached = null;
-	node.tokens = inner;
 	return node;
 }
 
-function Simplify_Data_Type_Access (node) {
-	node.tokens = [ ".", Simplify_Name(node.tokens[1][0]) ];
-	node.reached = null;
+function Simplify_Declare (node) {
+	node.value = [
+		// Data Type (if present)
+		node.value[1].value[0] ?
+			Simplify_Data_Type(node.value[1].value[0].value[0]) :
+			new SyntaxNode("blank", "", node.ref.clone()),
+
+		// Name
+		Simplify_Name(node.value[0]),
+
+		// Value (if present)
+		node.value[2].value[0] ?
+			Simplify_Expr(node.value[2].value[0].value[0]) :
+			new SyntaxNode("blank", "", node.ref.clone())
+	];
 	return node;
 }
-
-
-
-
-
-function Simplify_Constant (node) {
-	switch (node.tokens[0].type) {
-		case "boolean":
-			node.tokens = [ Simplify_Boolean(node.tokens[0]) ];
-			break;
-		case "integer":
-			node.tokens = [ Simplify_Integer(node.tokens[0]) ];
-			break;
-		case "float":
-			node.tokens = [ Simplify_Float(node.tokens[0]) ];
-			break;
-		case "string":
-			node.tokens = [ Simplify_String(node.tokens[0]) ];
-			break;
-		default:
-			throw new TypeError(`Unexpected constant expression ${node.tokens[0].type}`);
-	}
-
-	node.reached = null;
-	return node;
-}
-function Simplify_Integer(node) {
-	node.tokens = ( node.tokens[0].length != 0 ? "-" : "" ) +
-		( Simplify_Integer_U( node.tokens[1][0] ).tokens );
-	node.reached = null;
-	return node;
-}
-function Simplify_Integer_U (node) {
-	if (node.tokens[0].type == "zero") {
-		node.tokens = "0";
-	} else {
-		let out = node.tokens[0].tokens[0][0].tokens;
-		for (let val of node.tokens[0].tokens[1]) {
-			out += val.tokens;
-		};
-
-		node.tokens = out;
-	}
-
-	node.reached = null;
-	return node;
-}
-function Simplify_Float (node) {
-	let out = Simplify_Integer(node.tokens[0][0]).tokens;  // base
-	out += ".";
-	out += Simplify_Integer_U(node.tokens[2][0]).tokens;   // remainder
-
-	// Scientific notation
-	if (node.tokens[3].length > 0) {
-		out += "e";
-		out += Simplify_Integer(node.tokens[3][0].tokens[1][0]).tokens;
-	}
-
-	node.tokens = out;
-	node.reached = null;
-	return node;
-}
-function Simplify_Boolean (node) {
-	node.reached = null;
+function Simplify_Assign  (node) {
+	node.value = [
+		Simplify_Variable (node.value[0]), // target variable
+		Simplify_Expr     (node.value[1])  // value
+	];
 	return node;
 }
 
@@ -538,255 +231,550 @@ function Simplify_Boolean (node) {
 
 
 
-
-
+/*================================
+  Function
+================================*/
 function Simplify_Function (node) {
-	node.tokens = [
-		Simplify_Function_Head(node.tokens[0][0]), // head
-		Simplify_Function_Body(node.tokens[2][0])  // body
+	node.value = [
+		Simplify_Function_Head(node.value[0]),  // head
+		node.value[1].value == ";" ?
+			new SyntaxNode('blank', "", node.ref.clone()) :
+			Simplify_Function_Body(node.value[1]) // body
 	];
-	node.reached = null;
-	return node;
-}
-function Simplify_Function_Outline (node) {
-	node.tokens = [
-		Simplify_Function_Head(node.tokens[0][0])  // head
-	];
-	node.reached = null;
-	return node;
-}
-function Simplify_Function_Redirect (node) {
-	node.tokens = [
-		new BNF_SyntaxNode (
-			'function_head',
-			[
-				node.tokens[5][0] ?                      // Return type
-					Simplify_Data_Type  (node.tokens[5][0].tokens[3][0]) :
-					null,
-				Simplify_Name       (node.tokens[9][0]), // Name
-				Simplify_Func_Args  (node.tokens[4][0]),  // Arguments
-				[],
-			],
-			0,
-			node.ref.start,
-			node.ref.end
-		),
-		Simplify_String     (node.tokens[2][0]).tokens[1],  // Representation
-	];
-	node.reached = null;
-
-	// Replace null return type with "void" datatype
-	if (node.tokens[0].tokens[0] === null) {
-		node.tokens[0].tokens[0] = new BNF_SyntaxNode (
-			'data_type',
-			[
-				0,
-				new BNF_SyntaxNode(
-					'name',
-					'void',
-					4,
-					new BNF.types.BNF_Reference(0,0,0),
-					new BNF.types.BNF_Reference(0,0,0),
-					null
-				),
-				[],
-				{ type: 'template', tokens: [], ref: {} }
-			],
-			[],
-			new BNF.types.BNF_Reference(0,0,0),
-			new BNF.types.BNF_Reference(0,0,0),
-			null
-		);
-	}
-
 	return node;
 }
 function Simplify_Function_Head (node) {
-	node.tokens = [
-		node.tokens[6][0] ?                      // Return type
-			Simplify_Data_Type  (node.tokens[6][0].tokens[2][0]) :
-			null,
-		Simplify_Name       (node.tokens[2][0]), // Name
-		Simplify_Func_Args  (node.tokens[4][0]), // Arguments
+	let emptyReturn = node.value[2].value.length == 0;
+
+	node.value = [
+		!emptyReturn ?                      // Return type
+			Simplify_Data_Type  (node.value[2].value[0].value[0]) :
+			new SyntaxNode("blank", "", node.ref.clone()),
+		Simplify_Name       (node.value[0]), // Name
+		Simplify_Func_Args  (node.value[1]), // Arguments
 		[]
 	];
-	node.reached = null;
 
-	// Replace null return type with "void" datatype
-	if (node.tokens[0] === null) {
-		node.tokens[0] = new BNF_SyntaxNode (
-			'data_type',
-			[
-				0,
-				new BNF_SyntaxNode(
-					'name',
-					'void',
-					4,
-					new BNF.types.BNF_Reference(0,0,0),
-					new BNF.types.BNF_Reference(0,0,0),
-					null
-				),
-				[],
-				{ type: 'template', tokens: [], ref: {} }
-			],
-			[],
-			new BNF.types.BNF_Reference(0,0,0),
-			new BNF.types.BNF_Reference(0,0,0),
-			null
-		);
-	}
-
-	return node;
-}
-function Simplify_Function_Body (node) {
-	let out = [];
-	for (let inner of node.tokens[2]) {
-		let res = Simplify_Function_Stmt(inner.tokens[0][0]);
-		if (res !== null) {
-			out.push( res.tokens[0] );
-		}
-	}
-
-	node.tokens  = out;
-	node.reached = null;
-	return node;
-}
-function Simplify_Function_Stmt (node) {
-	let inner;
-	switch (node.tokens[0].type) {
-		case "comment":
-			return null;
-		case "declare":
-			inner = Simplify_Declare(node.tokens[0]);
-			break;
-		case "declare_assign":
-			inner = Simplify_Declare_Assign(node.tokens[0]);
-			break;
-		case "delete":
-			inner = Simplify_Delete(node.tokens[0]);
-			break;
-		case "assign":
-			inner = Simplify_Assign(node.tokens[0]);
-			break;
-		case "return":
-			inner = Simplify_Return(node.tokens[0]);
-			break;
-		case "call_procedure":
-			inner = Simplify_Call(node.tokens[0].tokens[0][0]);
-			break;
-		case "if":
-			inner = Simplify_If(node.tokens[0]);
-			break;
-		case "while":
-			inner = Simplify_While(node.tokens[0]);
-			break;
-		case "composition":
-			inner = Simplify_Composition(node.tokens[0]);
-			break;
-		default:
-			throw new TypeError(`Unexpected function statement ${node.tokens[0].type}`);
-	}
-
-	node.tokens = [inner];
-	node.reached = null;
 	return node;
 }
 function Simplify_Func_Args (node) {
-	node.tokens = node.tokens[2].length > 0 ? Simplify_Func_Args_List(node.tokens[2][0]).tokens : [];
-	node.reached = null;
+	node.value = node.value[0].value.length == 0 ? [] :
+		[
+			node.value[0].value[0].value[0],
+			...node.value[0].value[0].value[1].value.map(x => x.value[0])
+		].map(Simplify_Func_Arg);
+
 	return node;
 }
-function Simplify_Func_Args_List (node) {
-	let ittr = node.tokens[0].concat(node.tokens[2].map(x => x.tokens[2][0]));
+function Simplify_Func_Arg (node) {
+	node.value = [
+		Simplify_Data_Type(node.value[1]),
+		Simplify_Name(node.value[0])
+	];
 
-	node.tokens = ittr.map((arg) => [
-		arg.tokens[4][0] ? arg.tokens[4][0].tokens : null,             // borrowed?
-		Simplify_Data_Type(arg.tokens[6][0]), // type
-		Simplify_Name(arg.tokens[0][0])       // name
-	]);
+	return node;
+}
 
-	node.reached = null;
+function Simplify_Function_Body (node) {
+	node.value = node.value[0].value
+		.map(x => Simplify_Function_Stmt(x.value[0]));
+
+	return node;
+}
+function Simplify_Function_Stmt (node) {
+	let func = STMT_MAP[node.value[0].type];
+
+	if (func instanceof Function) {
+		return func(node.value[0]);
+	} else {
+		throw new TypeError(`Unexpected function statement ${node.value[0].type}`);
+	}
+}
+
+function Simplify_Function_Outline (node) {
+	node.value = [
+		Simplify_Function_Head(node.value[0])  // head
+	];
+	return node;
+}
+function Simplify_Function_Redirect (node) {
+	node.value = [
+		new SyntaxNode(
+			'function_head',
+			[
+				// Return Type
+				node.value[2].value[0] ?
+					Simplify_Data_Type(node.value[2].value[0].value[0]) :
+					new SyntaxNode('blank', "", node.ref.clone()),
+
+				// Name
+				Simplify_Name(node.value[3]),
+
+				// Arguments
+				Simplify_Func_Args(node.value[1])
+			],
+			node.ref
+		)
+	];
+
 	return node;
 }
 
 function Simplify_Call (node) {
-	let out = [
-		Simplify_Variable(node.tokens[0][0]),                                  // Call name
-		node.tokens[2].length > 0 ? Simplify_Template(node.tokens[2][0]) : {   // Template
-			type: "template",
-			tokens: []
-		},
-		Simplify_Call_Args(node.tokens[4][0])
-	];
+	node.value = [
+		// Function Name
+		Simplify_Access(node.value[0]),
 
-	node.tokens = out;
-	node.reached = null;
+		// Args
+		Simplify_Call_Body(node.value[1])
+	];
 	return node;
+}
+function Simplify_Call_Body (node) {
+	return node.value[0].value[0] ?
+			Simplify_Call_Args(node.value[0].value[0]) :
+			new SyntaxNode('call_args', [], node.ref.clone());
 }
 function Simplify_Call_Args (node) {
+	node.value = [
+		node.value[0],
+		...node.value[1].value.map(x => x.value[0])
+	].map(Simplify_Expr);
 
-	if (node.tokens[2].length > 0) {
-		let inner = node.tokens[2][0];
-		node.tokens =
-			[ inner.tokens[0][0] ]
-				.concat(
-					inner.tokens[1].map(arg => arg.tokens[3][0])
-				).map( x => Simplify_Call_Arg(x) );
-	} else {
-		node.tokens = [];
-	}
-
-	node.reached = null;
 	return node;
 }
-function Simplify_Call_Arg(node) {
-	if (node.tokens[0].type == "expr_lend") {
-		return Simplify_Expr_Lend(node.tokens[0]);
-	} else {
-		return Simplify_Expr(node.tokens[0]);
-	}
+
+function Simplify_Call_Procedure(node) {
+	return Simplify_Call(node.value[0]);
+}
+
+function Simplify_Return (node) {
+	node.value = node.value[0].value.map(x => Simplify_Expr(x.value[0]));
+	return node;
 }
 
 
 
+
+
+/*================================
+	Structures
+================================*/
+function Simplify_Struct (node) {
+	node.value = [
+		Simplify_Name(node.value[0]),
+		Simplify_Struct_Body(node.value[1])
+	];
+	return node;
+}
+function Simplify_Struct_Body (node) {
+	node.value = node.value[0].value
+		.map( x => Simplify_Struct_Stmt(x.value[0]) );
+	return node;
+}
+function Simplify_Struct_Stmt (node) {
+	switch (node.value[0].type) {
+		case "struct_attribute":
+			return Simplify_Struct_Attribute(node.value[0]);
+		default:
+			throw new Error(`Unexpected structure statement "${node.value[0].type}"`);
+	}
+}
+function Simplify_Struct_Attribute (node) {
+	node.value = [
+		Simplify_Data_Type(node.value[1]),
+		Simplify_Name(node.value[0])
+	];
+
+	return node;
+}
+
+function Simplify_Impl (node) {
+	let hasFor = node.value[1].value[0] != undefined;
+
+	let out = [
+		Simplify_Data_Type(node.value[0]),
+		hasFor ?
+			Simplify_Impl_For(node.value[1].value[0]) :
+			new SyntaxNode("blank", "", node.ref.clone()),
+		Simplify_Impl_Body(node.value[2])
+	];
+
+	// Swap the type references when a for is present
+	if (hasFor) {
+		let t = out[1];
+		out[1] = out[0];
+		out[0] = t;
+	}
+
+	node.value = out;
+	return node;
+}
+function Simplify_Impl_For (node) {
+	return Simplify_Data_Type(node.value[0]);
+}
+function Simplify_Impl_Body (node) {
+	node.value = node.value[0].value
+		.map( x => Simplify_Impl_Stmt(x.value[0]) );
+	return node;
+}
+function Simplify_Impl_Stmt (node) {
+	switch (node.value[0].type) {
+		case "struct_attribute":
+			return Simplify_Struct_Attribute(node.value[0]);
+		case "function":
+			return Simplify_Function(node.value[0]);
+		default:
+			throw new Error(`Unexpected class statement "${node.value[0].type}"`);
+	}
+}
+
+function Simplify_Trait (node) {
+	node.value = [
+		Simplify_Name(node.value[0]),
+		node.value[1].value[0] ?
+			Simplify_Trait_Reliance(node.value[1].value[0]) :
+			new SyntaxNode('trait_reliance', [], node.value[1].ref.clone()),
+		Simplify_Trait_Body(node.value[2])
+	];
+	return node;
+}
+function Simplify_Trait_Reliance (node) {
+	node.value = [
+		node.value[0],
+		...node.value[1].value.map(x => x.value[0])
+	].map(Simplify_Data_Type);
+
+	return node;
+}
+function Simplify_Trait_Body (node) {
+	node.value = node.value[0].value
+		.map( x => Simplify_Trait_Stmt(x.value[0]) );
+	return node;
+}
+function Simplify_Trait_Stmt (node) {
+	switch (node.value[0].type) {
+		case "struct_attribute":
+			return Simplify_Struct_Attribute(node.value[0]);
+		case "function":
+			return Simplify_Function(node.value[0]);
+		default:
+			throw new Error(`Unexpected class statement "${node.value[0].type}"`);
+	}
+}
+
+function Simplify_Expr_Struct (node) {
+	node.value = [
+		Simplify_Data_Type(node.value[0]),
+		Simplify_Expr_Struct_Body(node.value[1])
+	];
+
+	return node;
+}
+function Simplify_Expr_Struct_Body(node) {
+	return node.value[0].value[0] ?
+		Simplify_Expr_Struct_Args(node.value[0].value[0]) :
+		new SyntaxNode('expr_struct_args', [], node.ref);
+}
+function Simplify_Expr_Struct_Args (node) {
+	node.value = [
+		node.value[0],
+		...node.value[1].value.map(x => x.value[0])
+	].map(Simplify_Expr_Struct_Arg);
+
+	return node;
+}
+function Simplify_Expr_Struct_Arg(node) {
+	node.value = [
+		Simplify_Name(node.value[0]),
+		Simplify_Expr(node.value[1])
+	];
+	return node;
+}
+
+
+
+
+
+/*================================
+	Templates
+================================*/
+function Simplify_Template (node) {
+	node.value = Simplify_Template_Args(node.value[0]).value;
+	return node;
+}
+function Simplify_Template_Args (node) {
+	node.value = [
+		node.value[0],
+		...node.value[1].value.map(x => x.value[0])
+	].map(Simplify_Struct_Attribute);
+
+	return node;
+}
+
+
+
+
+
+/*================================
+	Expression
+================================*/
+function Simplify_Expr (node) {
+	let queue = [
+		Simplify_Expr_Arg(node.value[0])
+	];
+	for (let next of node.value[1].value) {
+		queue.push(next.value[0]);
+		queue.push(Simplify_Expr_Arg(next.value[1]));
+	}
+
+	return ApplyPrecedence(queue);
+}
+
+function Simplify_Expr_Arg (node) {
+	let subject = node.value[1];
+	switch (subject.type) {
+		case "expr_val":
+			subject = Simplify_Expr_Val(subject);
+			break;
+		case "constant":
+			subject = Simplify_Constant(subject);
+			break;
+		case "expr_brackets":
+			return Simplify_Expr_Brackets(subject);
+		case "expr_struct":
+			return Simplify_Expr_Struct(subject);
+		default:
+			throw "Implementation error";
+	}
+
+	let unary = node.value[0].value[0];
+	if (unary) {
+		return Simplify_Expr_Unary(unary, subject);
+	}
+
+	return subject;
+}
+function Simplify_Expr_Unary (operation, node) {
+	let operator = operation.flat();
+
+	let innerRef = operation.ref.clone();
+	let outerRef = operation.ref.clone();
+	outerRef.span(node.ref);
+
+	switch (operator) {
+		case "-":
+			return new SyntaxNode(
+				"expr_arithmetic",
+				[
+					new SyntaxNode(
+						"expr_invert",
+						[
+							node
+						],
+					innerRef)
+				],
+			outerRef);
+		case "!":
+			return new SyntaxNode(
+				"expr_bool",
+				[
+					new SyntaxNode(
+						"expr_not",
+						[
+							node
+						],
+						innerRef)
+				],
+			outerRef);
+		case "$":
+			return new SyntaxNode(
+				"expr_share",
+				[
+					node
+				],
+			outerRef);
+		case "@":
+			return new SyntaxNode(
+				"expr_lend",
+				[
+					node
+				],
+			outerRef);
+		default:
+			throw new Error(`Unexpected unary operation "${operator}"`);
+	}
+}
+
+function Simplify_Expr_Val (node) {
+	let base = Simplify_Access(node.value[0]);
+
+	let extra = node.value[1].value[0];
+	if (!extra) {
+		return base;
+	}
+
+	switch (extra.type) {
+		case "expr_struct_body":
+			return new SyntaxNode(
+				"expr_struct",
+				[
+					base,
+					Simplify_Expr_Struct_Body(extra)
+				],
+				node.ref
+			);
+		case "call_body":
+			return new SyntaxNode(
+				"call",
+				[
+					base,
+					Simplify_Call_Body(extra)
+				],
+				node.ref
+			);
+		default:
+			throw new Error(`Unknown expr value syntax type ${extra.type}`);
+	}
+}
+
+function Simplify_Expr_Brackets (node) {
+	node.value = [
+		Simplify_Expr(node.value[0])
+	];
+	return node;
+}
+
+
+
+
+
+/*================================
+	Library Management
+================================*/
+function Simplify_Library (node) {
+	switch (node.value[0].type) {
+		case "import":
+			node.value = [ Simplify_Library_Import(node.value[0]) ];
+			break;
+		default:
+			throw new TypeError(`Unexpected library statement ${node.value[0].type}`);
+	}
+	return node;
+}
+function Simplify_Library_Import (node) {
+	node.value = [
+		new SyntaxNode("name", node.value[1].flat() || "*", node.value[1].ref),
+		Simplify_String(node.value[0])
+	];
+
+	return node;
+}
+
+
+
+
+
+/*================================
+	External
+===============================*/
+function Simplify_Include (node) {
+	node.value = [
+		// Mode
+		node.value[0],
+
+		// Path
+		Simplify_String(node.value[1])
+	];
+	return node;
+}
+
+function Simplify_External (node) {
+	node.value = [
+		// Mode
+		node.value[0],
+
+		// Body
+		Simplify_External_Body(node.value[1])
+	];
+	return node;
+}
+function Simplify_External_Body (node) {
+	node.value = node.value[0].value
+		.map(x => Simplify_External_Term(x.value[0]));
+
+	return node;
+}
+function Simplify_External_Term (node) {
+	switch (node.value[0].type) {
+		case "function_outline":
+			return Simplify_Function_Outline(node.value[0]);
+		case "function_redirect":
+			return Simplify_Function_Redirect(node.value[0]);
+		case "struct":
+			return Simplify_Struct(node.value[0]);
+		case "type_def":
+			return Simplify_Type_Def(node.value[0]);
+		case "declare":
+			return Simplify_Declare(node.value[0]);
+		default:
+			throw new TypeError(`Unexpected external statement ${node.value[0].type}`);
+	}
+}
+
+function Simplify_Type_Def (node) {
+	node.value = [
+		// Name
+		Simplify_Name(node.value[0]),
+
+		// Size
+		Simplify_Integer(node.value[1]) // size
+	];
+	return node;
+}
+
+
+
+
+
+/*================================
+	If Statement
+================================*/
 function Simplify_If (node) {
-	let head = Simplify_If_Stmt(node.tokens[0][0]);
-	let elif = node.tokens[1].map(x => Simplify_If_Stmt(x.tokens[1][0]));
+	let head = Simplify_If_Stmt(node.value[0]);
+	let elif = node.value[1].value.map(x => Simplify_If_Stmt(x.value[0]));
+
 	let other =
-		node.tokens[3][0] ?
-			Simplify_If_Else(node.tokens[3][0]) :
-			new BNF_SyntaxNode ("else_stmt", [
-				new BNF_SyntaxNode ("function_body", [], 0, head.ref.start, head.ref.end, head.ref.reached)
-			], 0, head.ref.start, head.ref.end, head.ref.reached);
+		node.value[2].value[0] ?
+			Simplify_If_Else(node.value[2].value[0]) :
+			new SyntaxNode (
+				"else_stmt",
+				[ new SyntaxNode ("function_body", [], node.value[2].ref.clone()) ],
+				node.value[2].ref.clone()
+			);
 
 
 	// Merge elifs into new else statement
 	while (elif.length > 0) {
-		let last = elif.splice(elif.length-1, 1)[0];
+		let last = elif.shift();
+		let ref = new ReferenceRange(last.ref.start.clone(), other.ref.end.clone());
 
-		let s = last.ref.start;
-		let e = other.ref.end;
-		let r = null;
-
-		other = new BNF_SyntaxNode(
+		other = new SyntaxNode(
 			"else_stmt",
-			[new BNF_SyntaxNode(
+			[new SyntaxNode(
 				"function_body",
-				[new BNF_SyntaxNode(
+				[new SyntaxNode(
 					"if",
 					[last, other],
-					0,
-					s, e, r
+					ref.clone(),
 				)],
-				0,
-				s, e, r
+				ref.clone()
 			)],
-			0,
-			s, e, r
+			ref
 		);
 	}
 
-	node.tokens = [
+	node.value = [
 		head,
 		other
 	];
@@ -794,224 +782,16 @@ function Simplify_If (node) {
 	return node;
 }
 function Simplify_If_Stmt (node) {
-	let out = [
-		Simplify_Expr(node.tokens[4][0]),
-		Simplify_Function_Body(node.tokens[8][0])
+	node.value = [
+		Simplify_Expr(node.value[0]),
+		Simplify_Function_Body(node.value[1])
 	];
-
-	node.tokens  = out;
-	node.reached = null;
 	return node;
 }
 function Simplify_If_Else (node) {
-	let out = [
-		Simplify_Function_Body(node.tokens[2][0])
+	node.value = [
+		Simplify_Function_Body(node.value[0])
 	];
-
-	node.tokens = out;
-	node.reached = null;
-	return node;
-}
-
-
-
-function Simplify_While (node) {
-	let out = [
-		Simplify_Expr(node.tokens[4][0]),
-		Simplify_Function_Body(node.tokens[8][0])
-	];
-
-	node.tokens = out;
-	node.reached = null;
-	return node;
-}
-
-
-
-function Simplify_Return (node) {
-	let inner = [];
-	if (node.tokens[1].length == 1) {
-		inner = [ Simplify_Expr(node.tokens[1][0].tokens[1][0]) ];
-	}
-
-	node.tokens = inner;
-	node.reached = null;
-	return node;
-}
-
-
-
-function Simplify_Declare (node) {
-	let out = [
-		Simplify_Data_Type(node.tokens[6][0]),
-		Simplify_Name(node.tokens[2][0])
-	];
-
-	node.tokens = out;
-	node.reached = null;
-	return node;
-}
-function Simplify_Declare_Assign (node) {
-	let out = [
-		node.tokens[4][0] ?
-			Simplify_Data_Type (node.tokens[4][0].tokens[2][0]) :
-			null,
-		Simplify_Name(node.tokens[2][0]),
-		Simplify_Expr(node.tokens[7][0])
-	];
-
-	node.tokens = out;
-	node.reached = null;
-	return node;
-}
-function Simplify_Assign  (node) {
-	node.tokens = [
-		Simplify_Variable (node.tokens[0][0]), // target variable
-		Simplify_Expr     (node.tokens[4][0])  // value
-	];
-	node.reached = null;
-	return node;
-}
-
-function Simplify_Delete (node) {
-	node.tokens = [
-		Simplify_Variable(node.tokens[2][0])
-	];
-	node.reached = null;
-
-	return node;
-}
-
-
-
-function Simplify_Expr (node) {
-	let queue = [
-		Simplify_Expr_Arg(node.tokens[1][0])
-	];
-	for (let next of node.tokens[3]) {
-		queue.push(next.tokens[0][0]);
-		queue.push(Simplify_Expr_Arg(next.tokens[2][0]));
-	}
-
-	return ApplyPrecedence(queue);
-}
-
-function Simplify_Expr_Arg (node) {
-	switch (node.tokens[0].type) {
-		case "expr_val":
-			return Simplify_Expr_Val(node.tokens[0]);
-		case "expr_brackets":
-			return Simplify_Expr_Brackets(node.tokens[0]);
-		default:
-			throw new Error(`Unexpected expression argument ${node.tokens[0].type}`);
-	}
-}
-
-function Simplify_Expr_Val (node) {
-	let subject = node.tokens[2][0].tokens[0];
-	subject = subject.type == "variable" ?
-		Simplify_Variable(subject) :
-		Simplify_Constant(subject);
-
-	let call = node.tokens[4];
-	if (call.length > 0) {
-		return Simplify_Expr_Call(subject, call[0], subject.ref);
-	}
-
-	let unary = node.tokens[0][0];
-	if (unary) {
-		return Simplify_Expr_Unary(unary, subject);
-	}
-
-	return subject;
-}
-
-function Simplify_Expr_Unary (opperation, node) {
-	switch (opperation.tokens) {
-		case "-":
-			return new BNF_SyntaxNode(
-				"expr_arithmetic",
-				[
-					new BNF_SyntaxNode(
-						"expr_invert",
-						[
-							node
-						], 1,
-						opperation.ref.start,
-						opperation.ref.end
-					)
-				], 0,
-				opperation.ref.start,
-				node.ref.end
-			);
-		case "!":
-			return new BNF_SyntaxNode(
-				"expr_bool",
-				[
-					new BNF_SyntaxNode(
-						"expr_not",
-						[
-							node
-						], 1,
-						opperation.ref.start,
-						opperation.ref.end
-					)
-				], 0,
-				opperation.ref.start,
-				node.ref.end
-			);
-		case "$":
-			return new BNF_SyntaxNode(
-				"expr_clone",
-				[
-					node
-				],
-				0,
-				opperation.ref.start,
-				node.ref.end
-			);
-		default:
-			throw new Error(`Unexpected unary operation "${opperation.tokens}"`);
-	}
-}
-
-function Simplify_Expr_Call (name, node, ref) {
-	return new BNF_SyntaxNode(
-		"call",
-		[
-			name,                                     // name
-			node.tokens[0].length > 0 ?               // template
-				Simplify_Template(node.tokens[0][0]) :
-				new BNF_SyntaxNode(
-					"template",
-					[],
-					0,
-					node.ref.start,
-					node.ref.start
-				),
-			Simplify_Call_Args(node.tokens[2][0])      // args
-		],
-		0,
-		ref.start,
-		ref.end,
-		null
-	);
-}
-
-function Simplify_Expr_Brackets (node) {
-	node.tokens = [
-		Simplify_Expr(node.tokens[2][0])
-	];
-	node.reached = null;
-	return node;
-}
-
-function Simplify_Expr_Lend (node) {
-	node.tokens = [
-		Simplify_Variable(node.tokens[1][0])
-	];
-	node.reached = null;
-
 	return node;
 }
 
@@ -1019,27 +799,67 @@ function Simplify_Expr_Lend (node) {
 
 
 
-function Parse (data, filename){
+/*================================
+	When Statement
+================================*/
+function Simplify_When (node) {
+	node.value = [
+		Simplify_Variable(node.value[0]),
+		Simplify_When_Opt(node.value[1])
+	];
+
+	return node;
+}
+function Simplify_When_Opt(node) {
+	node.value = node.value.map(Simplify_When_Stmt);
+	return node;
+}
+function Simplify_When_Stmt(node) {
+	node.value = [
+		node.value[0].type == "literal" ?
+			node.value[0] :
+			Simplify_Data_Type(node.value[0]),
+		Simplify_When_Stmt(node.value[1])
+	];
+
+	return node;
+}
+
+
+
+const STMT_MAP = {
+	"declare": Simplify_Declare,
+	"assign": Simplify_Assign,
+	"return": Simplify_Return,
+	"call_procedure": Simplify_Call_Procedure,
+	"if": Simplify_If,
+	"when": Simplify_When
+};
+
+const STMT_TOP_MAP = {
+	"external": Simplify_External,
+	"include": Simplify_Include,
+	"function": Simplify_Function,
+	"library": Simplify_Library,
+	"struct": Simplify_Struct,
+	"impl": Simplify_Impl,
+	"trait": Simplify_Trait
+};
+
+
+
+module.exports = function (data, filename){
 	// Parse the file and check for errors
-	let result = BNF.Parse(data+"\n", syntax, "program");
+	let res = syntax.parse(data, false, "program");
+	if (res instanceof ParseError) {
+		let msg = filename ? `${filename}:\n  ` : "";
+		msg += `Syntax error at ${res.ref.toString()}\n`;
+		msg += `  ${CodeSection(data, res.ref.start, res.ref.end).split('\n').join('\n  ')}\n\n`;
+		msg += `  Interpreted: ${res.msg}`;
 
-	if (result.hasError || result.isPartial) {
-		let ref = result.tree.ref.end;
-		let cause = "Unknown";
-		if (result.tree.ref.reached) {
-			ref = result.tree.ref.reached.getReach();
-			cause = result.tree.ref.reached.getCausation();
-		}
-
-		let msg = filename ? `${filename}: ` : "";
-		msg += `Syntax error at ${ref.toString()}\n`;
-		msg += `  ${BNF.Message.HighlightArea(data, ref).split('\n').join('\n  ')}\n\n`;
-		msg += `  Interpreted: ${cause}`;
 		console.error(msg);
 		process.exit(1);
 	}
 
-	return Simplify_Program(result.tree);
-}
-
-module.exports = Parse;
+	return Simplify_Program(res);
+};

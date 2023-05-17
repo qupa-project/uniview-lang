@@ -1,16 +1,18 @@
 const Register = require('../memory/variable.js');
 const Scope = require('../memory/scope.js');
 
-const Flattern = require('../../parser/flattern.js');
+const Flatten = require('../../parser/flatten.js');
 const LLVM     = require("../../middle/llvm.js");
 const TypeRef  = require('../typeRef.js');
 
-const Primative = {
+const Primitive = {
 	types: require('../../primative/types.js')
 };
 
 const ExecutionFlow = require('./flow.js');
-const Variable = require('../memory/variable.js');
+
+const Reserved = require('../../reserved.js');
+const { ResolveAccess } = require('../resolve.js');
 
 class Execution extends ExecutionFlow {
 
@@ -25,8 +27,8 @@ class Execution extends ExecutionFlow {
 		// Load the target variable
 		//   This must occur after the expression is resolve
 		//   because this variable now needs to be accessed for writing
-		//   after any reads that might have taken place in the expresion
-		let access = this.getVar(ast.tokens[0], false);
+		//   after any reads that might have taken place in the expression
+		let access = this.getVar(ast.value[0], false);
 		if (access.error) {
 			this.getFile().throw( access.msg, access.ref.start, access.ref.start);
 			return null;
@@ -35,31 +37,17 @@ class Execution extends ExecutionFlow {
 		access = access.variable;
 
 		// Resolve the expression
-		let expr = this.compile_expr(ast.tokens[1], access.type, true);
+		let expr = this.compile_expr(ast.value[1], access.type, true);
 		if (expr === null) {
 			return null;
 		}
 		frag.merge(expr.preamble);
 
-		let targetType = access.type;
-		if (!expr.type.match(targetType)) {
-			this.getFile().throw(
-				`Error: Assignment type mis-match` +
-				` cannot assign ${targetType.toString()}` +
-				` to ${expr.type.toString()}`,
-				ast.ref.start, ast.ref.end
-			);
-			return null;
-		}
+		// The expression compilation checks the type already
 
+		// If there is already a value in this variable, clear it first
 		if (!access.isUndefined() && access.type.type.getDestructor()) {
-			this.getFile().throw(
-				`Error: Unsafe value drop\n` +
-				`  The previous value of ${access.name} was not destructed or consumed - but has now been lost\n` +
-				`  Suggest adding ${access.type.type.name}.Delete(${access.name}) before the current line`,
-				ast.ref.start, ast.ref.end
-			);
-			return null;
+			frag.merge(access.cleanup(ast.ref));
 		}
 
 		let chg = access.markUpdated(expr.instruction, false, ast.ref);
@@ -67,126 +55,75 @@ class Execution extends ExecutionFlow {
 			this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
 			return null;
 		}
+		frag.merge(chg);
 
 		frag.merge(expr.epilog);
 		return frag;
 	}
 
 	compile_declare (ast) {
-		let	name = ast.tokens[1].tokens;
+		let frag = new LLVM.Fragment();
+		let	name = ast.value[1].value;
 
-		let typeRef = this.resolveType(ast.tokens[0]);
-		if (!(typeRef instanceof TypeRef)) {
-			this.getFile().throw(`Error: Invalid type name "${Flattern.DataTypeStr(ast.tokens[0])}"`, ast.ref.start, ast.ref.end);
-			return null;
+		if (Reserved.Check(name)) {
+			this.getFile().throw(
+				`Error: Attempted to define a variable with a reserved word`,
+				ast.value[1].ref.start,
+				ast.value[1].ref.end
+			);
+			// continue compilation to check for later errors as this is not a critical fault
 		}
 
-		this.scope.register_Var(
-			typeRef,
-			name,
-			ast.ref.start
-		);
-
-		return new LLVM.Fragment();
-	}
-
-	/**
-	 * Generates the LLVM for the combined action of define + assign
-	 * @param {BNF_Node} ast
-	 * @returns {LLVM.Fragment}
-	 */
-	compile_declare_assign (ast) {
-		let frag = new LLVM.Fragment();
-
-		// If there is a goal type
-		//   Get the goal type
 		let targetType = null;
-		if (ast.tokens[0] !== null) {
-			targetType = this.resolveType(ast.tokens[0]);
+		if (ast.value[0].type != "blank") {
+			targetType = this.getType(ast.value[0]);
 			if (!(targetType instanceof TypeRef)) {
-				this.getFile().throw(`Error: Invalid type name "${
-					Flattern.DataTypeStr(ast.tokens[0])
-				}"`, ast.ref.start, ast.ref.end);
+				this.getFile().throw(
+					`Error: Invalid type name "${Flatten.DataTypeStr(ast.value[0])}"`,
+					ast.ref.start,
+					ast.ref.end
+				);
 				return null;
 			}
 		}
 
-
-
-		// Compile the expression
-		let expr = this.compile_expr(ast.tokens[2], targetType, true);
-		if (expr === null) {
-			return null;
-		}
-		frag.merge(expr.preamble);
-
-		// If the type was not given, extract it from the expression
-		if (targetType === null) {
+		let expr = null;
+		if (ast.value[2].type != "blank") {
+			expr = this.compile_expr(ast.value[2], targetType, true);
+			if (expr === null) {
+				return null;
+			}
+			frag.merge(expr.preamble);
 			targetType = expr.type;
 		}
 
-		// Declare the variable and assign it to the expression result
-		let variable = this.scope.register_Var(
-			targetType,             // type
-			ast.tokens[1].tokens,   // name
-			ast.ref.start           // ref
-		);
-		let chg = variable.markUpdated(expr.instruction, false, ast.ref);
-		if (chg.error) {
-			this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
-			return null;
-		}
-
-
-		frag.merge(expr.epilog);
-		return frag;
-	}
-
-
-	compile_delete (ast) {
-		let frag = new LLVM.Fragment();
-
-		let target = this.getVar(ast.tokens[0], true);
-		if (target.error) {
-			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
-			return null;
-		}
-		frag.merge(target.preamble);
-		target = target.variable;
-
-		if (target.type.lent) {
+		if (targetType == null) {
 			this.getFile().throw(
-				`Cannot delete lent values`,
-				ast.ref.start, ast.ref.end
+				`Error: No type information on declaration\n  Must either have explicit type or an assignment for inferred types`,
+				ast.ref.start,
+				ast.ref.end
 			);
+
 			return null;
 		}
 
-		let res = target.delete(ast.ref);
-		if (res.error) {
-			this.getFile().throw(res.msg, res.ref.start, res.ref.end);
-			return null;
-		}
-
-		let destructor = target.type.type.getDestructor();
-		if (destructor) {
-			if (this.ctx == destructor) {
-				this.getFile().throw(
-					`Error: Dangerous destructor, does not properly destruct all child values`,
-					ast.ref.start, ast.ref.end
-				);
-			} else {
-				this.getFile().warn(
-					`Warn: This class type has a destructor, recommend calling ${target.type.type.name}.Delete(${target.name})`,
-					ast.ref.start, ast.ref.end
-				);
+		let variable = this.scope.register_Var(
+			targetType,
+			name,
+			ast.ref.start
+		);
+		if (expr) {
+			let chg = variable.markUpdated(expr.instruction, false, ast.ref);
+			if (chg.error) {
+				this.getFile().throw(chg.msg, chg.ref.start, chg.ref.end);
+				return null;
 			}
+			frag.merge(chg);
+			frag.merge(expr.epilog);
 		}
 
-		frag.merge(res);
 		return frag;
 	}
-
 
 
 
@@ -209,7 +146,8 @@ class Execution extends ExecutionFlow {
 		let signature = [];
 		let args = [];
 		let regs = [];
-		for (let arg of ast.tokens[2].tokens) {
+
+		for (let arg of ast.value[1].value) {
 			let expr = this.compile_expr(arg, null, true);
 			if (expr === null) {
 				return null;
@@ -230,33 +168,18 @@ class Execution extends ExecutionFlow {
 			}
 		}
 
-		// Link any [] accessors
-		let accesses = [ ast.tokens[0].tokens[1].tokens ];
-		for (let access of ast.tokens[0].tokens[2]) {
-			if (access[0] == "[]") {
-				file.throw (
-					`Error: Class base function execution is currently unsupported`,
-					inner.ref.start, inner.ref.end
-				);
-				return null;
-			} else {
-				accesses.push([access[0], access[1].tokens]);
-			}
-		}
-
-
 		// Link any template access
-		let template = this.resolveTemplate(ast.tokens[1]);
-		if (template === null) {
+		let res = ResolveAccess(ast.value[0], this.ctx);
+		if (res === null) {
 			return null;
 		}
+		let access = res.access;
 
 		// Find a function with the given signature
-		let target = this.getFunction(accesses, signature, template);
+		let target = this.getFunction(access, signature);
 		if (!target) {
-			let funcName = Flattern.VariableStr(ast.tokens[0]);
 			file.throw(
-				`Error: Unable to find function "${funcName}" with signature (${signature.join(", ")})`,
+				`Error: Unable to find function "${Flatten.AccessToString(ast.value[0])}" with signature (${signature.join(", ")})`,
 				ast.ref.start, ast.ref.end
 			);
 			return null;
@@ -295,7 +218,7 @@ class Execution extends ExecutionFlow {
 				complex ?
 					new LLVM.Type("void", 0, ast.ref) :
 					target.returnType.toLLVM(ast.ref),
-				new LLVM.Name(target.represent, true, ast.tokens[0].ref),
+				new LLVM.Name(target.represent, true, ast.value[0].ref),
 				args,
 				ast.ref.start
 			);
@@ -346,12 +269,17 @@ class Execution extends ExecutionFlow {
 
 				return null;
 			} else {
-				let id = new LLVM.ID();
-				frag.append(new LLVM.Set(
-					new LLVM.Name(id, false, ast.ref),
-					out.instruction,
-					ast.ref
-				));
+				if (out.instruction instanceof LLVM.Argument) {
+					// Don't save a constant evaluation to a register
+					// i.e. %2 = i32 is bad
+				} else {
+					let id = new LLVM.ID();
+					frag.append(new LLVM.Set(
+						new LLVM.Name(id, false, ast.ref),
+						out.instruction,
+						ast.ref
+					));
+				}
 			}
 		}
 
@@ -367,7 +295,7 @@ class Execution extends ExecutionFlow {
 	compile_decompose (ast) {
 		let frag = new LLVM.Fragment();
 
-		let target = this.getVar(ast.tokens[0], true);
+		let target = this.getVar(ast.value[0], true);
 		if (target.error) {
 			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
 			return null;
@@ -388,7 +316,7 @@ class Execution extends ExecutionFlow {
 	compile_compose (ast) {
 		let frag = new LLVM.Fragment();
 
-		let target = this.getVar(ast.tokens[0], true);
+		let target = this.getVar(ast.value[0], true);
 		if (target.error) {
 			this.getFile().throw( target.msg, target.ref.start, target.ref.end );
 			return null;
@@ -417,11 +345,11 @@ class Execution extends ExecutionFlow {
 
 		// Get the return result in LLVM.Argument form
 		let returnType = null;
-		if (ast.tokens.length == 0){
+		if (ast.value.length == 0){
 			inner = new LLVM.Type("void", false);
-			returnType = new TypeRef(0, Primative.types.void);
+			returnType = new TypeRef(Primitive.types.void);
 		} else {
-			let res = this.compile_expr(ast.tokens[0], this.returnType, true);
+			let res = this.compile_expr(ast.value[0], this.returnType, true);
 			if (res === null) {
 				return null;
 			}
@@ -429,49 +357,27 @@ class Execution extends ExecutionFlow {
 			frag.merge(res.preamble);
 
 			if (returnType.type.typeSystem == "linear") {
-
-				let size = returnType.type.sizeof(ast.ref);
-				frag.append(size.preamble);
-
-				let fromID = new LLVM.ID();
+				let cacheID = new LLVM.ID();
 				frag.append(new LLVM.Set(
-					new LLVM.Name(fromID, false),
-					new LLVM.Bitcast(
-						new LLVM.Type("i8", 1),
-						res.instruction
-					)
-				));
-				let toID = new LLVM.ID();
-				frag.append(new LLVM.Set(
-					new LLVM.Name(toID, false),
-					new LLVM.Bitcast(
-						new LLVM.Type("i8", 1),
-						new LLVM.Argument(
-							returnType.toLLVM(),
-							new LLVM.Name("0", false, ast.ref),
-							ast.ref
-						)
-					)
+					new LLVM.Name(cacheID, false),
+					new LLVM.Load(
+						res.instruction.type.duplicate().offsetPointer(-1),
+						res.instruction.name
+					),
+					ast.ref
 				));
 
-				frag.append(new LLVM.Call(
-					new LLVM.Type("void", 0),
-					new LLVM.Name("llvm.memmove.p0i8.p0i8.i64", true),
-					[
-						new LLVM.Argument(
-							new LLVM.Type("i8", 1),
-							new LLVM.Name(toID.reference(), false)
-						),
-						new LLVM.Argument(
-							new LLVM.Type("i8", 1),
-							new LLVM.Name(fromID.reference(), false)
-						),
-						size.instruction,
-						new LLVM.Argument(
-							new LLVM.Type('i1', 0),
-							new LLVM.Constant("0")
-						)
-					]
+				frag.append(new LLVM.Store(
+					new LLVM.Argument(
+						returnType.toLLVM(),
+						new LLVM.Name("0", false, ast.ref),
+						ast.ref
+					),
+					new LLVM.Argument(
+						returnType.toLLVM().offsetPointer(-1),
+						new LLVM.Name(cacheID.reference(), false)
+					),
+					ast.ref
 				));
 
 				inner = new LLVM.Type("void", 0, ast.ref);
@@ -513,16 +419,15 @@ class Execution extends ExecutionFlow {
 
 	compile (ast) {
 		let fragment = new LLVM.Fragment();
-		let returnWarned = false;
 		let failed = false;
 		let inner = null;
-		for (let token of ast.tokens) {
-			if (this.returned && !returnWarned) {
+
+		for (let token of ast.value) {
+			if (this.returned) {
 				this.getFile().throw(
-					`Warn: This function has already returned, this line and preceeding lines will not execute`,
+					`Warn: This function has already returned, this line and preceding lines will not execute`,
 					token.ref.start, token.ref.end
 				);
-				returnWarned = true;
 				break;
 			}
 
@@ -533,9 +438,6 @@ class Execution extends ExecutionFlow {
 				case "assign":
 					inner = this.compile_assign(token);
 					break;
-				case "declare_assign":
-					inner = this.compile_declare_assign(token);
-					break;
 				case "return":
 					inner = this.compile_return(token);
 					break;
@@ -545,14 +447,14 @@ class Execution extends ExecutionFlow {
 				case "if":
 					inner = this.compile_if(token);
 					break;
+				case "when":
+					inner = this.compile_when(token);
+					break;
 				case "compose":
 					inner = this.compile_compose(token);
 					break;
 				case "decompose":
 					inner = this.compile_decompose(token);
-					break;
-				case "delete":
-					inner = this.compile_delete(token);
 					break;
 				default:
 					this.getFile().throw(
@@ -569,28 +471,15 @@ class Execution extends ExecutionFlow {
 			}
 		}
 
-		if (!failed && this.returned == false && !this.isChild) {
-			if (this.returnType.type == Primative.types.void) {
-				// Auto generate return and cleanup for void functions
+		if (failed) {
+			return null;
+		} else if (this.returned == false && !this.isChild) {
+			this.getFile().throw(
+				`Function does not return`,
+				ast.ref.start, ast.ref.end
+			);
 
-				// Clean up the scope
-				let res = this.scope.cleanup(ast.ref);
-				if (res.error) {
-					this.getFile().throw(res.msg, res.ref.start, res.ref.end);
-				} else {
-					fragment.append(res);
-				}
-
-				fragment.append(new LLVM.Return(
-					new LLVM.Type("void", 0),
-					ast.ref
-				));
-			} else {
-				this.getFile().throw(
-					`Function does not return`,
-					ast.ref.start, ast.ref.end
-				);
-			}
+			return null;
 		}
 
 		return fragment;
@@ -602,8 +491,7 @@ class Execution extends ExecutionFlow {
 	 * Deep clone
 	 * @returns {Scope}
 	 */
-	clone () {
-		let scope = this.scope.clone();
+	clone (scope = this.scope.clone()) {
 		let out = new Execution(this, this.returnType, scope);
 		out.isChild = true;
 		return out;

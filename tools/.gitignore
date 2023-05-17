@@ -1,0 +1,4 @@
+*
+!.gitignore
+!env-bind.js
+!install.js

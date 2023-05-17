@@ -21,7 +21,7 @@ class Call extends Instruction {
 		return super.flattern(
 			`call ${this.type.flattern()} ` +
 			`${this.name.flattern()} ` +
-			`(${this.args.map(x=>x.flattern()).join(",")})`,
+			`(${this.args.map(x=>x.flattern()).join(", ")})`,
 		indent);
 	}
 }

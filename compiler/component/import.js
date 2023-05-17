@@ -5,13 +5,14 @@ class Import {
 		this.ctx      = ctx;
 		this.ref      = ast ? ast.ref.start : null;
 
-		this.name = ( ast && ast.tokens[1] && ast.tokens[1].tokens ) ? ast.tokens[1].tokens : "*";
+		let hasAst = ast != null;
+		this.name = hasAst ? ast.value[0].value : "*";
 		this.files = [];
 
-		if (ast) {
+		if (hasAst) {
 			this.files.push({
 				file: null,
-				path: ast.tokens[0],
+				path: ast.value[1].value,
 				ref: ast.ref.start
 			});
 		}
@@ -64,9 +65,14 @@ class Import {
 		return null;
 	}
 
-	getFunction (access, signature, template, stack) {
+	getFunction (access, signature, stack) {
 		for (let lib of this.files) {
-			let opt = lib.file.getFunction(access, signature, template, stack);
+			if (stack.includes(lib.file.id)) {
+				continue;
+			}
+
+			let opt = lib.file.getFunction(access, signature, stack);
+			stack.push(lib.file.id);
 			if (opt) {
 				return opt;
 			}

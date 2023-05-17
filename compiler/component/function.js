@@ -5,7 +5,7 @@ const Structure = require('./struct.js');
 
 class Function {
 	constructor (ctx, ast, external = false, abstract = false) {
-		this.name = ast.tokens[0].tokens[1].tokens;
+		this.name = ast.value[0].value[1].value;
 		this.ctx = ctx;
 
 		this.ref = ast.ref.start;
@@ -41,22 +41,63 @@ class Function {
 		this.instances[0].markExport();
 	}
 
-	getFunction (variable, signature) {
-		if (variable.length != 0) {
+	getFunction (access, signature) {
+		if (access.length != 0) {
 			return null;
 		}
 
 		return this.matchSignature(signature);
 	}
 
+	getType(access, stack) {
+		return this.ctx.getType(access, stack);
+	}
+
 	matchSignature (sig) {
 		for (let instance of this.instances) {
+			if (instance.abstract && !instance.external) {
+				this.getFile().throw(
+					`Error: Cannot call abstract function "${this.name}" as it has no implementation`,
+					instance.ref,
+					instance.ref
+				);
+			}
 			if (instance.matchSignature(sig)) {
 				return instance;
 			}
 		}
 
 		return null;
+	}
+
+	ensureEquivalence(other) {
+		outer: for (let instA of this.instances) {
+			for (let instB of other.instances) {
+				if (instA.matchSignature(instB.signature)) {
+					continue outer;
+				}
+			}
+
+			this.ctx.getFile().throw(
+				`Error: Unable to find implementation of "${instA.toString()}" for trait "${this.ctx.trait.name}" in implementation`,
+				this.ctx.ref,
+				this.ctx.endRef
+			);
+		}
+
+		outer: for (let instA of other.instances) {
+			for (let instB of this.instances) {
+				if (instA.matchSignature(instB.signature)) {
+					continue outer;
+				}
+			}
+
+			this.ctx.getFile().throw(
+				`Error: Implementation has an extra function instance "${instA.toString()}" for trait "${this.ctx.trait.name}" in implementation`,
+				this.ctx.ref,
+				instA.ref
+			);
+		}
 	}
 
 	merge (other){
@@ -83,6 +124,12 @@ class Function {
 		}
 
 		return;
+	}
+
+	relink() {
+		for (let instance of this.instances) {
+			instance.relink();
+		}
 	}
 
 	compile () {

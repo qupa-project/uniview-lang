@@ -1,13 +1,14 @@
 const { Generator_ID } = require('./generate.js');
 
-const Flattern = require('./../parser/flattern.js');
-const TypeDef = require('./typedef.js');
+const Flatten = require('./../parser/flatten.js');
 const LLVM = require('../middle/llvm.js');
 const Execution = require('./execution/index.js');
 const Scope = require('./memory/scope.js');
 const TypeRef = require('./typeRef.js');
-const Structure = require('./struct.js');
 
+const Primitive = {
+	types: require('./../primative/types.js')
+};
 
 let funcIDGen = new Generator_ID();
 
@@ -17,7 +18,7 @@ class Function_Instance {
 		this.ast = ast;
 		this.ref = ast.ref.start;
 		this.external = external;
-		this.abstract = abstract;
+		this.abstract = abstract || ast.type == "function_outline";
 
 		this.returnType = null;
 		this.signature = [];
@@ -28,7 +29,11 @@ class Function_Instance {
 
 		this.id = funcIDGen.next();
 
-		this.name = ast.tokens[0].tokens[1].tokens;
+		this.constNum = 0;
+
+		this.consts = [];
+
+		this.name = ast.value[0].value[1].value;
 		this.represent = external ? `${this.name}` : `${this.ctx.represent}.${this.id.toString(36)}`;
 
 
@@ -47,6 +52,10 @@ class Function_Instance {
 		return this.ctx.getFile();
 	}
 
+	getType(access, stack = []) {
+		this.ctx.getType(access, stack);
+	}
+
 	getFunctionGroup () {
 		return this.ctx.getFunctionGroup();
 	}
@@ -54,7 +63,25 @@ class Function_Instance {
 		return this;
 	}
 
+	getType(access, stack) {
+		return this.ctx.getType(access, stack);
+	}
 
+	bindConst(val, ref = null) {
+		let id = this.consts.indexOf(val);
+		if (id == -1) {
+			id = this.consts.length;
+			this.consts.push(val);
+		}
+
+		return new LLVM.Name(`${this.represent}.const.${id}`, true);
+	}
+
+
+	relink () {
+		this.linked = false;
+		this.link();
+	}
 
 	link () {
 		if (this.linked) {
@@ -62,43 +89,37 @@ class Function_Instance {
 		}
 
 		let file = this.getFile();
-		let head = this.ast.tokens[0];
-		let args = head.tokens[2].tokens;
 
-		// Flaten signature types AST into a single array
-		let types = [ head.tokens[0] ];
-		let borrows = [ false ];
-		let consts = [ false ];
-		if (args.length > 0) {
-			borrows = borrows.concat(args.map(x => x[0] == "@"));
-			consts = consts.concat(args.map(x => x[0] == "#"));
-			types = types.concat(args.map((x) => x[1]));
-		}
+		let head = this.ast.value[0];
+		this.signature = [ head.value[0], ...head.value[2].value.map(x => x.value[0]) ]
+			.map((x, i) => {
+				if (x.type == "blank") {
+					return new TypeRef(Primitive.types.void, false, false, false);
+				}
 
-		// Generate an execution instance for type resolving
-		let exec = new Execution(
-			this,
-			null,
-			new Scope(this, this.getFile().project.config.caching)
-		);
+				let search = this.getType(x);
+				if (search instanceof TypeRef) {
+					// If an argument is void (ignoring return type which is at the front)
+					if (i != 0 && search.type == Primitive.types.void) {
+						file.throw(
+							`Functions cannot include void type as argument`,
+							x.ref.start, x.ref.end
+						);
+					}
+				} else {
+					file.throw(
+						`Invalid type name "${Flatten.AccessToString(x)}"`,
+						x.ref.start, x.ref.end
+					);
+				}
 
-		for (let [i, type] of types.entries()){
-			let search = exec.resolveType(type);
-			if (search instanceof TypeRef) {
-				search.pointer  = type.tokens[0]; // Copy the pointer level across
-				search.lent     = borrows[i];
-				search.constant = consts[i];
+				// Return the search even if it's invalid
+				// That way we check the other args at the same time
+				// In case they're also invalid
+				return search;
+			});
 
-				this.signature.push(search);
-			} else {
-				file.throw(
-					`Invalid type name "${Flattern.DataTypeStr(type)}"`,
-					type.ref.start, type.ref.end
-				);
-			}
-		}
-
-		this.returnType = this.signature.splice(0, 1)[0];
+		this.returnType = this.signature.shift();
 		this.linked = true;
 	}
 
@@ -129,7 +150,7 @@ class Function_Instance {
 
 
 	compile () {
-		if (this.abstract) {
+		if (this.abstract && !this.external) {
 			return null;
 		}
 
@@ -138,15 +159,14 @@ class Function_Instance {
 			this.getFile().project.config.caching
 		);
 
-		let head = this.ast.tokens[0];
-		let args = [];
-		for (let i=0; i<this.signature.length; i++) {
-			args.push({
-				type: this.signature[i],                     // TypeRef
-				name: head.tokens[2].tokens[i][2].tokens,    // Name
-				ref: head.tokens[2].tokens[i][2].ref.start   // Ref
-			});
-		}
+		let head = this.ast.value[0];
+		let args = this.signature.map((x, i) => {
+			return {
+				type: x,
+				name: head.value[2].value[i].value[1].value,
+				ref: head.value[2].value[i].ref
+			};
+		});
 
 		let res = scope.register_Args( args );
 		if (res == null) {
@@ -155,7 +175,7 @@ class Function_Instance {
 		let argsRegs = res.registers;
 
 		let id = new LLVM.ID();
-		let complex = this.returnType.type.typeSystem == "linear";
+		let complex = !this.returnType.native;
 		if (complex) {
 			argsRegs = [
 				new LLVM.Argument(
@@ -168,9 +188,9 @@ class Function_Instance {
 
 		let frag = new LLVM.Procedure(
 			complex ?
-				new LLVM.Type("void", 0, head.tokens[0].ref) :
-				this.returnType.toLLVM(head.tokens[0].ref),
-			new LLVM.Name(this.represent, true, head.tokens[1].ref),
+				new LLVM.Type("void", 0, head.value[0].ref) :
+				this.returnType.toLLVM(head.value[0].ref),
+			new LLVM.Name(this.represent, true, head.value[1].ref),
 			argsRegs,
 			"#1",
 			this.external,
@@ -193,17 +213,33 @@ class Function_Instance {
 				scope,
 				entry_id.reference()
 			);
-			frag.merge(exec.compile(this.ast.tokens[1]));
+			let inner = exec.compile(this.ast.value[1]);
+			if (inner === null) {
+				return null;
+			}
+			frag.merge(inner);
 		}
 
 		let gen = new Generator_ID(0);
 		frag.assign_ID(gen);
 
-		this.ir = frag;
+		this.ir.append(frag);
 	}
 
+	toString() {
+		return `${this.name}(${this.signature.map(x => x.toString()).join(", ")}): ${this.returnType.toString()}`;
+	}
 
 	toLLVM() {
+		this.ir.stmts = [
+			...this.consts
+				.map((val, i) => new LLVM.Set(
+					new LLVM.Name(`${this.represent}.const.${i}`, true),
+					new LLVM.Raw(val)
+				)),
+			...this.ir.stmts
+		];
+
 		return this.ir;
 	}
 }

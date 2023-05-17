@@ -3,5 +3,10 @@
 	 the language to function properly
 =======================================*/
 
+trait Drop {
+	fn drop(this: @Self);
+}
 
-import "memory.uv";
+trait Clone {
+	fn clone(this: @Self): Self;
+}

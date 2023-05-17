@@ -1,0 +1,44 @@
+include static "../../build/uvc-core.lib";
+
+include static "../../lib/install/lib/LLVMAnalysis.lib";
+include static "../../lib/install/lib/LLVMBitReader.lib";
+include static "../../lib/install/lib/LLVMBitWriter.lib";
+include static "../../lib/install/lib/LLVMCore.lib";
+include static "../../lib/install/lib/LLVMExecutionEngine.lib";
+include static "../../lib/install/lib/LLVMIRReader.lib";
+include static "../../lib/install/lib/LLVMLinker.lib";
+include static "../../lib/install/lib/LLVMJITLink.lib";
+// include static "../../lib/install/lib/LLVMTarget.lib";
+// include static "../../lib/install/lib/LLVMX86AsmParser.lib";
+// include static "../../lib/install/lib/LLVMX86CodeGen.lib";
+// include static "../../lib/install/lib/LLVMX86Info.lib";
+
+external assume {
+	fn fun (): void;
+
+	fn LLVMContextCreate(): addr_space;
+	fn LLVMModuleCreateWithNameInContext(name: cstring, ctx: addr_space): addr_space;
+	fn LLVMContextDispose(ctx: addr_space);
+
+	fn LLVMLinkInMCJIT();
+	fn LLVMInitializeX86Target();
+	fn LLVMInitializeX86AsmPrinter();
+	fn LLVMInitializeX86AsmParser();
+}
+
+fn main(): int {
+	fun();
+
+	// let ctx = LLVMContextCreate();
+
+	LLVMLinkInMCJIT();
+	// LLVMInitializeX86Target();
+	// LLVMInitializeX86AsmPrinter();
+	// LLVMInitializeX86AsmParser();
+
+	// LLVMContextDispose(ctx);
+	// printf("%s", "finished");
+	// let mod = LLVMModuleCreateWithNameInContext("main", ctx);
+
+	return 0;
+}
