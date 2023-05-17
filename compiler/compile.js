@@ -212,7 +212,6 @@ function Link() {
 			Execution();
 			return;
 		}
-		console.log(215, opt.options.mode);
 
 		console.info(`\nStatus Code: ${code}`);
 		Timers.Print();

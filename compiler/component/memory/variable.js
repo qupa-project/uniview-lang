@@ -560,8 +560,6 @@ class Variable extends Value {
 				this.err = x;
 			});
 
-		console.log(565, opts);
-
 		let id = new LLVM.ID();
 		let instruction = new LLVM.Set(
 			new LLVM.Name(id, false, ref),
