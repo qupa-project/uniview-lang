@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Save the directory of where the CLI was
 last=`pwd`
@@ -7,11 +7,11 @@ last=`pwd`
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR
 
-# TODO: Update the CLI title to "Uniview Dependencie Setup - Configuring..."
-cmake -S . -B build --install-prefix="$SCRIPT_DIR/install" -DLLVM_TARGETS_TO_BUILD=X86
-# TODO: Update the CLI title to "Uniview Dependencie Setup - Building..."
+# TODO: Update the CLI title to "Configuring - Uniview Dependencies"
+cmake -S . -B build -G Ninja
+# TODO: Update the CLI title to "Building - Uniview Dependencies"
 cmake --build build
-# TODO: Update the CLI title to "Uniview Dependencie Setup - Installing..."
+# TODO: Update the CLI title to "Installing - Uniview Dependencies"
 cmake --build build --target install
 
 # cd back to where the cli started this script from

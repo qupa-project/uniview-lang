@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 "use strict";
 
-const Getopt = require('node-getopt');
 const path = require('path');
 const fs = require('fs');
 
@@ -10,28 +9,43 @@ const env_path = path.resolve(__dirname, "../.env");
 let config = require('dotenv').config({path: env_path}).parsed;
 
 function UpdateEnv(delta) {
-	for (let key in delta) {
-		config[key] = delta[key];
+	if (config === undefined) {
+		config = delta;
+	} else {
+		for (let key in delta) {
+			config[key] = delta[key];
+		}
 	}
 
 	fs.writeFileSync(
 		env_path,
-		Object.entries(config).map(([k, v]) => `${k}="${v}"`).join("\n")
+		Object.entries(config)
+			.map(([k, v]) => `${k}="${v}"`)
+			.join("\n")
 	);
 }
 
 
 if (process.argv[1] == __filename) {
-	let getopt = new Getopt([
-		['', 'uvc_tool=ARG', 'the path to the prebuilt UVC tool']
-	]).bindHelp();
-	let opt = getopt.parse(process.argv.slice(2));
+	// Read in all arguments
+	let updates = {};
+	for (let arg of process.argv.slice(2)) {
+		if (arg.indexOf("--") != 0) {
+			console.warn(`Warn: Invalid argument ${arg}`);
+			continue;
+		}
+		arg = arg.slice(2);
 
-	if (opt.argv.length > 0) {
-		console.warn(`Warn: Unexpected argument values ${opt.argv.map(x => `"${x}"`).join(", ")}`);
+		let terms = arg.split("=");
+		if (!terms[1]) {
+			terms[1] = "true"
+		}
+		updates[terms[0]] = terms[1];
 	}
 
-	UpdateEnv(opt.options);
+	UpdateEnv(updates);
+
+	console.log(`Env Updated: ${Object.keys(updates).join(", ")}`)
 }
 
 
