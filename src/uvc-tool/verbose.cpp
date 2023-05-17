@@ -2,7 +2,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "verbose.h"
+#include "verbose.hpp"
 
 bool isVerbose = false;
 

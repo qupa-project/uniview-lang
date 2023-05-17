@@ -122,14 +122,14 @@ let needsLinking = project.includes
 let tool_mode = "execute";
 switch (opt.options.mode) {
 	case "execute":
-		tool_mode = "o";
+		tool_mode = "run";
 		break;
 	case "compile":
 		needsLinking = true;
-		tool_mode = "o";
+		tool_mode = "object";
 		break;
 	case "verify":
-		tool_mode = "v";
+		tool_mode = "verify";
 		break;
 	case "llir":
 		tool_mode = "ir";
@@ -144,7 +144,7 @@ switch (opt.options.mode) {
 let args = [
 	`${opt.options.output}.ll`,
 	"--mode", needsLinking ? "o" : tool_mode,
-	"--output", opt.options.output+(tool_mode == "ir" ? ".bc" : ".o")
+	"--output", opt.options.output
 ].concat(project.includes
 	.filter(x => x.type=="llvm")
 	.map(x => x.path)

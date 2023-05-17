@@ -87,14 +87,6 @@ SET( TAR )
 
 SET( APP_EXE uvc-tools )
 message("Configuring ${APP_EXE}")
-add_executable( ${APP_EXE} "src/uvc-tool/main.c"
-	"src/uvc-tool/verbose.c"
-)
-TARGET_LINK_LIBRARIES( ${APP_EXE} "${llvm_libs}" )
-
-
-SET( APP_EXE uvc-tools2 )
-message("Configuring ${APP_EXE}")
 add_executable( ${APP_EXE} "src/uvc-tool/main.cpp"
 	"src/uvc-tool/verbose.cpp"
 )
