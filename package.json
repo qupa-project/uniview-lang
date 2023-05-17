@@ -19,11 +19,11 @@
 		"node": ">=14"
 	},
 	"scripts": {
-		"test": "npm run test-execution",
-		"test-translation": "node compiler/test.js",
-		"test-compilation": "node compiler/test.js --bin",
-		"test-execution": "node compiler/test.js --bin --exec",
-		"postinstall": "run-s build-syntax install-tools",
+		"test": "npm run test:execution",
+		"test:translation": "node compiler/test.js",
+		"test:compilation": "node compiler/test.js --bin",
+		"test:execution": "node compiler/test.js --bin --exec",
+		"postinstall": "run-s build:syntax install-tools",
 		"install-tools": "node tools/install.js",
 		"build": "run-s build:*",
 		"build:syntax": "node compiler/parser/build.js",
