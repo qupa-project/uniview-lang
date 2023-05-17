@@ -15,6 +15,15 @@ void ShowTriples(){
 	return;
 }
 
+void InitializeTargets(){
+	LLVMInitializeX86TargetInfo();
+	LLVMInitializeX86Target();
+	LLVMInitializeX86TargetMC();
+	LLVMInitializeX86AsmParser();
+	LLVMInitializeX86AsmPrinter();
+	return;
+}
+
 
 Config IngestConfig(int argc, char* argv[]) {
 	Config config;
@@ -208,11 +217,7 @@ int Compile_Object(LLVMContext& ctx, Module* module, Config config) {
 
 	// Initialize the target registry etc.
 	verbose("Initializing Targets...\n");
-	InitializeAllTargetInfos();
-	InitializeAllTargets();
-	InitializeAllTargetMCs();
-	InitializeAllAsmParsers();
-	InitializeAllAsmPrinters();
+	InitializeTargets();
 
 	std::string err;
 	auto Target = TargetRegistry::lookupTarget(config.target, err);
@@ -261,11 +266,7 @@ int Compile_Object(LLVMContext& ctx, Module* module, Config config) {
 int Execute_Module(LLVMContext& context, Module* module) {
 	// Initialize the target registry etc.
 	verbose("Initializing Targets...\n");
-	InitializeAllTargetInfos();
-	InitializeAllTargets();
-	InitializeAllTargetMCs();
-	InitializeAllAsmParsers();
-	InitializeAllAsmPrinters();
+	InitializeTargets();
 
 	verbose("Execution:\n");
 

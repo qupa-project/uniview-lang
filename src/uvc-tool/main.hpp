@@ -73,6 +73,7 @@ struct Config {
 	int                         opt;
 };
 
+void InitializeTargets();
 void ShowTriples();
 
 Config IngestConfig(int argc, char* argv[]);
