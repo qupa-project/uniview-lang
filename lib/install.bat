@@ -6,8 +6,7 @@
 @cd %~dp0
 
 @title Configuring - Uniview Dependencies
-@rem cmake -S . -B build --install-prefix="%~dp0\install"
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build
 @title Building - Uniview Dependencies
 cmake --build build
 @title Installing - Uniview Dependencies

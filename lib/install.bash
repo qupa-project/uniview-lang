@@ -8,7 +8,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR
 
 # TODO: Update the CLI title to "Configuring - Uniview Dependencies"
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build -G Ninja
 # TODO: Update the CLI title to "Building - Uniview Dependencies"
 cmake --build build
 # TODO: Update the CLI title to "Installing - Uniview Dependencies"
