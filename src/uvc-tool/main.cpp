@@ -16,6 +16,18 @@ void ShowTriples(){
 }
 
 void InitializeTargets() {
+	// Manually initialize targets incase build device is using standard LLVM install
+	//  If they aren't using the custom build InitAll will attempt to init unlinked targets
+	LLVMInitializeARMTargetInfo();
+	LLVMInitializeARMTarget();
+	LLVMInitializeARMTargetMC();
+	LLVMInitializeARMAsmParser();
+	LLVMInitializeARMAsmPrinter();
+	LLVMInitializeRISCVTargetInfo();
+	LLVMInitializeRISCVTarget();
+	LLVMInitializeRISCVTargetMC();
+	LLVMInitializeRISCVAsmParser();
+	LLVMInitializeRISCVAsmPrinter();
 	LLVMInitializeX86TargetInfo();
 	LLVMInitializeX86Target();
 	LLVMInitializeX86TargetMC();

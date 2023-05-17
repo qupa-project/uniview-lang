@@ -68,14 +68,14 @@ llvm_map_components_to_libnames( llvm_libs
 	TransformUtils
 
 	# PLATFORM SPECIFIC
-	# armasmparser
-	# armcodegen
-	# armdesc
-	# arminfo
-	# riscvasmparser
-	# riscvcodegen
-	# riscvdesc
-	# riscvinfo
+	armasmparser
+	armcodegen
+	armdesc
+	arminfo
+	riscvasmparser
+	riscvcodegen
+	riscvdesc
+	riscvinfo
 	# webassemblyasmparser
 	# webassemblycodegen
 	# webassemblydesc
