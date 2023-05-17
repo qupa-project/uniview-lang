@@ -4,6 +4,18 @@
 using namespace llvm;
 using namespace std;
 
+void ShowTriples(){
+	std::string triple = llvm::sys::getDefaultTargetTriple();
+	printf("  Default target triple: %s\n", triple.c_str());
+	printf("  Supported targets:\n");
+	for (const auto& target : llvm::TargetRegistry::targets()) {
+			printf("    %s\n", target.getName());
+	}
+
+	return;
+}
+
+
 Config IngestConfig(int argc, char* argv[]) {
 	Config config;
 	config.files.clear(); // init
@@ -143,6 +155,8 @@ Module* loadAndLinkModules(LLVMContext& context, const vector<string>& files) {
 
 
 void Optimise(Module* module, int level) {
+	verbose("Optimising O%d...\n", level);
+
 	// Create the analysis managers.
 	LoopAnalysisManager LAM;
 	FunctionAnalysisManager FAM;
@@ -206,6 +220,7 @@ int Compile_Object(LLVMContext& ctx, Module* module, Config config) {
 	}
 
 	// Initialize the target registry etc.
+	verbose("Initializing Targets...\n");
 	InitializeAllTargetInfos();
 	InitializeAllTargets();
 	InitializeAllTargetMCs();
@@ -218,12 +233,7 @@ int Compile_Object(LLVMContext& ctx, Module* module, Config config) {
 	if (!Target) {
 		printf("\n\u001b[31merror\u001b[0m: %s\n", err.c_str());
 
-		printf("  Supported Targets:\n");
-		auto targets = llvm::TargetRegistry::targets();
-		for (auto it = targets.begin(); it != targets.end(); ++it) {
-			printf("    - %s\n", it->getName());
-		}
-
+		void ShowTriples();
 		return 1;
 	}
 
@@ -266,6 +276,14 @@ int Compile_Object(LLVMContext& ctx, Module* module, Config config) {
 
 
 int Execute_Module(LLVMContext& context, Module* module) {
+	// Initialize the target registry etc.
+	verbose("Initializing Targets...\n");
+	InitializeAllTargetInfos();
+	InitializeAllTargets();
+	InitializeAllTargetMCs();
+	InitializeAllAsmParsers();
+	InitializeAllAsmPrinters();
+
 	verbose("Execution:\n");
 
 	// Find the main function in the module
@@ -283,18 +301,17 @@ int Execute_Module(LLVMContext& context, Module* module) {
 		return 1;
 	}
 
-	// printf("\n\u001b[31merror\u001b[0m: %s\n", "Unimplemented");
-	// return 1;
-
 	// Create an execution engine for the module
 	unique_ptr<llvm::Module> modulePtr(module);
 	EngineBuilder builder( std::move(modulePtr) );
 	error.clear();
 	builder.setErrorStr(&error);
-	// builder.setEngineKind(llvm::EngineKind::JIT);
+	builder.setEngineKind(llvm::EngineKind::JIT); // Use JIT engine kind
 	auto engine = builder.create();
 	if (!engine) {
-		printf("\n\u001b[31merror\u001b[0m: %s\n  %s\n", "Failed to create execution engine", error.c_str());
+		printf("\n\u001b[31merror\u001b[0m: %s\n  %s\n\n", "Failed to create execution engine", error.c_str());
+
+		ShowTriples();
 		return 1;
 	}
 
@@ -331,7 +348,6 @@ int main(int argc, char* argv[]) {
 	mod->setTargetTriple(config.target);
 
 
-	verbose("Optimising...");
 	Optimise(mod, config.opt);
 
 

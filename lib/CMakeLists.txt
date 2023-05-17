@@ -43,6 +43,8 @@ message("Compiler architecture is ${_compiler_arch}")
 set(CMAKE_INSTALL_PREFIX "${PROJECT_SOURCE_DIR}/install" CACHE PATH "Installation directory" FORCE)
 message(STATUS "Install path: ${CMAKE_INSTALL_PREFIX}")
 
+set(CMAKE_BUILD_TYPE Release CACHE STRING "Set the build type")
+
 
 
 # Download the submodules if missing
@@ -70,9 +72,10 @@ endif()
 #################################################################
 # find_package(LLVM REQUIRED CONFIG)
 
-# set(LLVM_TARGETS_TO_BUILD:STRING "arm;X86;WebAssembly;risv") future targets
+# set(LLVM_TARGETS_TO_BUILD:STRING "AArch64;X86;WebAssembly;RISCV") future targets
 set(LLVM_TARGETS_TO_BUILD "X86;" CACHE STRING "" FORCE)
 set(LLVM_ENABLE_PROJECTS "llvm;lld")
+set(LLVM_BUILD_JIT ON)
 
 
 set(LLVM_ENABLE_COROUTINES ON)

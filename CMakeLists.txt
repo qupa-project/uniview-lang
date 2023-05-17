@@ -63,6 +63,7 @@ llvm_map_components_to_libnames( llvm_libs
 	Interpreter
 	IPO
 	irReader
+	# JITLink
 	Linker
 	MCJIT
 	Object

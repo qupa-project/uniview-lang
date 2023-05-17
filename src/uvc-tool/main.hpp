@@ -15,7 +15,7 @@
 #include <llvm/Config/llvm-config.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
-// #include <llvm/ExecutionEngine/MCJIT.h>
+#include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/ExecutionEngine/SectionMemoryManager.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRPrintingPasses.h>
@@ -72,6 +72,8 @@ struct Config {
 	std::string              target;
 	int                         opt;
 };
+
+void ShowTriples();
 
 Config IngestConfig(int argc, char* argv[]);
 
