@@ -4,7 +4,7 @@ struct Cat {
 
 impl Cat {
 	fn new(id: int): Cat {
-		let out = new Cat {
+		let out := new Cat {
 			id: id;
 		};
 
@@ -19,7 +19,7 @@ impl Cat {
 
 impl Clone for Cat {
 	fn clone(src: @Self): Self {
-		let out = new Cat {
+		let out := new Cat {
 			id: src.id + 1;
 		};
 		printf("%s", "Cloning cat\n");
@@ -56,9 +56,9 @@ impl CatCage {
 
 
 fn main(): int {
-	let c = Cat.new(cast#[i64](2));
+	let c := Cat.new(cast#[i64](2));
 	Cat.say($c);
-	let c2 = Clone(@c);
+	let c2 := Clone(@c);
 	Cat.say($c);
 
 	let h = CatCage.new(c);

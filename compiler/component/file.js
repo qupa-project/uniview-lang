@@ -1,16 +1,18 @@
-const path = require('path');
-const BNF = require('bnf-parser');
+const chalk = require('chalk');
+const path  = require('path');
+const BNF   = require('bnf-parser');
 
 const helper = require('../helper/error.js');
 
-const LLVM = require('../middle/llvm.js');
-const Function = require('./function.js');
-const TypeDef  = require('./typedef.js');
+const LLVM      = require('../middle/llvm.js');
+const Function  = require('./function.js');
+const TypeDef   = require('./typedef.js');
 const Structure = require('./struct.js');
-const Trait = require('./trait.js');
+const Trait     = require('./trait.js');
 const Implement = require('./impl.js');
-const TypeRef = require('./typeRef.js');
-const Import  = require('./import.js');
+const TypeRef   = require('./typeRef.js');
+const Import    = require('./import.js');
+
 const { ResolveAccess } = require("./resolve.js");
 
 // const { Namespace, Namespace_Type } = require('./namespace.js');
@@ -353,7 +355,7 @@ class File {
 	throw (msg, refStart, refEnd) {
 		// let area = BNF.Message.HighlightArea(this.data, refStart, refEnd);
 		let area = helper.CodeSection(this.data, refStart, refEnd);
-		console.error(`\n${this.relPath}:\n ${msg.replace(/\n/g, "\n ")}\n${area.replace(/\t/g, '  ')}`);
+		console.error(`\n${this.relPath}:\n ${chalk.cyan(msg.replace(/\n/g, "\n "))}\n${area.replace(/\t/g, '  ')}`);
 		this.project.markError();
 	}
 	warn (msg, refStart, refEnd) {

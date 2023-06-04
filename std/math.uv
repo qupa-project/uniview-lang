@@ -64,7 +64,7 @@ fn abs(val: i64): i64 {
 }
 
 fn abs(val: double): double {
-	let zero = cast#[double](0.0);
+	let zero := cast#[double](0.0);
 	if (val < zero) {
 		return zero - val;
 	}

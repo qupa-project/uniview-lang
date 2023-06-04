@@ -1,6 +1,6 @@
 
 fn BoolLending(): int {
-	let a = false;
+	let a := false;
 	FlipFlop(@a);
 	Flip(@a);
 
@@ -22,7 +22,7 @@ fn Flip(val: @bool) {
 
 
 fn IntLending(): int {
-	let a = 1;
+	let a := 1;
 	Multiply(@a);
 	if (a != 3) {
 		return 1;

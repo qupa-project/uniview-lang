@@ -7,7 +7,7 @@ fn Producer(switch: bool): Either#[void, int, float] {
 }
 
 fn main(): int {
-	let val = Producer(false);
+	let val := Producer(false);
 
 	when val {
 		void {

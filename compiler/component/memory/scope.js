@@ -1,10 +1,6 @@
-const Flattern = require('../../parser/flatten.js');
-const { Generator_ID } = require('../generate.js');
 const LLVM = require("../../middle/llvm.js");
 const TypeRef = require('./../typeRef.js');
 
-
-const Probability = require('./probability.js');
 const Variable = require('./variable.js');
 
 class Scope {
@@ -253,10 +249,15 @@ class Scope {
 	/**
 	 * PreSync must be ran in each scope first
 	 * @param {Branch} branches
+	 * @returns {Object|Error}
 	 */
-	sync (branches, segment, ref) {
+	sync (branches, ref) {
 		let preambles = branches.map(x => new LLVM.Fragment());
 		let frag = new LLVM.Fragment();
+
+		if (branches.length == 0) {
+			throw new Error("Cannot sync zero branches");
+		}
 
 		// Ensure any parents are marked as updated
 		//   if their children were
@@ -282,32 +283,29 @@ class Scope {
 
 				// This value was not updated
 				//   Thus is can be skipped
-				if (!branches.map( x => x.scope.variables[name].hasUpdated).includes(true)) {
+				if (!branches.map(x => x.scope.variables[name].hasUpdated).includes(true)) {
 					continue;
 				}
 
-				let applicable = branches.filter(tuple =>
-					tuple.scope.variables[name].isClone // Ignore locally defined variables
+				let res = this.variables[name].resolveBranches(
+					branches.map(exec => {
+						return {
+							block: exec.entryPoint,
+							variable: exec.scope.variables[name]
+						};
+					}),
+					ref
 				);
 
-				if (applicable.length > 1) {
-					let res = this.variables[name].createResolutionPoint(
-						applicable.map(tuple => tuple.scope.variables[name]),
-						applicable.map(tuple => tuple),
-						segment,
-						ref
-					);
-
-					let j=0;
-					for (let i=0; i<preambles.length; i++) {
-						if (applicable.includes(branches[i])) {
-							preambles[i].append(res.preambles[j]);
-							j++;
-						}
-					}
-
-					frag.append(res.frag);
+				if (res.error) {
+					return res;
 				}
+
+				// Merge in the preambles
+				preambles
+					.map((x, i) => x.merge(res.preambles[i]));
+
+				frag.append(res.frag);
 			}
 		}
 

@@ -1,6 +1,6 @@
 fn CheckOverFlow(): int {
-	let a = cast#[u8](128);
-	let b = cast#[i8](a);
+	let a := cast#[u8](128);
+	let b := cast#[i8](a);
 
 	if (b != cast#[i8](127)) {
 		return 1;
@@ -19,12 +19,12 @@ fn CheckOverFlow(): int {
 		return 1;
 	}
 
-	let c = cast#[i16](9223372036854780000);
+	let c := cast#[i16](9223372036854780000);
 	if (c != cast#[i16](32767)) {
 		return 1;
 	}
 
-	let d = cast#[i32](9223372036854780000);
+	let d := cast#[i32](9223372036854780000);
 	if (d != cast#[i32](2147483647)) {
 		return 1;
 	}
@@ -33,8 +33,8 @@ fn CheckOverFlow(): int {
 }
 
 fn CheckUnderflow(): int {
-	let a = cast#[i8](-1);
-	let b = cast#[u8](a);
+	let a := cast#[i8](-1);
+	let b := cast#[u8](a);
 
 	if (b != cast#[u8](0)) {
 		return 1;
@@ -58,7 +58,7 @@ fn CheckUnderflow(): int {
 
 
 fn main (): int {
-	let res = CheckOverFlow();
+	let res := CheckOverFlow();
 	if (res == -1) {
 		printf("%s", "Failed overflow check\n");
 		return 1;

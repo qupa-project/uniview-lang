@@ -81,7 +81,7 @@ program ::= %w* ( stmt_top %w* )* ;
 	data_type ::= ...data_type_lending? ...name ( %w* ( access_static | access_template ) )* ;
 		data_type_lending ::= "@" | "$" ;
 
-	declare ::= %( "let" %w+ ) ...name %w* ( %( ":" w* ) data_type %w* )? ( %( "=" w* ) expr )? %( w* ";" ) ;
+	declare ::= %( "let" %w+ ) ...name %( w* ":" w* ) ( data_type %w* )? ( %( "=" w* ) expr )? %( w* ";" ) ;
 	assign  ::= variable %( w* "=" w* ) expr %( w* ";" ) ;
 
 
@@ -134,7 +134,7 @@ program ::= %w* ( stmt_top %w* )* ;
 #=============================
 #  Template
 #=============================
-	template ::= %( %"template" w* "(" w* ) template_args %( w* ")" ) ;
+	template ::= %( %"sect" w* "(" w* ) template_args %( w* ")" ) ;
 		template_args ::= struct_attribute %w* ( %( "," w* ) struct_attribute %w* )* ;
 
 

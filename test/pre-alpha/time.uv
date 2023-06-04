@@ -1,9 +1,9 @@
 import "experimental/time.uv" as Time;
 
 fn println(dt: Time.DateTime) {
-	let time = dt.time;
+	let time := dt.time;
 
-	let pm = time.hours > 12;
+	let pm := time.hours > 12;
 	if (pm) {
 		time.hours = time.hours - 12;
 	}
@@ -16,18 +16,18 @@ fn println(dt: Time.DateTime) {
 		printf("%s", " AM");
 	}
 
-	let date = dt.date;
+	let date := dt.date;
 	printf(" %i/%i/%i %i %i\n", date.day, date.month, date.year, date.weekDay, date.days);
 
 	return;
 }
 
 fn main(): int {
-	let now = Time.Now();
+	let now := Time.Now();
 	printf("Unix   : %i\n", now);
 
 	printf("%s", "UTC    : ");
-	let dt = Time.GetDateTime(now);
+	let dt := Time.GetDateTime(now);
 	println(dt);
 
 	dt = Time.GetDateTime(now + 10*60*60);

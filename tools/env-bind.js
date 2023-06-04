@@ -6,6 +6,10 @@ const fs = require('fs');
 
 
 const env_path = path.resolve(__dirname, "../.env");
+if (!fs.existsSync(env_path)) {
+	fs.writeFileSync(env_path, "");
+}
+
 let config = require('dotenv').config({path: env_path}).parsed;
 
 function UpdateEnv(delta) {

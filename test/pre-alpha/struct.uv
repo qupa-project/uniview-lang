@@ -29,7 +29,7 @@ struct Person {
 
 
 fn init(ofAge: bool): Person {
-	let age = 16;
+	let age := 16;
 	if (ofAge) {
 		age = 21;
 	}
@@ -63,7 +63,7 @@ fn print(f: FingerPrint) {
 
 
 fn main(): int {
-	let p = init(false);
+	let p := init(false);
 	if (check(@p, 0, 16, 1) == 1) {
 		printf("%s", "Failed init test\n");
 		print(p);
@@ -81,7 +81,7 @@ fn main(): int {
 
 	Clone(1);
 
-	let q = Clone#[Person](@p);
+	let q := Clone#[Person](@p);
 	if (check(@q, 0, 21, 1) == 1) {
 		printf("%s", "Failed clone test\n");
 		print(q);
