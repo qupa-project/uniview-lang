@@ -11,23 +11,23 @@ struct String {
 
 impl String {
 	fn new(str: cstring): String {
-		let size = strlen($str);
-		let out = new String {
+		let size := strlen($str);
+		let out := new String {
 			data: Memory.Alloc(size);
 			size: size;
 		};
 
-		let other = bitcast#[addr_space](str);
+		let other := bitcast#[addr_space](str);
 		Memory.Move($out.data, $other, out.size, false);
 
 		return out;
 	}
 
 	fn append(this: @String, other: String) {
-		let nx_len = this.size + other.size - cast#[u64](1);
+		let nx_len := this.size + other.size - cast#[u64](1);
 		this.data = Memory.Realloc(this.data, nx_len);
 
-		let insert = Memory.Offset($this.data, cast#[i64](this.size) -1 );
+		let insert := Memory.Offset($this.data, cast#[i64](this.size) -1 );
 		Memory.Move(insert, $other.data, other.size, false);
 
 		this.size = nx_len;
@@ -47,19 +47,19 @@ impl String {
 		}
 
 		// Create a space for the new data
-		let length = end - begin;
-		let size = length + cast#[u64](1);
-		let sub = new String {
+		let length := end - begin;
+		let size := length + cast#[u64](1);
+		let sub := new String {
 			size: size;
 			data: Memory.Alloc(size);
 		};
 
 		// Move the taken slice to the new string
-		let sect_start = Memory.Offset($this.data, cast#[i64](begin));
+		let sect_start := Memory.Offset($this.data, cast#[i64](begin));
 		Memory.Move($sub.data, $sect_start, length, false);
 
 		// Fix the hole in the current string
-		let sect_end = Memory.Offset($this.data, cast#[i64](end));
+		let sect_end := Memory.Offset($this.data, cast#[i64](end));
 		Memory.Move($sect_start, $sect_end, this.size-end, false);
 
 		// Resize the string
@@ -67,7 +67,7 @@ impl String {
 		this.data = Memory.Realloc(this.data, this.size);
 
 		// Add the null terminator
-		let terminator = Memory.Offset($sub.data, cast#[i64](sub.size) -1);
+		let terminator := Memory.Offset($sub.data, cast#[i64](sub.size) -1);
 		Memory.Set(terminator, cast#[i8](0), cast#[u64](1), false);
 
 		return sub;
@@ -76,7 +76,7 @@ impl String {
 
 
 	fn slice(this: String, begin: u64): String {
-		let end = this.size;
+		let end := this.size;
 		return String.slice(this, begin, end);
 	}
 	fn slice(this: String, begin: u64, end: u64): String {
@@ -88,19 +88,19 @@ impl String {
 		}
 
 		// Create a space for the new data
-		let length = end - begin;
-		let size = length + cast#[u64](1);
-		let sub = new String {
+		let length := end - begin;
+		let size := length + cast#[u64](1);
+		let sub := new String {
 			size: size;
 			data: Memory.Alloc(size);
 		};
 
 		// Move the taken slice to the new string
-		let sect_start = Memory.Offset($this.data, cast#[i64](begin));
+		let sect_start := Memory.Offset($this.data, cast#[i64](begin));
 		Memory.Copy($sub.data, $sect_start, length, false);
 
 		// Add the null terminator
-		let terminator = Memory.Offset($sub.data, cast#[i64](sub.size) -1);
+		let terminator := Memory.Offset($sub.data, cast#[i64](sub.size) -1);
 		Memory.Set(terminator, cast#[i8](0), cast#[u64](1), false);
 		return sub;
 	}
@@ -122,9 +122,9 @@ impl Drop for String {
 impl Clone for String {
 	fn clone(this: @String): String {
 		// Initiliase the data structure
-		let data = Memory.Alloc(this.size);
+		let data := Memory.Alloc(this.size);
 
-		let out = new String {
+		let out := new String {
 			data: data;
 			size: this.size;
 		};

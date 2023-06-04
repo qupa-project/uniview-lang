@@ -20,7 +20,7 @@ fn Consume(t: Test) {
 }
 
 fn UnifiedUndefined() {
-	let t = new Test {};
+	let t := new Test {};
 
 	if (true) {
 		Consume(t);

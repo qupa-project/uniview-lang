@@ -15,7 +15,7 @@ struct File {
 
 impl File {
 	fn New(path: cstring, access: cstring): File {
-		let this = new File {
+		let this := new File {
 			ptr: fopen_s(@this, path, access);
 		};
 

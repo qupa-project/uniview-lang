@@ -1,8 +1,8 @@
 fn CompareFloats() {
-	let a = 3.0;
-	let b = 7.0;
+	let a := 3.0;
+	let b := 7.0;
 
-	let c = a == b;
+	let c := a == b;
 	c = a != b;
 	c = a > b;
 	c = a < b;
@@ -12,10 +12,10 @@ fn CompareFloats() {
 }
 
 fn CompareInts(): bool {
-	let a = 3;
-	let b = 7;
+	let a := 3;
+	let b := 7;
 
-	let c = a == b;
+	let c := a == b;
 	if (a == b) {
 		return false;
 	}
@@ -39,10 +39,10 @@ fn CompareInts(): bool {
 }
 
 fn CompareBools (): bool {
-	let a = true;
-	let b = false;
+	let a := true;
+	let b := false;
 
-	let c = !a;
+	let c := !a;
 	c = a || b;
 	c = a && b;
 

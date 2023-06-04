@@ -21,7 +21,8 @@
 
 ## Changes
  - [x] Comments are now able to be used anywhere whitespace can
- - [x] Cloning now done via the `Clone()` function instead of via the `$` operator.
+ - [x] Cloning now done via the `Clone()` function instead of via the `$` operator
+ - [x] Now use `let x := 23;` to infer type rather than `let x = 23;`, this is to help with future variant types
 
 ## Tweaks
  - [x] Now uses the LLVM tool chain (instead of clang) to generated the platform specific assembly, then clang does the final mile to make the executable binary.
